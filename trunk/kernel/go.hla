@@ -1,0 +1,11 @@
+unit Go;
+
+#includeonce("always.hhf")
+#includeonce("prototype.hhf")
+
+procedure g; @nodisplay; @noalignstack; @noframe;
+begin g;
+	jmp start;
+end g;
+
+end Go;

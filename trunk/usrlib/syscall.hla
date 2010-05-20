@@ -1,0 +1,244 @@
+unit syscall;
+
+#includeonce("../include/const.hhf")
+
+procedure call_syscall_setFeature_HLA(feature: byte; error: dword);
+begin call_syscall_setFeature_HLA;
+	push(eax);
+	push(ebx);
+	push(esi);
+	pushfd();
+	mov(SYS_SETFEATURE,eax);
+	movzx(feature,ebx);
+	mov(error,esi);
+	int($22);
+	popfd();
+	pop(esi);
+	pop(ebx);
+	pop(eax);
+end call_syscall_setFeature_HLA;
+
+procedure call_syscall_setFeature(feature: byte; error: dword); @cdecl; @external;
+procedure call_syscall_setFeature(feature: byte; error: dword);
+begin call_syscall_setFeature;
+	call_syscall_setFeature_HLA(feature, error);
+end call_syscall_setFeature;
+
+procedure call_syscall_receive_HLA(sender: dword; where: dword; length: dword; error: dword);
+begin call_syscall_receive_HLA;
+	push(ebx);
+	push(ecx);
+	push(edx);
+	push(esi);
+	pushfd();
+	mov(SYS_RECEIVE,eax);
+	mov(sender,ebx);
+	mov(length,ecx);
+	mov(where,edx);
+	mov(error,esi);
+	int($22);
+	popfd();
+	pop(esi);
+	pop(edx);
+	pop(ecx);
+	pop(ebx);
+end call_syscall_receive_HLA;
+
+procedure call_syscall_receive(sender: dword; where: dword; length: dword; error: dword); @cdecl; @external;
+procedure call_syscall_receive(sender: dword; where: dword; length: dword; error: dword);
+begin call_syscall_receive;
+	call_syscall_receive_HLA(sender, where, length, error);
+end call_syscall_receive;
+
+
+procedure call_syscall_send_by_feature_HLA(feature: dword; where: dword; length: dword; block: dword; error: dword);
+begin call_syscall_send_by_feature_HLA;
+	push(ebx);
+	push(ecx);
+	push(edx);
+	push(edi);
+	push(esi);
+	mov(SYS_SEND_BY_FEATURE,eax);
+	mov(feature,ebx);
+	mov(length,ecx);
+	mov(where,edx);
+	mov(block,edi);
+	mov(error,esi);
+	int($22);
+	pop(esi);
+	pop(edi);
+	pop(edx);
+	pop(ecx);
+	pop(ebx);
+end call_syscall_send_by_feature_HLA;
+
+procedure call_syscall_send_by_feature(feature: dword; where: dword; length: dword; block: dword; error: dword); @cdecl; @external;
+procedure call_syscall_send_by_feature(feature: dword; where: dword; length: dword; block: dword; error: dword);
+begin call_syscall_send_by_feature;
+	call_syscall_send_by_feature_HLA(feature, where, length, block, error);
+end call_syscall_send_by_feature;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+procedure call_syscall_show_tss(feature: dword; where: dword; length: dword; block: dword); @cdecl; @external;
+procedure call_syscall_show_tss(feature: dword; where: dword; length: dword; block: dword);
+begin call_syscall_show_tss;
+	mov(SYS_SHOW_TSS,eax);
+	int($22);
+end call_syscall_show_tss;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+procedure call_syscall_requestFeature_HLA(feature: byte);
+begin call_syscall_requestFeature_HLA;
+	push(ebx);
+	pushfd();
+	mov(SYS_REQUESTFEATURE,eax);
+	movzx(feature,ebx);
+	int($22);
+	popfd();
+	pop(ebx);
+end call_syscall_requestFeature_HLA;
+
+procedure call_syscall_requestFeature(feature: byte); @cdecl; @external;
+procedure call_syscall_requestFeature(feature: byte);
+begin call_syscall_requestFeature;
+	call_syscall_requestFeature_HLA(feature);
+end call_syscall_requestFeature;
+
+procedure call_syscall_send_HLA(receiver: dword; where: dword; length: dword);
+begin call_syscall_send_HLA;
+	push(ebx);
+	push(ecx);
+	push(edx);
+	pushfd();
+	mov(SYS_SEND,eax);
+	mov(receiver,ebx);
+	mov(length,ecx);
+	mov(where,edx);
+	int($22);
+	popfd();
+	pop(edx);
+	pop(ecx);
+	pop(ebx);
+end call_syscall_send_HLA;
+
+procedure call_syscall_send(receiver: dword; where: dword; length: dword); @cdecl; @external;
+procedure call_syscall_send(receiver: dword; where: dword; length: dword);
+begin call_syscall_send;
+	call_syscall_send_HLA(receiver, where, length);
+end call_syscall_send;
+*/
+
+end syscall;

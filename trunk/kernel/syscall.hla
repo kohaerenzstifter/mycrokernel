@@ -1,0 +1,229 @@
+unit Syscall;
+
+#includeonce("const.hhf")
+#includeonce("prototype.hhf")
+#includeonce("external.hhf")
+#includeonce("../include/always.hhf")
+
+procedure sys_call; @nodisplay; @noalignstack; @noframe;
+begin sys_call;
+	forever
+		mov(curptr,eax);
+		mov((type tss_t [eax]).eax_reg,eax);
+		if ((type uns32 eax) > NO_SYSCALLS - 1) then
+		      mov(UNKNOWNSYSCALL,err);
+		      set_error(&syscallstate, curptr);
+		      add(8,esp);
+		else
+		      mov(@size(syscall_t),ebx);
+		      mul(ebx,eax);
+		      mov(syscalls.fnct[eax],eax);
+		      call(eax);
+		endif;
+		chargeProc();
+		if (nextptr == NULL) then
+			pickNextProc();
+		endif;
+		schedule(&syscallstate);
+		mov(PIC_EOI,al);
+		out(al,PIC1_COMMAND);
+		iret();
+	endfor;
+end sys_call;
+
+procedure syscall_exit;
+begin syscall_exit;
+	mov(curptr, eax);
+	mov(EMPTY, (type tss_t [eax]).state);
+
+	movzx((type tss_t [eax]).pid, ebx);
+
+	movzx((type tss_t [eax]).cs_reg, ebx);
+	if (ebx != 0) then
+	      movzx((type tss_t [eax]).cs_reg, ebx);
+	      and($fffc,bx);
+	      unfreeGDTIDX(ebx);
+	endif;
+
+	movzx((type tss_t [eax]).ds_reg, ebx);
+	if (ebx != 0) then
+	      movzx((type tss_t [eax]).cs_reg, ebx);
+	      and($fffc,bx);
+	      unfreeGDTIDX(ebx);
+	endif;
+
+	movzx((type tss_t [eax]).es_reg, ebx);
+	if (ebx != 0) then
+	      movzx((type tss_t [eax]).cs_reg, ebx);
+	      and($fffc,bx);
+	      unfreeGDTIDX(ebx);
+	endif;
+
+	movzx((type tss_t [eax]).fs_reg, ebx);
+	if (ebx != 0) then
+	      movzx((type tss_t [eax]).cs_reg, ebx);
+	      and($fffc,bx);
+	      unfreeGDTIDX(ebx);
+	endif;
+
+	movzx((type tss_t [eax]).gs_reg, ebx);
+	if (ebx != 0) then
+	      movzx((type tss_t [eax]).cs_reg, ebx);
+	      and($fffc,bx);
+	      unfreeGDTIDX(ebx);
+	endif;
+
+	movzx((type tss_t [eax]).ss_reg, ebx);
+	if (ebx != 0) then
+	      movzx((type tss_t [eax]).cs_reg, ebx);
+	      and($fffc,bx);
+	      unfreeGDTIDX(ebx);
+	endif;
+
+	movzx((type tss_t [eax]).pid, ebx);
+	freePID(ebx);
+	dequeue(curptr);
+	add(4,esp);
+end syscall_exit;
+
+procedure syscall_setFeature;
+begin syscall_setFeature;
+	push(eax);
+	mov(curptr, eax);
+	set_feature(curptr,(type tss_t [eax]).ebx_reg);
+	add(8,esp);
+	pop(eax);
+end syscall_setFeature;
+
+procedure syscall_receive;
+begin syscall_receive;
+	mov(curptr, edi);
+	//from whom does process want to receive?
+	mov((type tss_t [edi]).ebx_reg,ebx);
+	//how many bytes does process want to receive?
+	mov((type tss_t [edi]).ecx_reg,ecx);
+	//where does the process want the data to be placed?
+	mov((type tss_t [edi]).edx_reg,edx);
+	validateDataArea(edi,edx,ecx);
+	add(12,esp);
+	if (eax != 0) then
+		mov(INVALIDBUFFER,err);
+		set_error(&syscallstate, curptr);
+		add(8,esp);
+		exit syscall_receive;
+	endif;
+	getSender(ebx,edi);
+	add(8,esp);
+	if (eax != NULL) then
+	  mov(eax,ebx);
+	  //exchange the maximum amount of data between the two processes
+	  //and place the number of actually sent bytes in the eax registers
+	  exchangeData(ebx,edi);
+	  mov(eax, (type tss_t [edi]).eax_reg);
+	  mov(eax, (type tss_t [ebx]).eax_reg);
+	  //remove the sender from the list of sending processes
+	  //and potentially re-enqueue the sender
+	  removeFromSenderList(ebx,edi);
+	  add(8,esp);
+	else
+	  //unready the process and mark it as receiving
+	  markAsReceivingFrom(edi,ebx);
+	  add(8,esp);
+	endif;
+end syscall_receive;
+
+procedure syscall_send;
+begin syscall_send;
+	mov(curptr, edi);
+	//to whom does process want to send?
+	mov((type tss_t [edi]).ebx_reg,ebx);
+	//how many bytes does process want to send?
+	mov((type tss_t [edi]).ecx_reg,ecx);
+	//from where does process want to send?
+	mov((type tss_t [edi]).edx_reg,edx);
+	validateDataArea(edi,edx,ecx);
+	add(12,esp);
+	if (eax != 0) then
+		mov(INVALIDBUFFER,err);
+		set_error(&syscallstate, curptr);
+		add(8,esp);
+		exit syscall_send;
+	endif;
+	receivingFrom(ebx,edi);
+	add(8,esp);
+	if (eax == TRUE) then
+	  //exchange the maximum amount of data between the two processes
+	  //and place the number of actually sent bytes in the eax registers
+	  exchangeData(edi,ebx);
+	  mov(eax, (type tss_t [edi]).eax_reg);
+	  mov(eax, (type tss_t [ebx]).eax_reg);
+	  //remove the sender from the list of sending processes
+	  //and potentially re-enqueue the sender
+	  clearReceivingFrom(ebx);
+	  add(4,esp);
+	else
+	  //unready the process and mark it as receiving
+	  addToSenderList(edi,ebx);
+	  add(8,esp);
+	endif;
+end syscall_send;
+/*
+procedure syscall_requestFeature;
+begin syscall_requestFeature;
+	mov(curptr,eax);
+	//which feature is the process requesting?
+	mov((type tss_t [eax]).ebx_reg,ebx);
+	push(eax);
+	getProcessByFeature(ebx);
+	add(4,esp);
+	mov(eax,ebx);
+	pop(eax);
+	mov(ebx,(type tss_t [eax]).eax_reg);
+end syscall_requestFeature;
+*/
+procedure syscall_send_by_feature;
+begin syscall_send_by_feature;
+	mov(curptr,edi);
+
+	//which feature is the process requesting?
+	check_feature((type tss_t [edi]).ebx_reg);
+	add(4,esp);
+	if (eax != 0) then
+		mov(INVALIDFEATURE,err);
+		set_error(&syscallstate, curptr);
+		exit syscall_send_by_feature;
+	endif;
+	getProcessByFeature((type tss_t [edi]).ebx_reg);
+	add(4,esp);
+	if (eax == edi) then
+		mov(CIRCULARSEND,err);
+		set_error(&syscallstate, curptr);
+		add(8,esp);
+		exit syscall_send_by_feature;
+	endif;
+	if (eax != NULL) then
+		mov(eax,(type tss_t [edi]).ebx_reg);
+		call syscall_send;
+		exit syscall_send_by_feature;
+	endif;
+	//process willing to wait?
+	mov((type tss_t [edi]).edi_reg,eax);
+	if (eax == TRUE) then
+		add_waiting_for_feature(edi,ebx);
+		add(8,esp);
+		dequeue(edi);
+		add(4,esp);
+	else
+		mov(WOULDBLOCK,err);
+		set_error(&syscallstate, curptr);
+		add(8,esp);
+	endif;
+end syscall_send_by_feature;
+
+procedure syscall_show_tss;
+begin syscall_show_tss;
+	showTSS(curptr);
+	add(4,esp);
+	hlt;
+end syscall_show_tss;
+end Syscall;
