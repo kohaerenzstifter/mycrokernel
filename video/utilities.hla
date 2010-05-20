@@ -1,0 +1,309 @@
+unit Utilities;
+
+#includeonce("external.hhf")
+#includeonce("prototype.hhf");
+#includeonce("../include/const.hhf")
+#includeonce("../include/character.hhf")
+#includeonce("../include/always.hhf")
+
+static //global variables go here
+
+//procedure putchar(what:dword); @cdecl; @external;
+procedure putchar(what:dword); 
+begin putchar;
+	push(eax);
+	push(ebx);
+	push(ecx);
+	push(edx);
+	pushfd();
+
+	mov(what,ecx);
+	if (character.isPrintable(cl)) then		
+		mov(attrib,ch);
+		movzx(cursor,eax);
+putchar_back:
+		if(eax<NO_LINES*NO_COLUMNS*2) then
+			gseg:mov(cx,[eax]);
+			add(2,cursor);			
+		else
+			scrollscreen();
+			movzx(cursor,eax);
+			jmp putchar_back;
+		endif;
+		jmp end_putchar;
+	endif;
+	if (ecx=LF) then
+		putchar(' ');
+		add(4,esp);
+		mov(NO_COLUMNS*2,ebx);
+		movzx(cursor,eax);
+		zerify(edx);
+		div(ebx,edx:eax);
+		while (edx<>0) do
+			putchar(' ');
+			add(4,esp);
+			movzx(cursor,eax);
+			zerify(edx);
+			div(ebx,edx:eax);
+		endwhile;
+		jmp end_putchar;
+	endif;
+	if (ecx=TAB) then
+		putchar(' ');
+		add(4,esp);
+		mov(NO_COLUMNS*2,ebx);
+		movzx(cursor,eax);
+		add(2,eax);
+		zerify(edx);
+		div(ebx,edx:eax);
+		mov(edx,eax);
+		mov(NO_TABSPACES*2,ebx);
+		zerify(edx);
+		div(ebx,edx:eax);
+		while (edx<>0) do
+			putchar(' ');
+			add(4,esp);
+			mov(NO_COLUMNS*2,ebx);
+			movzx(cursor,eax);
+			add(2,eax);
+			zerify(edx);
+			div(ebx,edx:eax);
+			mov(edx,eax);
+			mov(NO_TABSPACES*2,ebx);
+			zerify(edx);
+			div(ebx,edx:eax);
+		endwhile;
+		jmp end_putchar;
+	endif;
+end_putchar:
+	popfd();
+	pop(edx);
+	pop(ecx);
+	pop(ebx);
+	pop(eax);
+end putchar;
+
+procedure putstring(what: string);
+//1) if byte character at "what" nonzero then write to gs:cursor, else return
+//2) write "attrib" byte to gs:cursor+1
+//3) increase "cursor" by 2 and set cursor on screen
+//4) increase "what" by 1
+//5) goto 1)
+//increments "cursor" by 2
+begin putstring;
+	push(eax);
+	push(ebx);
+	push(ecx);
+	pushfd();	
+	mov(what,eax);
+	zerify(ebx);
+	//mov(attrib,bh);
+	movzx(cursor,ecx);
+	mov([eax],bl);
+	while(bl<>0) do
+		putchar(ebx);
+		add(4,esp);
+		inc(eax);
+		mov([eax],bl);
+	endwhile;
+	popfd();
+	pop(ecx);
+	pop(ebx);
+	pop(eax);
+end putstring;
+
+//procedure puthex(what: dword); @cdecl; @external;
+procedure puthex(what: dword);
+//print hexadecimal number on screen
+begin puthex;
+	push(eax);
+	push(edx);
+	push(ecx);
+	push(ebx);
+	pushfd();
+	putchar('$');
+	add(4,esp);
+	mov(what,eax);
+	mov($FFFFFFF,edx);
+	mov(7*4,cl);
+	forever
+		mov(eax,ebx);
+		shr(cl,ebx);
+		and($F,ebx);
+		if(bl<$A) then
+			add($30,ebx);
+		else
+			add($37,ebx);
+		endif;
+		putchar(ebx);
+		add(4,esp);
+		and(edx,eax);
+		shr(4,edx);
+		if (cl=0) then
+			break;
+		endif;
+		sub(4,cl);
+	endfor;
+	popfd();
+	pop(ebx);
+	pop(ecx);
+	pop(edx);
+	pop(eax);
+end puthex;
+
+//procedure putbin(what: dword); @cdecl; @external;
+procedure putbin(what: dword);
+//print binary number on screen
+begin putbin;
+	push(eax);
+	push(edx);
+	push(ecx);
+	push(ebx);
+	pushfd();
+	putchar('%');
+	add(4,esp);
+	mov(what,eax);
+	mov($7FFFFFFF,edx);
+	mov(31,cl);
+	forever
+		mov(eax,ebx);
+		shr(cl,ebx);
+		and(1,ebx);
+		add($30,ebx);
+		putchar(ebx);
+		add(4,esp);
+		and(edx,eax);
+		shr(1,edx);
+		if (cl=0) then
+			break;
+		endif;
+		dec(cl);
+	endfor;
+	popfd();
+	pop(ebx);
+	pop(ecx);
+	pop(edx);
+	pop(eax);
+end putbin;
+
+//procedure putunsint(what: dword); @cdecl; @external;
+procedure putunsint(what: dword);
+//put unsigned decimal number on screen
+begin putunsint;
+	push(eax);
+	push(ebx);
+	push(ecx);
+	push(edx);
+	pushfd();
+	mov(what,eax);
+	mov(1000000000,ebx);
+	forever
+		mov(eax,ecx);
+		zerify(edx);
+		div(ebx,edx:eax);
+		add($30,eax);
+		putchar(eax);
+		add(4,esp);
+		if (ebx=1) then
+			break;
+		endif;
+		sub($30,eax);
+		mul(ebx,eax);
+		sub(eax,ecx);
+		mov(ecx,eax);
+		mov(eax,edi);
+		mov(ebx,eax);
+		zerify(edx);
+		div(10,edx:eax);
+		mov(eax,ebx);
+		mov(edi,eax);
+	endfor;
+	popfd();
+	pop(edx);
+	pop(ecx);
+	pop(ebx);
+	pop(eax);
+end putunsint;
+
+//procedure putsint(what: dword); @cdecl; @external;
+procedure putsint(what: dword);
+begin putsint;
+	push(eax);
+	push(ebx);
+	pushfd();
+	mov(what,eax);
+	mov(eax,ebx);
+	and($80000000,eax);
+	if (@nz) then
+		putchar('-');
+		add(4,esp);
+		not(ebx);
+		add(1,ebx);
+	endif;
+	putunsint(ebx);
+	add(4,esp);
+	popfd();
+	pop(ebx);
+	pop(eax);
+end putsint;
+
+//procedure cls; @cdecl; @external;
+procedure cls;
+//clear screen, set "cursor" to zero and set cursor on screen
+begin cls;
+	push(eax);
+	push(ebx);
+	pushfd();
+	zerify(eax);
+
+	mov(attrib,bh);
+	mov($00,bl);
+	shl(16,ebx);
+	mov(attrib,bh);
+	mov($00,bl);
+
+	while (eax<NO_LINES*NO_COLUMNS*2) do
+		gseg: mov(ebx,[eax]);
+		add(4,eax);
+	endwhile;
+	mov(0,cursor);
+	popfd();
+	pop(ebx);
+	pop(eax);
+end cls;
+
+//procedure scrollscreen; @cdecl; @external;
+procedure scrollscreen;
+//scroll screen by 1 line
+//set "cursor" to (NO_LINES-1)*NO_COLUMNS*2 and set cursor on screen
+begin scrollscreen;
+	push(eax);
+	push(ebx);
+	push(ecx);
+	push(esi);
+	push(edi);
+	pushfd();
+	mov(eseg,ax);
+	mov(gseg,bx);
+	mov(bx,eseg);
+	mov(((NO_LINES*NO_COLUMNS*2)-(NO_COLUMNS*2)) div @size(dword),ecx);
+	mov(NO_COLUMNS*2,esi);
+	zerify(edi);
+	cld();
+	gseg: rep.movsd();
+	mov(ax,eseg);
+	mov((NO_LINES*NO_COLUMNS*2)-(NO_COLUMNS*2),eax);
+	while (eax<NO_LINES*NO_COLUMNS*2) do
+		gseg: mov($F000F00,(type dword [eax]));
+		add(4,eax);
+	endwhile;
+	mov((NO_LINES*NO_COLUMNS*2)-(NO_COLUMNS*2),cursor);
+	popfd();
+	pop(edi);
+	pop(esi);
+	pop(ecx);
+	pop(ebx);
+	pop(eax);
+end scrollscreen;
+
+end Utilities;

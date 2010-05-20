@@ -1,0 +1,137 @@
+//types.hhf
+
+#includeonce("const.hhf")
+#includeonce("../include/const.hhf");
+
+type charptr_t: pointer to char;
+type memdesc_t:
+	record;
+		b:	dword;
+		align(8);
+		l:	dword;
+		align(8);
+		t:	dword;
+	endrecord;
+
+type segdesc_t:
+	record;
+		limit:	word;
+		base1:	word;
+		base2:	byte;
+		props1:	byte;
+		props2:	byte;
+		base3:	byte;
+	endrecord;
+
+//type segdescptr_t: pointer to segdesc;
+
+type keyboard_t:
+	record;
+		write: pointer to byte;
+		modifier: dword;
+		buffer: byte[KBD_BUFFER_SIZE];
+	endrecord;
+
+type keymap_t:
+	record;
+		fnct: dword;
+		no_args: uns32;
+		args: dword;
+	endrecord;
+
+type command_t:
+	record;
+		command: string;
+		no_args: uns32;
+		fnct: dword;
+	endrecord;
+
+type idtdesc_t:
+	record;
+		offset1: word;	//if _type_=INTERRUPT || TRAP => lower word of offset, else unused and 0
+		selector: word;	//selector into GDT
+		zero: byte;	//unused
+		_type_: byte;	//INTERRUPT(10001110), TRAP(10001111) or TSS(10000101)
+		offset2: word;	//if _type_=INTERRUPT || TRAP => upper word of offset, else unused and 0
+	endrecord;
+
+type DTdesc_t:
+	record;
+		limit: word;
+		base: dword;
+	endrecord;
+
+type syscall_t:
+	record;
+		fnct: dword;
+	endrecord;
+
+type tss_t:
+	record;
+		backlink: word;
+		zeroes1: word;
+		esp0: dword; //next: dword;
+		ss0: word; //idx_tss: word;
+		zeroes2: word;
+		schedticks: uns32;
+		state: byte;
+		misc: byte;
+		zeroes3: word;
+		ticksleft: uns32;
+		pid: uns16;
+		zeroes4: word;
+		cr3_reg: dword;
+		eip_reg: dword;
+		eflag_reg: dword;
+		eax_reg: dword;
+		ecx_reg: dword;
+		edx_reg: dword;
+		ebx_reg: dword;
+		esp_reg: dword;
+		ebp_reg: dword;
+		esi_reg: dword;
+		edi_reg: dword;
+		es_reg: word;
+		zeroes5: word;
+		cs_reg: word;
+		zeroes6: word;
+		ss_reg: word;
+		zeroes7: word;
+		ds_reg: word;
+		zeroes8: word;
+		fs_reg: word;
+		zeroes9: word;
+		gs_reg: word;
+		zeroes10: word;
+		ldt_sel: word;
+		zeroes11: word;
+		debug: byte; //set lowest bit to TRUE to raise a debug exception on a task switch
+		zeroes12: byte;
+		iomap_base: word;
+		next: dword;
+		idx_tss: word;
+		callMask: dword;
+		previous: dword;
+		firstSender: dword;
+		nextSender: dword;
+		receivingFrom: dword;
+	endrecord;
+
+type featureDescription_t:
+	record;
+		feature: byte;
+		align(4);
+		virtualAddress: dword;
+		size: dword;
+		next: dword;
+	endrecord;
+
+type schedqueue_t:
+ 	record;
+		head: pointer to tss_t;
+		ticksleft: uns32;
+		schedticks: uns32;
+	endrecord;
+
+type inttype_t: enum{INTERRUPT, TRAP, TSS};
+type segtype_t: enum{CODE, DATA, STACK};

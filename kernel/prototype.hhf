@@ -1,0 +1,204 @@
+#includeonce("const.hhf")
+
+procedure kputchar_HLA(what: dword); @external;
+procedure kputchar(what: dword); @cdecl; @external;
+procedure disableInterrupts; @cdecl; @external;
+procedure enableInterrupts; @cdecl; @external;
+procedure disableInterrupts_HLA; @external;
+procedure enableInterrupts_HLA; @external;
+procedure halt; @cdecl; @external;
+procedure kputstring_HLA(what: string); @external;
+procedure kputstring(what: string); @cdecl; @external;
+procedure task1; @external;
+procedure task2; @external;
+procedure kputhex_HLA(what: dword); @external;
+procedure kputhex(what: dword); @cdecl; @external;
+procedure kputbin_HLA(what: dword); @external;
+procedure kputunsint_HLA(what: dword); @external;
+procedure kputunsint(what: dword); @cdecl; @external;
+procedure kputsint_HLA(what: dword); @external;
+procedure kputsint(what: dword); @cdecl; @external;
+procedure kscrollscreen_HLA; @external;
+procedure kmove_cursor_HLA; @external;
+procedure start(pass: dword); @external;
+procedure readchar(what:dword); @external;
+procedure paus; @external;
+procedure remap_pics(offset1: dword; offset2: dword); @external;
+procedure do_mem(pass: dword); @external;
+procedure hook_int(i: dword; t: dword; s: dword; offset: dword); @external;
+procedure streq(s1: string; s2: string); @returns("eax"); @external;
+procedure writeTSSDesc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; busy: dword; granularity: dword); @external;
+procedure writeSegmentDesc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; _type: dword; granularity: dword); @external;
+procedure createProcess(privilege: dword; schedticks: dword; start: dword; csegmBase: dword; dsegmBase:dword; esegmBase: dword; fsegmBase: dword; gsegmBase: dword; ssegmBase: dword; csegmLimit: dword; dsegmLimit:dword; esegmLimit: dword; fsegmLimit: dword; gsegmLimit: dword; ssegmLimit: dword); @returns("eax"); @external;
+procedure getFreeGDTIDX; @returns("eax"); @external;
+procedure unfreeGDTIDX(what: dword); @external;
+procedure freeGDTIDX(what: dword); @external;
+procedure getFreePID; @returns("eax"); @external;
+procedure unfreePID(what: dword); @external;
+procedure freePID(what: dword); @external;
+procedure showSegment(what: dword); @external;
+procedure isPrimeNumber(what: dword); @returns("edx"); @external;
+procedure enqueue(process: dword); @cdecl; @external;
+procedure dequeue(process: dword); @cdecl; @external;
+procedure pickNextProc; @cdecl; @external;
+procedure getProcessByFeature(feature: dword); @returns("eax"); @cdecl; @external;
+procedure chargeProc; @cdecl; @external;
+procedure key_int; @external;
+procedure clock_int; @external;
+procedure sys_call; @external;
+procedure exchangeData(sender: dword; receiver: dword);
+@external;
+procedure validateDataArea(process: dword; mem: dword;size: dword);@returns("eax"); @cdecl; @external;
+procedure check_feature(feature: dword); @cdecl; @external;
+procedure set_error(context: dword; process:dword); @cdecl; @external;
+procedure getLimit_HLA(gdtIndex: dword); @returns("eax"); @external;
+procedure getLimit(gdtIndex: dword); @returns("eax"); @cdecl; @external;
+
+procedure getSender(sender: dword; receiver: dword); @returns("eax"); @cdecl; @external;
+procedure showTSS(process:dword); @cdecl; @external;
+procedure receivingFrom(receiver: dword; sender: dword); @returns("eax");
+@cdecl;
+@external;
+procedure removeFromSenderList(sender: dword; receiver: dword); @cdecl;
+@external;
+procedure clearReceivingFrom(receiver: dword); @cdecl;
+@external;
+procedure markAsReceivingFrom(receiver: dword; sender: dword); @cdecl;
+@external;
+procedure addToSenderList(sender: dword; receiver: dword); @cdecl;
+@external;
+procedure add_waiting_for_feature(process: dword; feature:dword); @cdecl; @external;
+procedure set_feature(process:dword; feature: dword); @cdecl; @external;
+
+procedure doTask1; @cdecl; @external;
+procedure doTask2; @cdecl; @external;
+
+procedure writer; @cdecl; @external;
+
+procedure showQ; @cdecl;
+@external;
+
+procedure enter_pressed; @external;
+procedure backspace_pressed; @external;
+procedure shift_pressed; @external;
+procedure shift_released; @external;
+
+procedure echo(what:string); @external;
+procedure clear_echoline; @external;
+procedure ctask; @external;
+procedure idle_task; @external;
+
+procedure uptime; @external;
+procedure say; @external;
+procedure kcls_HLA; @external;
+
+procedure syscall_exit; @external;
+procedure syscall_setFeature; @external;
+procedure syscall_send; @external;
+procedure syscall_receive; @external;
+procedure syscall_requestFeature; @external;
+procedure syscall_send_by_feature; @external;
+procedure syscall_show_tss; @external;
+
+#macro end_of_buffer(what);
+	&what.buffer[KBD_BUFFER_SIZE-1]
+#endmacro
+
+#macro up(what);
+	inc(what);
+#endmacro
+
+#macro down(what);
+	dec(what);
+#endmacro
+
+namespace variant_args;
+
+#macro prepare_args(reg1,reg2,reg3);
+	mov([ebp+8],reg1);
+	dec(reg1);
+	shl(2,reg1);
+	mov(ebp,reg2);
+	add(reg1,reg2)
+#endmacro
+
+#macro start_args(reg1,reg2,reg3);
+	forever
+#endmacro
+
+#macro get_arg(reg1,reg2,reg3);
+	if (reg1 = 0) then
+		break;
+	endif;
+	sseg: mov([reg2+8],reg3)
+#endmacro
+
+#macro next_arg(reg1,reg2,reg3);
+	sub(4,reg1);
+	sub(4,reg2)
+#endmacro
+
+#macro end_args(reg1,reg2,reg3);
+	endfor;
+#endmacro
+
+end variant_args;
+
+#macro init_clock(divider);
+	mov(%00110100,al);			//Timer channel 0, lobyte/hibyte, rate generator
+	out(al,$43);				//Set timer mode!
+	mov(divider,ax);			//ax = divider
+	out(al,$40);				//write low byte of clock divider
+	shr(8,ax);				//write high byte of clock divider
+	out(al,$40)
+#endmacro
+
+#macro addToEchCursor(what);
+	add(what,echcursor);
+	kmove_cursor_HLA()
+#endmacro
+
+#macro subFromEchCursor(what);
+	sub(what,echcursor);
+	kmove_cursor_HLA()
+#endmacro
+
+#macro moveToEchCursor(what);
+	mov(what,echcursor);
+	kmove_cursor_HLA()
+#endmacro
+
+#macro schedule(returnFrom);
+	push(eax);
+	push(ebx);
+	mov(nextptr,eax);
+	mov(NULL,nextptr);
+	mov(eax,curptr);
+	zerify(ebx);
+	mov((type tss_t [eax]).idx_tss,bx);
+	mov(returnFrom,eax);
+	mov(bx,(type tss_t [eax]).backlink);
+	mov(GDT_BASE,eax); //set
+	add(ebx,eax); //busy flag
+	fseg: mov((type segdesc_t [eax]).props1,bl); //for
+	or(%00000010,bl); //incoming
+	fseg: mov(bl,(type segdesc_t [eax]).props1); //task
+	pop(ebx);
+	pop(eax);
+#endmacro;
+/*
+#macro check_feature(feature);
+	push(ebx);
+	mov(feature,ebx);
+	mov(1,eax);
+	forever
+		if (eax == ebx) then
+			break;
+		endif;
+		rol(1,eax);
+		if (eax == 1) then
+			break;
+		endif;
+	endfor;
+	pop(ebx);
+#endmacro;*/
