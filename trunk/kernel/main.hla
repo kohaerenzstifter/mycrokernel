@@ -20,8 +20,7 @@ begin start;
 
 	add(@size(DTdesc_t)+2,eax);		//eax=pointer to memory map (preceded by number of memory regions found)
 	kcls_HLA();
-	//do_mem(eax);				//Make sense of data found in memory map and adjust gdt accordingly
-	//hlt;
+	do_mem(eax);				//Make sense of data found in memory map and adjust gdt accordingly
 	kmove_cursor_HLA();
 	kcls_HLA();
 
@@ -65,10 +64,6 @@ begin start;
 
 	remap_pics($20,$28);
 
-	//zerify(eax);
-	//mov(cseg,ax);
-	//hook_int($21,TRAP,eax,&key_int);
-
 	hook_int($20,TSS,IDX_CLOCKINTTSS*@size(segdesc_t),0);
 	hook_int($21,TSS,IDX_KEYINTTSS*@size(segdesc_t),0);
 	hook_int($22,TSS,IDX_SYSCALL*@size(segdesc_t),0);
@@ -109,24 +104,11 @@ begin start;
 	add(4,esp);
 
 	createProcess(0,100,&writer,KERNEL_BASE,
-	  KERNEL_BASE,NO_BASE,0,$b8000,
-	  KERNEL_BASE,$fffff000,$fffff000,0,$fffff000,4096,$ff);
+	  KERNEL_BASE,NO_BASE,NO_BASE,$b8000,
+	  KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$ffc);
 	enqueue(pproctab[eax]);
 	add(4,esp);
 
-/*
-	createProcess(0,100,&doTask1,KERNEL_BASE,
-	  KERNEL_BASE,NO_BASE,0,$b8000,
-	  KERNEL_BASE,$fffff000,$fffff000,0,$fffff000,4096,$ffffff);
-	enqueue(pproctab[eax]);
-	add(4,esp);
-
-	createProcess(0,100,&doTask2,KERNEL_BASE,
-	  KERNEL_BASE,NO_BASE,0,$b8000,
-	  KERNEL_BASE,$fffff000,$fffff000,0,$fffff000,4096,$ffff);
-	enqueue(pproctab[eax]);
-	add(4,esp);
-*/
 	sti;
 here:	hlt;
 	jmp here;

@@ -455,7 +455,10 @@ begin createProcess;
 				jmp unset;
 			endif;
 		else
-			mov(0,(type tss_t [ebx]).es_reg);
+			push(eax);
+			mov((type tss_t [ebx]).ds_reg, ax);
+			mov(ax, (type tss_t [ebx]).es_reg);
+			pop(eax);
 		endif;
 		if (fsegmBase != NO_BASE) then
 			if (getFreeGDTIDX() != INVALID_GDT_IDX) then
@@ -485,7 +488,10 @@ begin createProcess;
 				jmp unset;
 			endif;
 		else
-			mov(0,(type tss_t [ebx]).fs_reg);
+			push(eax);
+			mov((type tss_t [ebx]).ds_reg, ax);
+			mov(ax, (type tss_t [ebx]).fs_reg);
+			pop(eax);
 		endif;
 		if (gsegmBase != NO_BASE) then
 			if (getFreeGDTIDX() != INVALID_GDT_IDX) then
@@ -515,7 +521,10 @@ begin createProcess;
 				jmp unset;
 			endif;
 		else
-			mov(0,(type tss_t [ebx]).gs_reg);
+			push(eax);
+			mov((type tss_t [ebx]).ds_reg, ax);
+			mov(ax, (type tss_t [ebx]).gs_reg);
+			pop(eax);
 		endif;
 		if (ssegmBase != NO_BASE) then
 			if (getFreeGDTIDX() != INVALID_GDT_IDX) then
@@ -535,11 +544,9 @@ begin createProcess;
 					shr(10,edx);
 					add(eax,edx);
 					pop(eax);
-					writeSegmentDesc(eax, edx, ssegmBase,
-TRUE, esi, DATA, PAGE_GRANULARITY);
+					writeSegmentDesc(eax, edx, ssegmBase, TRUE, esi, DATA, PAGE_GRANULARITY);
 				else
-					writeSegmentDesc(eax, edx, ssegmBase,
-TRUE, esi, DATA, BYTE_GRANULARITY);
+					writeSegmentDesc(eax, edx, ssegmBase, TRUE, esi, DATA, BYTE_GRANULARITY);
 				endif;
 				add(esi,eax);
 				mov(ax,(type tss_t [ebx]).ss_reg);
@@ -548,7 +555,10 @@ TRUE, esi, DATA, BYTE_GRANULARITY);
 				jmp unset;
 			endif;
 		else
-			mov(0,(type tss_t [ebx]).ss_reg);
+			push(eax);
+			mov((type tss_t [ebx]).ds_reg, ax);
+			mov(ax, (type tss_t [ebx]).ss_reg);
+			pop(eax);
 		endif;
 		if (getFreeGDTIDX() != INVALID_GDT_IDX) then
 			add(@size(dword),ecx);
@@ -565,7 +575,6 @@ TRUE, esi, DATA, BYTE_GRANULARITY);
 			mov(schedticks,(type tss_t [ebx]).ticksleft);
 			mov(ssegmLimit,(type tss_t [ebx]).esp_reg);
 			mov(ssegmLimit,(type tss_t [ebx]).ebp_reg);
-//			mov(ssegmLimit,(type tss_t [ebx]).esp0);
 			mov(start,(type tss_t [ebx]).eip_reg);
 			mov($200,(type tss_t [ebx]).eflag_reg);
 			mov(0,(type tss_t [ebx]).state);

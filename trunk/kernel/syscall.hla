@@ -220,10 +220,4 @@ begin syscall_send_by_feature;
 	endif;
 end syscall_send_by_feature;
 
-procedure syscall_show_tss;
-begin syscall_show_tss;
-	showTSS(curptr);
-	add(4,esp);
-	hlt;
-end syscall_show_tss;
 end Syscall;

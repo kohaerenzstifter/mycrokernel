@@ -98,7 +98,6 @@ procedure syscall_send; @external;
 procedure syscall_receive; @external;
 procedure syscall_requestFeature; @external;
 procedure syscall_send_by_feature; @external;
-procedure syscall_show_tss; @external;
 
 #macro end_of_buffer(what);
 	&what.buffer[KBD_BUFFER_SIZE-1]

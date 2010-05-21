@@ -16,4 +16,6 @@
 
 #define ANYPROC NULL
 
+#define FEATURE_SPEAK 1
+
 #endif

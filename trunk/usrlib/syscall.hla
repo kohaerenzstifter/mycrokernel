@@ -78,74 +78,69 @@ begin call_syscall_send_by_feature;
 	call_syscall_send_by_feature_HLA(feature, where, length, block, error);
 end call_syscall_send_by_feature;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-procedure call_syscall_show_tss(feature: dword; where: dword; length: dword; block: dword); @cdecl; @external;
-procedure call_syscall_show_tss(feature: dword; where: dword; length: dword; block: dword);
-begin call_syscall_show_tss;
-	mov(SYS_SHOW_TSS,eax);
+procedure call_syscall_exit; @cdecl; @external;
+procedure call_syscall_exit;
+begin call_syscall_exit;
+	mov(SYS_EXIT,eax);
 	int($22);
-end call_syscall_show_tss;
+end call_syscall_exit;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

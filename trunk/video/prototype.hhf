@@ -8,5 +8,3 @@ procedure scrollscreen; @cdecl; @external;
 procedure cls; @cdecl; @external;
 procedure g; @external;
 procedure main; @cdecl; @external;
-
-//procedure call_syscall_show_tss; @cdecl; @external;

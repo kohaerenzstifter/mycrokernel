@@ -263,8 +263,7 @@ static //global variables go here
 		syscall_t:[&syscall_exit],
 		syscall_t:[&syscall_setFeature],
 		syscall_t:[&syscall_receive],
-		syscall_t:[&syscall_send_by_feature],
-		syscall_t:[&syscall_show_tss]
+		syscall_t:[&syscall_send_by_feature]
 	];
 	
 	align(4);
