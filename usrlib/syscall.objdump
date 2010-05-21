@@ -135,16 +135,16 @@ Disassembly of section .text:
   e7:	5d                   	pop    %ebp
   e8:	c3                   	ret    
 
-000000e9 <call_syscall_show_tss>:
+000000e9 <call_syscall_exit>:
   e9:	55                   	push   %ebp
   ea:	ff 75 fc             	pushl  -0x4(%ebp)
   ed:	8d 6c 24 04          	lea    0x4(%esp),%ebp
   f1:	55                   	push   %ebp
   f2:	83 e4 fc             	and    $0xfffffffc,%esp
-  f5:	b8 04 00 00 00       	mov    $0x4,%eax
+  f5:	b8 00 00 00 00       	mov    $0x0,%eax
   fa:	cd 22                	int    $0x22
 
-000000fc <xcall_syscall_show_tss__hla_>:
+000000fc <xcall_syscall_exit__hla_>:
   fc:	89 ec                	mov    %ebp,%esp
   fe:	5d                   	pop    %ebp
   ff:	c3                   	ret    
