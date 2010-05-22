@@ -1,5 +1,5 @@
 //always.hhf
 
 #macro zerify(what);
-	xor(what,what);
+  xor(what,what);
 #endmacro

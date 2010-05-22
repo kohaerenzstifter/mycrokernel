@@ -11,107 +11,103 @@ procedure start(pass: dword); @nodisplay; @noalignstack; //@noframe;
 var //local variables go here
 
 begin start;
-	mov(pass,eax);	//eax=pointer to the data passed over
+  mov(pass,eax);	//eax=pointer to the data passed over
 
-	fseg: mov((type DTdesc_t [eax]).limit,bx);	//We copy the
-	mov(bx,gdt.limit);				//global descriptor table
-	fseg: mov((type DTdesc_t [eax]).base,ebx);	//descriptor so we can address
-	mov(ebx,gdt.base);				//it more easily
+  fseg: mov((type DTdesc_t [eax]).limit,bx);	//We copy the
+  mov(bx,gdt.limit);				//global descriptor table
+  fseg: mov((type DTdesc_t [eax]).base,ebx);	//descriptor so we can address
+  mov(ebx,gdt.base);				//it more easily
 
-	add(@size(DTdesc_t)+2,eax);		//eax=pointer to memory map (preceded by number of memory regions found)
-	kcls_HLA();
-	do_mem(eax);				//Make sense of data found in memory map and adjust gdt accordingly
-	kmove_cursor_HLA();
-	kcls_HLA();
+  add(@size(DTdesc_t)+2,eax);		//eax=pointer to memory map (preceded by number of memory regions found)
+  kcls_HLA();
+  do_mem(eax);				//Make sense of data found in memory map and adjust gdt accordingly
+  kmove_cursor_HLA();
+  kcls_HLA();
 
-	clear_echoline();
+  clear_echoline();
 
-	/*The following entries in the gdt are
-	used and need be marked in gdtBitmap via
-	calls to unfreeGDTIDX.*/ 
+  /*The following entries in the gdt are
+  used and need be marked in gdtBitmap via
+  calls to unfree_gdt_idx.*/ 
 
-	unfreeGDTIDX(0*@size(segdesc_t));
-	unfreeGDTIDX(IDX_KERNELCODE*@size(segdesc_t));
-	unfreeGDTIDX(IDX_KERNELDATA*@size(segdesc_t));
-	unfreeGDTIDX(IDX_KERNELSTACK*@size(segdesc_t));
-	unfreeGDTIDX(IDX_INTERMEDIARYCODE*@size(segdesc_t)); //this segment shall not be used; was only used in 512.asm
-	unfreeGDTIDX(IDX_VIDEO*@size(segdesc_t));
-	unfreeGDTIDX(IDX_MEMORY*@size(segdesc_t));
-	unfreeGDTIDX(IDX_INTSTACK*@size(segdesc_t));
+  unfree_gdt_idx(0*@size(segdesc_t));
+  unfree_gdt_idx(IDX_KERNELCODE*@size(segdesc_t));
+  unfree_gdt_idx(IDX_KERNELDATA*@size					(segdesc_t));
+  unfree_gdt_idx(IDX_KERNELSTACK*@size(segdesc_t));
+  unfree_gdt_idx(IDX_INTERMEDIARYCODE*@size(segdesc_t)); //this segment shall not be used; was only used in 512.asm
+  unfree_gdt_idx(IDX_VIDEO*@size(segdesc_t));
+  unfree_gdt_idx(IDX_MEMORY*@size(segdesc_t));
+  unfree_gdt_idx(IDX_INTSTACK*@size(segdesc_t));
 
-	/*Now the tasks most essential to the
-	functioning of the system are written
-	into the gdt via calls to writeTSSDesc.
-	This function also marks the respective
-	entries in gdtBitmap as "in use".*/
+  /*Now the tasks most essential to the
+  functioning of the system are written
+  into the gdt via calls to write_tss_desc.
+  This function also marks the respective
+  entries in gdtBitmap as "in use".*/
 
-	writeTSSDesc(IDX_KERNELTSS*@size(segdesc_t),104,&kernelstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
-	writeTSSDesc(IDX_IDLETASKTSS*@size(segdesc_t),104,&idlestate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
-	writeTSSDesc(IDX_CLOCKINTTSS*@size(segdesc_t),104,&clockintstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
-	writeTSSDesc(IDX_KEYINTTSS*@size(segdesc_t),104,&keyintstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
-	writeTSSDesc(IDX_SYSCALL*@size(segdesc_t),104,&syscallstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  write_tss_desc(IDX_KERNELTSS*@size(segdesc_t),104,&kernelstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  write_tss_desc(IDX_IDLETASKTSS*@size(segdesc_t),104,&idlestate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  write_tss_desc(IDX_CLOCKINTTSS*@size(segdesc_t),104,&clockintstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  write_tss_desc(IDX_KEYINTTSS*@size(segdesc_t),104,&keyintstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  write_tss_desc(IDX_SYSCALL*@size(segdesc_t),104,&syscallstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
 
 
-	/*Now the pids of these processes
-	are marked as "assigned" in the pid
-	bitmap*/
+  /*Now the pids of these processes
+  are marked as "assigned" in the pid
+  bitmap*/
 
-	unfreePID(PID_KERNEL);
-	unfreePID(PID_SYSCALL);
-	unfreePID(PID_KEYINT);
-	unfreePID(PID_CLOCK);
-	unfreePID(PID_IDLE);
+  unfree_pid(PID_KERNEL);
+  unfree_pid(PID_SYSCALL);
+  unfree_pid(PID_KEYINT);
+  unfree_pid(PID_CLOCK);
+  unfree_pid(PID_IDLE);
 
-	remap_pics($20,$28);
+  remap_pics($20,$28);
 
-	hook_int($20,TSS,IDX_CLOCKINTTSS*@size(segdesc_t),0);
-//	hook_int($21,TSS,IDX_KEYINTTSS*@size(segdesc_t),0);
-	hook_int($22,TSS,IDX_SYSCALL*@size(segdesc_t),0);
-	mov(%11111100,al);
-	out(al,$21);
-	lidt(idt);
+  hook_int($20,TSS,IDX_CLOCKINTTSS*@size(segdesc_t),0);
+  //hook_int($21,TSS,IDX_KEYINTTSS*@size(segdesc_t),0);
+  hook_int($22,TSS,IDX_SYSCALL*@size(segdesc_t),0);
+  mov(%11111100,al);
+  out(al,$21);
+  lidt(idt);
 
-	mov(IDX_KERNELTSS*@size(segdesc_t),ax);
-	ltreg(ax);
+  mov(IDX_KERNELTSS*@size(segdesc_t),ax);
+  ltreg(ax);
 
-	init_clock(CLOCK_DIVIDER);
+  init_clock(CLOCK_DIVIDER);
 
-	kputstring_HLA("This is HL-OS. Known commands are:");
-	kputchar_HLA(LF);
-	kputstring_HLA("1) say {something}+");
-	kputchar_HLA(LF);
-	kputstring_HLA("2) cls");
-	kputchar_HLA(LF);
-	kputstring_HLA("3) uptime");
-	kputchar_HLA(LF);
-	kputchar_HLA(LF);
+  kputstring_HLA("This is HL-OS. Known commands are:");
+  kputchar_HLA(LF);
+  kputstring_HLA("1) say {something}+");
+  kputchar_HLA(LF);
+  kputstring_HLA("2) cls");
+  kputchar_HLA(LF);
+  kputstring_HLA("3) uptime");
+  kputchar_HLA(LF);
+  kputchar_HLA(LF);
 
-	mov(GDT_BASE+IDX_KERNELCODE*@size(segdesc_t),eax);
-	fseg:movzx((type segdesc_t [eax]).limit,edx);
-	fseg:movzx((type segdesc_t [eax]).props2,ecx);
-	and(%1111,ecx);
-	shl(16,ecx);
-	or(ecx,edx);
-	add(KERNEL_BASE,edx);					//the base address of the video driver is now in edx!
+  mov(GDT_BASE+IDX_KERNELCODE*@size(segdesc_t),eax);
+  fseg:movzx((type segdesc_t [eax]).limit,edx);
+  fseg:movzx((type segdesc_t [eax]).props2,ecx);
+  and(%1111,ecx);
+  shl(16,ecx);
+  or(ecx,edx);
+  add(KERNEL_BASE,edx);					//the base address of the video driver is now in edx!
 
-	kputstring_HLA("video base: "); kputhex_HLA(edx); kputchar_HLA(LF);
-	kputstring_HLA("video size: "); kputhex_HLA(@text(@env("VIDEO_SIZE"))); kputchar_HLA(LF);
+  kputstring_HLA("video base: "); kputhex_HLA(edx); kputchar_HLA(LF);
+  kputstring_HLA("video size: "); kputhex_HLA(@text(@env("VIDEO_SIZE"))); kputchar_HLA(LF);
 
-	createProcess(3,400,0,edx,edx,NO_BASE,NO_BASE,$b8000,edx,
-	  $fffc,$fffc,0,0,
-	  4096,$fffc);
-	enqueue(pproctab[eax]);
-	add(4,esp);
+  create_process(3,400,0,edx,edx,NO_BASE,NO_BASE,$b8000,edx, $fffc,$fffc,0,0, 4096,$fffc);
+  enqueue(pproctab[eax]);
+  add(4,esp);
 
-	createProcess(0,100,&writer,KERNEL_BASE,
-	  KERNEL_BASE,NO_BASE,NO_BASE,$b8000,
-	  KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$ffc);
-	enqueue(pproctab[eax]);
-	add(4,esp);
+  create_process(0,100,&writer,KERNEL_BASE, KERNEL_BASE,NO_BASE,NO_BASE,$b8000, KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$ffc);
+  enqueue(pproctab[eax]);
+  add(4,esp);
 
-	sti;
+  sti;
 here:	hlt;
-	jmp here;
+  jmp here;
 end start;	
 
 end Main;

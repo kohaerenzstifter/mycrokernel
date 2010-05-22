@@ -3,11 +3,11 @@
 namespace character;
 
 #macro isPrintable(what);
-	(what>$1F) && (what<$7F)
+  (what>$1F) && (what<$7F)
 #endmacro
 
 #macro isWhitespace(what);
-	(what=' ') || (what=TAB)
+  (what=' ') || (what=TAB)
 #endmacro
 
 end character;

@@ -10,674 +10,670 @@ unit Utilities;
 
 procedure remap_pics(offset1: dword; offset2: dword);
 begin remap_pics;
-	push(eax);
-	pushfd();
-	mov(ICW1_INIT+ICW1_ICW4,al);
-	out(al,PIC1_COMMAND);
-	mov(ICW1_INIT+ICW1_ICW4,al);
-	out(al,PIC2_COMMAND);
-	mov(offset1,eax);
-	out(al,PIC1_DATA);
-	mov(offset2,eax);
-	out(al,PIC2_DATA);
-	mov(%100,al);
-	out(al,PIC1_DATA);
-	mov(%10,al);
-	out(al,PIC2_DATA);
-	mov(ICW4_8086,al);
-	out(al,PIC1_DATA);
-	out(al,PIC2_DATA);
-	mov(%11111111,al);
-	out(al,PIC1_DATA); //let's mask all interrupts on master
-	out(al,PIC2_DATA); //and on slave
-	popfd();
-	pop(eax);
+  push(eax);
+  pushfd();
+  mov(ICW1_INIT+ICW1_ICW4,al);
+  out(al,PIC1_COMMAND);
+  mov(ICW1_INIT+ICW1_ICW4,al);
+  out(al,PIC2_COMMAND);
+  mov(offset1,eax);
+  out(al,PIC1_DATA);
+  mov(offset2,eax);
+  out(al,PIC2_DATA);
+  mov(%100,al);
+  out(al,PIC1_DATA);
+  mov(%10,al);
+  out(al,PIC2_DATA);
+  mov(ICW4_8086,al);
+  out(al,PIC1_DATA);
+  out(al,PIC2_DATA);
+  mov(%11111111,al);
+  out(al,PIC1_DATA); //let's mask all interrupts on master
+  out(al,PIC2_DATA); //and on slave
+  popfd();
+  pop(eax);
 end remap_pics;
 
 //to be tested!
 procedure hook_int(i: dword; t: dword; s: dword; offset: dword); @nodisplay; @noalignstack;
 begin hook_int;
-	push(eax);
-	push(ebx);
-	push(ecx);
-	push(edx);
-	pushfd();
-	mov(i,eax);
-	mul(@size(idtdesc_t),eax);
-	mov(IDT_BASE,ebx);
-	fseg: mov(0,(type idtdesc_t [ebx]).zero[eax]);
-	mov(s,ecx);
-	fseg: mov(cx,(type idtdesc_t [ebx]).selector[eax]);
-	mov(t,edx);
-	if ((type inttype_t dl)=INTERRUPT || (type inttype_t dl)=TRAP) then
-		mov(offset,ecx);
-		fseg: mov(cx,(type idtdesc_t [ebx]).offset1[eax]);
-		shr(16,ecx);
-		fseg: mov(cx,(type idtdesc_t [ebx]).offset2[eax]);	
-		if ((type inttype_t dl)=INTERRUPT) then
-			fseg: mov(%10001110,(type idtdesc_t [ebx])._type_[eax]);
-		else
-			fseg: mov(%10001111,(type idtdesc_t [ebx])._type_[eax]);
-		endif;
-	else
-		fseg: mov(0,(type idtdesc_t [ebx]).offset1[eax]);
-		fseg: mov(0,(type idtdesc_t[ ebx]).offset2[eax]);
-		fseg: mov(%11100101,(type idtdesc_t [ebx])._type_[eax]);
-	endif;
+  push(eax);
+  push(ebx);
+  push(ecx);
+  push(edx);
+  pushfd();
+  mov(i,eax);
+  mul(@size(idtdesc_t),eax);
+  mov(IDT_BASE,ebx);
+  fseg: mov(0,(type idtdesc_t [ebx]).zero[eax]);
+  mov(s,ecx);
+  fseg: mov(cx,(type idtdesc_t [ebx]).selector[eax]);
+  mov(t,edx);
+  if ((type inttype_t dl)=INTERRUPT || (type inttype_t dl)=TRAP) then
+    mov(offset,ecx);
+    fseg: mov(cx,(type idtdesc_t [ebx]).offset1[eax]);
+    shr(16,ecx);
+    fseg: mov(cx,(type idtdesc_t [ebx]).offset2[eax]);	
+    if ((type inttype_t dl)=INTERRUPT) then
+      fseg: mov(%10001110,(type idtdesc_t [ebx])._type_[eax]);
+    else
+      fseg: mov(%10001111,(type idtdesc_t [ebx])._type_[eax]);
+    endif;
+  else
+    fseg: mov(0,(type idtdesc_t [ebx]).offset1[eax]);
+    fseg: mov(0,(type idtdesc_t[ ebx]).offset2[eax]);
+    fseg: mov(%11100101,(type idtdesc_t [ebx])._type_[eax]);
+  endif;
 
-	popfd();
-	pop(edx);
-	pop(ecx);
-	pop(ebx);
-	pop(eax);
+  popfd();
+  pop(edx);
+  pop(ecx);
+  pop(ebx);
+  pop(eax);
 end hook_int;
 
 procedure do_mem(pass: dword);
 begin do_mem;
-	pushfd();
-	push(esi);
-	push(eax);
-	push(ecx);
-	push(edi);
-	push(edx);
-	push(ebx);	
-	//here we copy the memory map into kernel space and show the user what we've got
-	mov(pass,esi);			//esi=pointer to memory map (preceded by number of memory regions found)
-	fseg: mov([esi],eax);		//eax=number of memory regions found
-	add(4,esi); //esi is now base of memory segments passed w/o the number of them
-	if (eax>MAX_MEM_AREAS) then
-		mov(MAX_MEM_AREAS,eax);		//We can only take so many
-	endif;					//memory regions into account
-	mov(eax,no_memregs);
-	mov((@size(memdesc_t)) div (@size(dword)),ecx);		//We need to copy so many dwords to get
-	mul(ecx,eax); //we discard edx, it *should* be zero	//the memory map into our segment
-	mov(eax,ecx);						//Now copy
-	mov(&memory,edi);					//the memory map
-	cld();							//into our address
-	fseg: rep.movsd();					//space
-	kputstring_HLA("Following memory regions identified by BIOS:");
-	kputchar_HLA(LF);	
-	mul(@size(dword),eax);					//Now let's
-	zerify(edx);						//show the
-	while(edx<eax) do					//user all
-		kputstring_HLA("Base Address: ");			//the memory
-		kputhex_HLA(memory.b[edx]);				//memory regions
-		kputchar_HLA(TAB);					//found in
-		kputstring_HLA("Length: ");				//the memory
-		kputhex_HLA(memory.l[edx]);				//map
-		kputchar_HLA(TAB);
-		kputstring_HLA("Type: ");
-		kputhex_HLA(memory.t[edx]);
-		kputchar_HLA(LF);
-		add(@size(memdesc_t),edx);
-	endwhile;
-	zerify(eax);
-	/*The following part is a bit complicated. We look for the
-	first memory region in the memory map of type RAM. Then we
-	look at its size and subtract the size of the interrupt
-	descriptor table, the bios data area, the 512 byte bootcode,
-	the gdt size and the idt size. The result is what's left for
-	ourselves. And this calculated limit value is inserted into
-	the data and code descriptors in the global descriptor table.
-	Then we load cs,ds,es with the updated descriptors.*/
-	zerify(ebx);
-	while(memory.t[eax]<>RAM && ebx < MAX_MEM_AREAS) do
-		add(@size(memdesc_t),eax);
-		inc(ebx);
-	endwhile;
-	if (memory.t[eax]<>RAM) then
-		kputstring_HLA("PANIC: NO RAM FOUND!");
-		cli;
-		hlt;
-	endif;
-	mov(memory.l[eax],ebx);
-	sub(SIZE_RMIVT+SIZE_BDA+512+SIZE_GDT+SIZE_IDT,ebx); //ebx now contains size of memory available for kernel
+  pushfd();
+  push(esi);
+  push(eax);
+  push(ecx);
+  push(edi);
+  push(edx);
+  push(ebx);	
+  //here we copy the memory map into kernel space and show the user what we've got
+  mov(pass,esi);			//esi=pointer to memory map (preceded by number of memory regions found)
+  fseg: mov([esi],eax);		//eax=number of memory regions found
+  add(4,esi); //esi is now base of memory segments passed w/o the number of them
+  if (eax>MAX_MEM_AREAS) then
+    mov(MAX_MEM_AREAS,eax);		//We can only take so many
+  endif;					//memory regions into account
+  mov(eax,no_memregs);
+  mov((@size(memdesc_t)) div (@size(dword)),ecx);		//We need to copy so many dwords to get
+  mul(ecx,eax); //we discard edx, it *should* be zero	//the memory map into our segment
+  mov(eax,ecx);						//Now copy
+  mov(&memory,edi);					//the memory map
+  cld();							//into our address
+  fseg: rep.movsd();					//space
+  kputstring_HLA("Following memory regions identified by BIOS:");
+  kputchar_HLA(LF);	
+  mul(@size(dword),eax);					//Now let's
+  zerify(edx);						//show the
+  while(edx<eax) do					//user all
+    kputstring_HLA("Base Address: ");			//the memory
+    kputhex_HLA(memory.b[edx]);				//memory regions
+    kputchar_HLA(TAB);					//found in
+    kputstring_HLA("Length: ");				//the memory
+    kputhex_HLA(memory.l[edx]);				//map
+    kputchar_HLA(TAB);
+    kputstring_HLA("Type: ");
+    kputhex_HLA(memory.t[edx]);
+    kputchar_HLA(LF);
+    add(@size(memdesc_t),edx);
+  endwhile;
+  zerify(eax);
+  /*The following part is a bit complicated. We look for the
+  first memory region in the memory map of type RAM. Then we
+  look at its size and subtract the size of the interrupt
+  descriptor table, the bios data area, the 512 byte bootcode,
+  the gdt size and the idt size. The result is what's left for
+  ourselves. And this calculated limit value is inserted into
+  the data and code descriptors in the global descriptor table.
+  Then we load cs,ds,es with the updated descriptors.*/
+  zerify(ebx);
+  while(memory.t[eax]<>RAM && ebx < MAX_MEM_AREAS) do
+    add(@size(memdesc_t),eax);
+    inc(ebx);
+  endwhile;
+  if (memory.t[eax]<>RAM) then
+    kputstring_HLA("PANIC: NO RAM FOUND!");
+    cli;
+    hlt;
+  endif;
+  mov(memory.l[eax],ebx);
+  sub(SIZE_RMIVT+SIZE_BDA+512+SIZE_GDT+SIZE_IDT,ebx); //ebx now contains size of memory available for kernel
 
-	kputchar_HLA(LF);
-	kputchar_HLA(LF);
-	kputstring_HLA("Memory available for kernel: ");
-	kputhex_HLA(ebx);
-	kputchar_HLA(LF);
+  kputchar_HLA(LF);
+  kputchar_HLA(LF);
+  kputstring_HLA("Memory available for kernel: ");
+  kputhex_HLA(ebx);
+  kputchar_HLA(LF);
 
-	/*Now that we actually know how much space there is left for the kernel
-	below the first MByte of memory, we can rewrite the segment descriptors.*/
-	/*
-	shr(10,ebx);
-	//writeSegmentDesc(IDX_KERNELCODE*@size(segdesc_t),ebx,$14700,TRUE,0,CODE,PAGE_GRANULARITY);
-	//writeSegmentDesc(IDX_KERNELDATA*@size(segdesc_t),ebx,$14700,TRUE,0,DATA,PAGE_GRANULARITY);
-	FAR_JMP(IDX_KERNELCODE*@size(segdesc_t), &reload_ds);
+  /*Now that we actually know how much space there is left for the kernel
+  below the first MByte of memory, we can rewrite the segment descriptors.*/
+  /*
+  shr(10,ebx);
+  //writeSegmentDesc(IDX_KERNELCODE*@size(segdesc_t),ebx,$14700,TRUE,0,CODE,PAGE_GRANULARITY);
+  //writeSegmentDesc(IDX_KERNELDATA*@size(segdesc_t),ebx,$14700,TRUE,0,DATA,PAGE_GRANULARITY);
+  FAR_JMP(IDX_KERNELCODE*@size(segdesc_t), &reload_ds);
 reload_ds:
-	mov($10,ax);
-	mov(ax,dseg);
-	mov(ax,eseg);*/
+  mov($10,ax);
+  mov(ax,dseg);
+  mov(ax,eseg);*/
 
-	pop(ebx);
-	pop(edx);
-	pop(edi);
-	pop(ecx);
-	pop(eax);
-	pop(esi);
-	popfd();
+  pop(ebx);
+  pop(edx);
+  pop(edi);
+  pop(ecx);
+  pop(eax);
+  pop(esi);
+  popfd();
 end do_mem;
 
 procedure say;
 begin say;
-	push(eax);
-	push(ebx);
-	push(ecx);
-	push(edx);
-	pushfd();
+  push(eax);
+  push(ebx);
+  push(ecx);
+  push(edx);
+  pushfd();
 
-	zerify(edx);
+  zerify(edx);
 
-	variant_args.prepare_args(eax,ebx,ecx);
-	variant_args.start_args(eax,ebx,ecx)
-		variant_args.get_arg(eax,ebx,ecx);
-		kputstring_HLA(ecx);
-		kputchar_HLA(' ');
-		inc(edx);
-		variant_args.next_arg(eax,ebx,ecx);
-	variant_args.end_args(eax,ebx,ecx)
+  variant_args.prepare_args(eax,ebx,ecx);
+  variant_args.start_args(eax,ebx,ecx)
+  variant_args.get_arg(eax,ebx,ecx);
+  kputstring_HLA(ecx);
+  kputchar_HLA(' ');
+  inc(edx);
+  variant_args.next_arg(eax,ebx,ecx);
+  variant_args.end_args(eax,ebx,ecx)
 
-	if(edx = 0) then
-		kputstring_HLA("WHAT?");
-		kputchar_HLA(LF);
-	endif;
-	popfd();
-	pop(edx);
-	pop(ecx);
-	pop(ebx);
-	pop(eax);
+  if(edx = 0) then
+    kputstring_HLA("WHAT?");
+    kputchar_HLA(LF);
+  endif;
+  popfd();
+  pop(edx);
+  pop(ecx);
+  pop(ebx);
+  pop(eax);
 end say;
 
 procedure idle_task;
 begin idle_task;
-	forever
-		hlt;
-	endfor;
+  forever
+    hlt;
+  endfor;
 end idle_task;
 
-procedure writeTSSDesc
-	(index: dword; limit: dword; base: dword;
-	present: dword; privilege: dword; busy: dword;
-	granularity: dword);
-begin writeTSSDesc;
-	push(eax);
-	push(ebx);
-	push(edx);
-	pushfd();
+procedure write_tss_desc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; busy: dword; granularity: dword);
+begin write_tss_desc;
+  push(eax);
+  push(ebx);
+  push(edx);
+  pushfd();
 
-	mov(index,eax);
-	if (gdt.limit < ax) then
-		add(@size(segdesc_t),eax);
-		dec(eax);
-		mov(ax,gdt.limit);
-		inc(eax);
-		sub(@size(segdesc_t),eax);
-		lgdt(gdt);
-	endif;
-	add(GDT_BASE,eax);
+  mov(index,eax);
+  if (gdt.limit < ax) then
+    add(@size(segdesc_t),eax);
+    dec(eax);
+    mov(ax,gdt.limit);
+    inc(eax);
+    sub(@size(segdesc_t),eax);
+    lgdt(gdt);
+  endif;
+  add(GDT_BASE,eax);
 
-	mov(limit,ebx);
-	fseg: mov(bx,(type segdesc_t [eax]).limit);
-	shr(16,ebx);
-	mov(granularity,edx);
-	shl(7,edx);
-	or(edx,ebx);
-	fseg: mov(bl,(type segdesc_t [eax]).props2);
+  mov(limit,ebx);
+  fseg: mov(bx,(type segdesc_t [eax]).limit);
+  shr(16,ebx);
+  mov(granularity,edx);
+  shl(7,edx);
+  or(edx,ebx);
+  fseg: mov(bl,(type segdesc_t [eax]).props2);
 
-	mov(base,ebx);
-	fseg: mov(bx,(type segdesc_t [eax]).base1);
-	shr(16,ebx);
-	fseg: mov(bl,(type segdesc_t [eax]).base2);
-	fseg: mov(bh,(type segdesc_t [eax]).base3);
+  mov(base,ebx);
+  fseg: mov(bx,(type segdesc_t [eax]).base1);
+  shr(16,ebx);
+  fseg: mov(bl,(type segdesc_t [eax]).base2);
+  fseg: mov(bh,(type segdesc_t [eax]).base3);
 
-	mov(privilege,ebx);
-	shl(5,ebx);
-	mov(busy,edx);
-	shl(1,edx);
-	or(edx,ebx);
-	mov(present,edx);
-	shl(7,edx);
-	or(edx,ebx);
-	or(%00001001,ebx);
-	fseg: mov(bl,(type segdesc_t [eax]).props1);
+  mov(privilege,ebx);
+  shl(5,ebx);
+  mov(busy,edx);
+  shl(1,edx);
+  or(edx,ebx);
+  mov(present,edx);
+  shl(7,edx);
+  or(edx,ebx);
+  or(%00001001,ebx);
+  fseg: mov(bl,(type segdesc_t [eax]).props1);
 
-	unfreeGDTIDX(index);
+  unfree_gdt_idx(index);
 
-	popfd();
-	pop(edx);
-	pop(ebx);
-	pop(eax);
-end writeTSSDesc;
+  popfd();
+  pop(edx);
+  pop(ebx);
+  pop(eax);
+end write_tss_desc;
 
 procedure writeSegmentDesc
-	(index: dword; limit: dword; base: dword;
-	present: dword; privilege: dword; _type: dword;
-	granularity: dword);
+  (index: dword; limit: dword; base: dword;
+  present: dword; privilege: dword; _type: dword;
+  granularity: dword);
 begin writeSegmentDesc;
-	push(eax);
-	push(ebx);
-	push(edx);
-	pushfd();
-	mov(index,eax);
-	if (gdt.limit < ax) then
-		add(@size(segdesc_t),eax);
-		dec(eax);
-		mov(ax,gdt.limit);
-		inc(eax);
-		sub(@size(segdesc_t),eax);
-		lgdt(gdt);
-	endif;
-	add(GDT_BASE,eax);
+  push(eax);
+  push(ebx);
+  push(edx);
+  pushfd();
+  mov(index,eax);
+  if (gdt.limit < ax) then
+    add(@size(segdesc_t),eax);
+    dec(eax);
+    mov(ax,gdt.limit);
+    inc(eax);
+    sub(@size(segdesc_t),eax);
+    lgdt(gdt);
+  endif;
+  add(GDT_BASE,eax);
 
-	mov(limit,ebx);
-	fseg: mov(bx,(type segdesc_t [eax]).limit);
-	shr(16,ebx);
-	mov(granularity,edx);
-	shl(7,edx);
-	or(%1000000,edx);
-	or(edx,ebx);
-	fseg: mov(bl,(type segdesc_t [eax]).props2);
+  mov(limit,ebx);
+  fseg: mov(bx,(type segdesc_t [eax]).limit);
+  shr(16,ebx);
+  mov(granularity,edx);
+  shl(7,edx);
+  or(%1000000,edx);
+  or(edx,ebx);
+  fseg: mov(bl,(type segdesc_t [eax]).props2);
 
-	mov(base,ebx);
-	fseg: mov(bx,(type segdesc_t [eax]).base1);
-	shr(16,ebx);
-	fseg: mov(bl,(type segdesc_t [eax]).base2);
-	fseg: mov(bh,(type segdesc_t [eax]).base3);
+  mov(base,ebx);
+  fseg: mov(bx,(type segdesc_t [eax]).base1);
+  shr(16,ebx);
+  fseg: mov(bl,(type segdesc_t [eax]).base2);
+  fseg: mov(bh,(type segdesc_t [eax]).base3);
 
-	mov(privilege,ebx);
-	shl(5,ebx);
-	mov(present,edx);
-	shl(7,edx);
-	or(edx,ebx);
-	mov(_type,edx);
-	if ((type segtype_t dl)=CODE) then
-		or(%11010,bl);
-	elseif ((type segtype_t dl)=DATA) then
-		or(%10010,bl);
-	else
-		or(%10110,bl);
-	endif;
-	fseg: mov(bl,(type segdesc_t [eax]).props1);
+  mov(privilege,ebx);
+  shl(5,ebx);
+  mov(present,edx);
+  shl(7,edx);
+  or(edx,ebx);
+  mov(_type,edx);
+  if ((type segtype_t dl)=CODE) then
+    or(%11010,bl);
+  elseif ((type segtype_t dl)=DATA) then
+    or(%10010,bl);
+  else
+    or(%10110,bl);
+  endif;
+  fseg: mov(bl,(type segdesc_t [eax]).props1);
 
-	unfreeGDTIDX(index);
+  unfree_gdt_idx(index);
 
-	popfd();
-	pop(edx);
-	pop(ebx);
-	pop(eax);
+  popfd();
+  pop(edx);
+  pop(ebx);
+  pop(eax);
 end writeSegmentDesc;
 
-procedure getLimit_HLA(gdtIndex: dword);
-begin getLimit_HLA;
-	push(ebx);
-	pushfd();
-	mov(gdtIndex, ebx);
-	add(GDT_BASE, ebx);
-	fseg: movzx((type segdesc_t [ebx]).limit,eax);
+procedure get_limit_HLA(gdtIndex: dword);
+begin get_limit_HLA;
+  push(ebx);
+  pushfd();
+  mov(gdtIndex, ebx);
+  add(GDT_BASE, ebx);
+  fseg: movzx((type segdesc_t [ebx]).limit,eax);
 
-	fseg: movzx((type segdesc_t [ebx]).props2,ebx);
+  fseg: movzx((type segdesc_t [ebx]).props2,ebx);
 
-	shl(16,ebx);
-	or(ebx,eax);
-	and(%100000000000000000000000,ebx);
-	if (@z) then
-		and(%11111111111111111111,eax);
-	else
-		and(%11111111111111111111,eax);
-		shl(12,eax);
-	endif;
-	popfd();
-	pop(ebx);
-end getLimit_HLA;
+  shl(16,ebx);
+  or(ebx,eax);
+  and(%100000000000000000000000,ebx);
+  if (@z) then
+    and(%11111111111111111111,eax);
+  else
+    and(%11111111111111111111,eax);
+    shl(12,eax);
+  endif;
+  popfd();
+  pop(ebx);
+end get_limit_HLA;
 
-procedure getLimit(gdtIndex: dword);
-begin getLimit;
-	getLimit_HLA(gdtIndex);
-end getLimit;
+procedure get_limit(gdtIndex: dword);
+begin get_limit;
+  get_limit_HLA(gdtIndex);
+end get_limit;
 
-procedure createProcess
-	(privilege: dword; schedticks: dword; start: dword;
-	csegmBase: dword; dsegmBase:dword; esegmBase: dword;
-	fsegmBase: dword; gsegmBase: dword; ssegmBase: dword;
-	csegmLimit: dword; dsegmLimit:dword; esegmLimit: dword;
-	fsegmLimit: dword; gsegmLimit: dword; ssegmLimit: dword);
+procedure create_process(privilege: dword; schedticks: dword; start: dword;
+ csegmBase: dword; dsegmBase:dword; esegmBase: dword;
+ fsegmBase: dword; gsegmBase: dword; ssegmBase: dword;
+ csegmLimit: dword; dsegmLimit:dword; esegmLimit: dword;
+ fsegmLimit: dword; gsegmLimit: dword; ssegmLimit: dword);
 var
-	buffer: dword[NO_PROCSEGMENTS];
-begin createProcess;
-	push(ebx);
-	push(ecx);
-	push(edx);
-	push(edi);
-	push(esi);
-	pushfd();
-	mov(privilege,esi);
-	zerify(edi);
-	forever
-		mov(pproctab[edi],ebx);
-		if ((type tss_t [ebx]).state = EMPTY) then
-			break;
-		endif;
-		add(@size(dword),edi);
-		if (edi = MAX_NO_PROCS*@size(dword)) then
-			break;
-		endif;
-	endfor;
-	if (edi = MAX_NO_PROCS*@size(dword)) then
-		mov(E_NONEWPROCESS,eax);
+  buffer: dword[NO_PROCSEGMENTS];
+begin create_process;
+  push(ebx);
+  push(ecx);
+  push(edx);
+  push(edi);
+  push(esi);
+  pushfd();
+  mov(privilege,esi);
+  zerify(edi);
+  forever
+    mov(pproctab[edi],ebx);
+    if ((type tss_t [ebx]).state = EMPTY) then
+      break;
+    endif;
+    add(@size(dword),edi);
+    if (edi = MAX_NO_PROCS*@size(dword)) then
+      break;
+    endif;
+  endfor;
+  if (edi = MAX_NO_PROCS*@size(dword)) then
+    mov(E_NONEWPROCESS,eax);
+  else
+    if (csegmBase != NO_BASE) then
+      if (get_free_gdt_idx() != INVALID_GDT_IDX) then
+	lea(buffer,ecx);
+	sseg:mov(eax,[ecx]);
+	mov(csegmLimit,edx);
+	if (edx > $fffff) then
+	  push(eax);
+	  push(edx);
+	  and(%1111111111,edx);
+	  pop(edx);
+	  if (@z) then
+	    mov(0,eax);
+	  else
+	    mov(1,eax);
+	  endif;
+	  shr(3*4,edx);
+	  add(eax,edx);
+	  pop(eax);
+	  writeSegmentDesc(eax, edx, csegmBase, TRUE, esi, CODE, PAGE_GRANULARITY);
 	else
-		if (csegmBase != NO_BASE) then
-			if (getFreeGDTIDX() != INVALID_GDT_IDX) then
-				lea(buffer,ecx);
-				sseg:mov(eax,[ecx]);
-				mov(csegmLimit,edx);
-				if (edx > $fffff) then
-					push(eax);
-					push(edx);
-					and(%1111111111,edx);
-					pop(edx);
-					if (@z) then
-						mov(0,eax);
-					else
-						mov(1,eax);
-					endif;
-					shr(3*4,edx);
-					add(eax,edx);
-					pop(eax);
-					writeSegmentDesc(eax, edx, csegmBase, TRUE, esi, CODE, PAGE_GRANULARITY);
-				else
-					writeSegmentDesc(eax, edx, csegmBase, TRUE, esi, CODE, BYTE_GRANULARITY);
-				endif;
-				add(esi,eax);
-				mov(ax,(type tss_t [ebx]).cs_reg);
-			else
-				jmp unset;
-			endif;
-		else
-			mov(0,(type tss_t [ebx]).cs_reg);
-		endif;
-		if (dsegmBase != NO_BASE) then
-			if (getFreeGDTIDX() != INVALID_GDT_IDX) then
-				add(@size(dword),ecx);
-				sseg:mov(eax,[ecx]);
-				mov(dsegmLimit,edx);
-				if (edx > $fffff) then
-					push(eax);
-					push(edx);
-					and(%1111111111,edx);
-					pop(edx);
-					if (@z) then
-						mov(0,eax);
-					else
-						mov(1,eax);
-					endif;
-					shr(3*4,edx);
-					add(eax,edx);
-					pop(eax);
-					writeSegmentDesc(eax, edx, dsegmBase, TRUE, esi, DATA, PAGE_GRANULARITY);
-				else
-					writeSegmentDesc(eax, edx, dsegmBase, TRUE, esi, DATA, BYTE_GRANULARITY);
-				endif;
-				add(esi,eax);
-				mov(ax,(type tss_t [ebx]).ds_reg);
-			else
-				jmp unset;
-			endif;
-		else
-			mov(0,(type tss_t [ebx]).ds_reg);
-		endif;
-		if (esegmBase != NO_BASE) then
-			if (getFreeGDTIDX() != INVALID_GDT_IDX) then
-				add(@size(dword),ecx);
-				sseg:mov(eax,[ecx]);
-				mov(esegmLimit,edx);
-				if (edx > $fffff) then
-					push(eax);
-					push(edx);
-					and(%1111111111,edx);
-					pop(edx);
-					if (@z) then
-						mov(0,eax);
-					else
-						mov(1,eax);
-					endif;
-					shr(3*4,edx);
-					add(eax,edx);
-					pop(eax);
-					writeSegmentDesc(eax, edx, esegmBase, TRUE, esi, DATA, PAGE_GRANULARITY);
-				else
-					writeSegmentDesc(eax, edx, esegmBase, TRUE, esi, DATA, BYTE_GRANULARITY);
-				endif;
-				add(esi,eax);
-				mov(ax,(type tss_t [ebx]).es_reg);
-			else
-				jmp unset;
-			endif;
-		else
-			push(eax);
-			mov((type tss_t [ebx]).ds_reg, ax);
-			mov(ax, (type tss_t [ebx]).es_reg);
-			pop(eax);
-		endif;
-		if (fsegmBase != NO_BASE) then
-			if (getFreeGDTIDX() != INVALID_GDT_IDX) then
-				add(@size(dword),ecx);
-				sseg:mov(eax,[ecx]);
-				mov(fsegmLimit,edx);
-				if (edx > $fffff) then
-					push(eax);
-					push(edx);
-					and(%1111111111,edx);
-					pop(edx);
-					if (@z) then
-						mov(0,eax);
-					else
-						mov(1,eax);
-					endif;
-					shr(3*4,edx);
-					add(eax,edx);
-					pop(eax);
-					writeSegmentDesc(eax, edx, fsegmBase, TRUE, esi, DATA, PAGE_GRANULARITY);
-				else
-					writeSegmentDesc(eax, edx, fsegmBase, TRUE, esi, DATA, BYTE_GRANULARITY);
-				endif;
-				add(esi,eax);
-				mov(ax,(type tss_t [ebx]).fs_reg);
-			else
-				jmp unset;
-			endif;
-		else
-			push(eax);
-			mov((type tss_t [ebx]).ds_reg, ax);
-			mov(ax, (type tss_t [ebx]).fs_reg);
-			pop(eax);
-		endif;
-		if (gsegmBase != NO_BASE) then
-			if (getFreeGDTIDX() != INVALID_GDT_IDX) then
-				add(@size(dword),ecx);
-				sseg:mov(eax,[ecx]);
-				mov(gsegmLimit,edx);
-				if (edx > $fffff) then
-					push(eax);
-					push(edx);
-					and(%1111111111,edx);
-					pop(edx);
-					if (@z) then
-						mov(0,eax);
-					else
-						mov(1,eax);
-					endif;
-					shr(3*4,edx);
-					add(eax,edx);
-					pop(eax);
-					writeSegmentDesc(eax, edx, gsegmBase, TRUE, esi, DATA, PAGE_GRANULARITY);
-				else
-					writeSegmentDesc(eax, edx, gsegmBase, TRUE, esi, DATA, BYTE_GRANULARITY);
-				endif;
-				add(esi,eax);
-				mov(ax,(type tss_t [ebx]).gs_reg);
-			else
-				jmp unset;
-			endif;
-		else
-			push(eax);
-			mov((type tss_t [ebx]).ds_reg, ax);
-			mov(ax, (type tss_t [ebx]).gs_reg);
-			pop(eax);
-		endif;
-		if (ssegmBase != NO_BASE) then
-			if (getFreeGDTIDX() != INVALID_GDT_IDX) then
-				add(@size(dword),ecx);
-				sseg:mov(eax,[ecx]);
-				mov(ssegmLimit,edx);
-				if (edx > $fffff) then
-					push(eax);
-					push(edx);
-					and(%1111111111,edx);
-					if (@z) then
-						mov(0,eax);
-					else
-						mov(1,eax);
-					endif;
-					pop(edx);
-					shr(10,edx);
-					add(eax,edx);
-					pop(eax);
-					writeSegmentDesc(eax, edx, ssegmBase, TRUE, esi, DATA, PAGE_GRANULARITY);
-				else
-					writeSegmentDesc(eax, edx, ssegmBase, TRUE, esi, DATA, BYTE_GRANULARITY);
-				endif;
-				add(esi,eax);
-				mov(ax,(type tss_t [ebx]).ss_reg);
-				mov(ax,(type tss_t [ebx]).ss0);
-			else
-				jmp unset;
-			endif;
-		else
-			push(eax);
-			mov((type tss_t [ebx]).ds_reg, ax);
-			mov(ax, (type tss_t [ebx]).ss_reg);
-			pop(eax);
-		endif;
-		if (getFreeGDTIDX() != INVALID_GDT_IDX) then
-			add(@size(dword),ecx);
-			sseg:mov(eax,[ecx]);
-
-			add(KERNEL_BASE,ebx);
-			writeTSSDesc(eax, @size(tss_t), ebx, TRUE, esi, TRUE, BYTE_GRANULARITY);
-			sub(KERNEL_BASE,ebx);
-
-			add(esi,eax);
-			mov(ax,(type tss_t [ebx]).idx_tss);
-
-			mov(schedticks,(type tss_t [ebx]).schedticks);
-			mov(schedticks,(type tss_t [ebx]).ticksleft);
-			mov(ssegmLimit,(type tss_t [ebx]).esp_reg);
-			mov(ssegmLimit,(type tss_t [ebx]).ebp_reg);
-			mov(start,(type tss_t [ebx]).eip_reg);
-			mov($200,(type tss_t [ebx]).eflag_reg);
-			mov(0,(type tss_t [ebx]).state);
-			mov(0, (type tss_t [ebx]).callMask);
-			mov(NULL, (type tss_t [ebx]).next);
-			mov(NULL, (type tss_t [ebx]).previous);
-			mov(NULL, (type tss_t [ebx]).firstSender);
-			mov(NULL, (type tss_t [ebx]).nextSender);
-			mov(NULL, (type tss_t [ebx]).receivingFrom);
-			mov(@size(tss_t), (type tss_t [ebx]).iomap_base);
-		else
-			jmp unset;
-		endif;
-		if (getFreePID() != INVALID_PID) then
-			mov(ax, (type tss_t [ebx]).pid);
-			unfreePID(eax);
-		else
-			jmp unset;
-		endif;
-		jmp end_createProcess_S;
-unset:
-		lea(buffer,ebx);
-		forever
-			if (ebx = ecx) then
-				break;
-			sseg:mov([ecx],edx);
-			endif;
-			freeGDTIDX(edx);
-			sseg:sub(@size(dword),ecx);
-		endfor;
+	  writeSegmentDesc(eax, edx, csegmBase, TRUE, esi, CODE, BYTE_GRANULARITY);
 	endif;
-end_createProcess_F:
-	mov(E_NONEWPROCESS,eax);
-	jmp end_createProcess;
-end_createProcess_S:
-	mov(edi,eax);
-end_createProcess:
-	popfd();
-	pop(esi);
-	pop(edi);
-	pop(edx);
-	pop(ecx);
-	pop(ebx);
-end createProcess;
+	add(esi,eax);
+	mov(ax,(type tss_t [ebx]).cs_reg);
+      else
+	jmp unset;
+      endif;
+    else
+      mov(0,(type tss_t [ebx]).cs_reg);
+    endif;
+    if (dsegmBase != NO_BASE) then
+      if (get_free_gdt_idx() != INVALID_GDT_IDX) then
+	add(@size(dword),ecx);
+	sseg:mov(eax,[ecx]);
+	mov(dsegmLimit,edx);
+	if (edx > $fffff) then
+	  push(eax);
+	  push(edx);
+	  and(%1111111111,edx);
+	  pop(edx);
+	  if (@z) then
+	    mov(0,eax);
+	  else
+	    mov(1,eax);
+	  endif;
+	  shr(3*4,edx);
+	  add(eax,edx);
+	  pop(eax);
+	  writeSegmentDesc(eax, edx, dsegmBase, TRUE, esi, DATA, PAGE_GRANULARITY);
+	else
+	  writeSegmentDesc(eax, edx, dsegmBase, TRUE, esi, DATA, BYTE_GRANULARITY);
+	endif;
+	add(esi,eax);
+	mov(ax,(type tss_t [ebx]).ds_reg);
+      else
+	jmp unset;
+	endif;
+    else
+      mov(0,(type tss_t [ebx]).ds_reg);
+    endif;
+    if (esegmBase != NO_BASE) then
+      if (get_free_gdt_idx() != INVALID_GDT_IDX) then
+	add(@size(dword),ecx);
+	sseg:mov(eax,[ecx]);
+	mov(esegmLimit,edx);
+	if (edx > $fffff) then
+	  push(eax);
+	  push(edx);
+	  and(%1111111111,edx);
+	  pop(edx);
+	  if (@z) then
+	    mov(0,eax);
+	  else
+	    mov(1,eax);
+	  endif;
+	  shr(3*4,edx);
+	  add(eax,edx);
+	  pop(eax);
+	  writeSegmentDesc(eax, edx, esegmBase, TRUE, esi, DATA, PAGE_GRANULARITY);
+	else
+	  writeSegmentDesc(eax, edx, esegmBase, TRUE, esi, DATA, BYTE_GRANULARITY);
+	endif;
+	add(esi,eax);
+	mov(ax,(type tss_t [ebx]).es_reg);
+	else
+	  jmp unset;
+	endif;
+      else
+	push(eax);
+	mov((type tss_t [ebx]).ds_reg, ax);
+	mov(ax, (type tss_t [ebx]).es_reg);
+	pop(eax);
+      endif;
+      if (fsegmBase != NO_BASE) then
+	if (get_free_gdt_idx() != INVALID_GDT_IDX) then
+	  add(@size(dword),ecx);
+	  sseg:mov(eax,[ecx]);
+	  mov(fsegmLimit,edx);
+	  if (edx > $fffff) then
+	    push(eax);
+	    push(edx);
+	    and(%1111111111,edx);
+	    pop(edx);
+	    if (@z) then
+	      mov(0,eax);
+	    else
+	      mov(1,eax);
+	    endif;
+	    shr(3*4,edx);
+	    add(eax,edx);
+	    pop(eax);
+	    writeSegmentDesc(eax, edx, fsegmBase, TRUE, esi, DATA, PAGE_GRANULARITY);
+	  else
+	    writeSegmentDesc(eax, edx, fsegmBase, TRUE, esi, DATA, BYTE_GRANULARITY);
+	  endif;
+	  add(esi,eax);
+	  mov(ax,(type tss_t [ebx]).fs_reg);
+	else
+	  jmp unset;
+	endif;
+      else
+	push(eax);
+	mov((type tss_t [ebx]).ds_reg, ax);
+	mov(ax, (type tss_t [ebx]).fs_reg);
+	pop(eax);
+      endif;
+      if (gsegmBase != NO_BASE) then
+	if (get_free_gdt_idx() != INVALID_GDT_IDX) then
+	  add(@size(dword),ecx);
+	  sseg:mov(eax,[ecx]);
+	  mov(gsegmLimit,edx);
+	  if (edx > $fffff) then
+	    push(eax);
+	    push(edx);
+	    and(%1111111111,edx);
+	    pop(edx);
+	    if (@z) then
+	      mov(0,eax);
+	    else
+	      mov(1,eax);
+	    endif;
+	    shr(3*4,edx);
+	    add(eax,edx);
+	    pop(eax);
+	    writeSegmentDesc(eax, edx, gsegmBase, TRUE, esi, DATA, PAGE_GRANULARITY);
+	  else
+	    writeSegmentDesc(eax, edx, gsegmBase, TRUE, esi, DATA, BYTE_GRANULARITY);
+	  endif;
+	  add(esi,eax);
+	  mov(ax,(type tss_t [ebx]).gs_reg);
+	else
+	  jmp unset;
+	endif;
+      else
+	push(eax);
+	mov((type tss_t [ebx]).ds_reg, ax);
+	mov(ax, (type tss_t [ebx]).gs_reg);
+	pop(eax);
+      endif;
+      if (ssegmBase != NO_BASE) then
+	if (get_free_gdt_idx() != INVALID_GDT_IDX) then
+	  add(@size(dword),ecx);
+	  sseg:mov(eax,[ecx]);
+	  mov(ssegmLimit,edx);
+	if (edx > $fffff) then
+	  push(eax);
+	  push(edx);
+	  and(%1111111111,edx);
+	  if (@z) then
+	    mov(0,eax);
+	  else
+	    mov(1,eax);
+	  endif;
+	  pop(edx);
+	  shr(10,edx);
+	  add(eax,edx);
+	  pop(eax);
+	  writeSegmentDesc(eax, edx, ssegmBase, TRUE, esi, DATA, PAGE_GRANULARITY);
+	else
+	  writeSegmentDesc(eax, edx, ssegmBase, TRUE, esi, DATA, BYTE_GRANULARITY);
+	endif;
+	add(esi,eax);
+	mov(ax,(type tss_t [ebx]).ss_reg);
+	mov(ax,(type tss_t [ebx]).ss0);
+      else
+	jmp unset;
+      endif;
+    else
+      push(eax);
+      mov((type tss_t [ebx]).ds_reg, ax);
+      mov(ax, (type tss_t [ebx]).ss_reg);
+      pop(eax);
+    endif;
+    if (get_free_gdt_idx() != INVALID_GDT_IDX) then
+      add(@size(dword),ecx);
+      sseg:mov(eax,[ecx]);
+
+      add(KERNEL_BASE,ebx);
+      write_tss_desc(eax, @size(tss_t), ebx, TRUE, esi, TRUE, BYTE_GRANULARITY);
+      sub(KERNEL_BASE,ebx);
+
+      add(esi,eax);
+      mov(ax,(type tss_t [ebx]).idx_tss);
+
+      mov(schedticks,(type tss_t [ebx]).schedticks);
+      mov(schedticks,(type tss_t [ebx]).ticksleft);
+      mov(ssegmLimit,(type tss_t [ebx]).esp_reg);
+      mov(ssegmLimit,(type tss_t [ebx]).ebp_reg);
+      mov(start,(type tss_t [ebx]).eip_reg);
+      mov($200,(type tss_t [ebx]).eflag_reg);
+      mov(0,(type tss_t [ebx]).state);
+      mov(0, (type tss_t [ebx]).callMask);
+      mov(NULL, (type tss_t [ebx]).next);
+      mov(NULL, (type tss_t [ebx]).previous);
+      mov(NULL, (type tss_t [ebx]).firstSender);
+      mov(NULL, (type tss_t [ebx]).nextSender);
+      mov(NULL, (type tss_t [ebx]).receivingFrom);
+      mov(@size(tss_t), (type tss_t [ebx]).iomap_base);
+    else
+      jmp unset;
+    endif;
+    if (get_free_pid() != INVALID_PID) then
+      mov(ax, (type tss_t [ebx]).pid);
+      unfree_pid(eax);
+    else
+      jmp unset;
+    endif;
+    jmp end_create_process_S;
+unset:
+    lea(buffer,ebx);
+    forever
+      if (ebx = ecx) then
+	break;
+	sseg:mov([ecx],edx);
+      endif;
+      free_gdt_idx(edx);
+      sseg:sub(@size(dword),ecx);
+    endfor;
+  endif;
+end_create_process_F:
+  mov(E_NONEWPROCESS,eax);
+  jmp end_create_process;
+end_create_process_S:
+  mov(edi,eax);
+end_create_process:
+  popfd();
+  pop(esi);
+  pop(edi);
+  pop(edx);
+  pop(ecx);
+  pop(ebx);
+end create_process;
 
 procedure showSegment(what: dword);
 begin showSegment;
-	push(eax);
-	push(ebx);
-	pushfd();
-	mov(GDT_BASE,eax);
-	add(what,eax);
-	fseg:movzx((type segdesc_t [eax]).limit,ebx);
-	kputhex_HLA(ebx);
-	kputchar_HLA(LF);
-	fseg:movzx((type segdesc_t [eax]).base1,ebx);
-	kputhex_HLA(ebx);
-	kputchar_HLA(LF);
-	fseg:movzx((type segdesc_t [eax]).base2,ebx);
-	kputhex_HLA(ebx);
-	kputchar_HLA(LF);
-	fseg:movzx((type segdesc_t [eax]).props1,ebx);
-	kputbin_HLA(ebx);
-	kputchar_HLA(LF);
-	fseg:movzx((type segdesc_t [eax]).props2,ebx);
-	kputbin_HLA(ebx);
-	kputchar_HLA(LF);
-	fseg:movzx((type segdesc_t [eax]).base3,ebx);
-	kputbin_HLA(ebx);
-	kputchar_HLA(LF);
-	popfd();
-	pop(ebx);
-	pop(eax);
+  push(eax);
+  push(ebx);
+  pushfd();
+  mov(GDT_BASE,eax);
+  add(what,eax);
+  fseg:movzx((type segdesc_t [eax]).limit,ebx);
+  kputhex_HLA(ebx);
+  kputchar_HLA(LF);
+  fseg:movzx((type segdesc_t [eax]).base1,ebx);
+  kputhex_HLA(ebx);
+  kputchar_HLA(LF);
+  fseg:movzx((type segdesc_t [eax]).base2,ebx);
+  kputhex_HLA(ebx);
+  kputchar_HLA(LF);
+  fseg:movzx((type segdesc_t [eax]).props1,ebx);
+  kputbin_HLA(ebx);
+  kputchar_HLA(LF);
+  fseg:movzx((type segdesc_t [eax]).props2,ebx);
+  kputbin_HLA(ebx);
+  kputchar_HLA(LF);
+  fseg:movzx((type segdesc_t [eax]).base3,ebx);
+  kputbin_HLA(ebx);
+  kputchar_HLA(LF);
+  popfd();
+  pop(ebx);
+  pop(eax);
 end showSegment;
 
 procedure disableInterrupts_HLA;
 begin disableInterrupts_HLA;
-	cli;
+  cli;
 end disableInterrupts_HLA;
 
 procedure disableInterrupts;
 begin disableInterrupts;
-	disableInterrupts_HLA();
+  disableInterrupts_HLA();
 end disableInterrupts;
 
 procedure enableInterrupts_HLA;
 begin enableInterrupts_HLA;
-	sti;
+  sti;
 end enableInterrupts_HLA;
 
 procedure enableInterrupts;
 begin enableInterrupts;
-	enableInterrupts_HLA();
+  enableInterrupts_HLA();
 end enableInterrupts;
 
 procedure halt_HLA;
 begin halt_HLA;
-	hlt;
+  hlt;
 end halt_HLA;
 
 procedure halt;
 begin halt;
-	halt_HLA();
+  halt_HLA();
 end halt;
 
 end Utilities;

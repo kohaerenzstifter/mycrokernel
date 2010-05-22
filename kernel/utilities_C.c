@@ -7,31 +7,12 @@
 #include "prototype.h"
 
 typedef struct _feature {
-	tss_t *supplier;
-	tss_t *waiter;
+  tss_t *supplier;
+  tss_t *waiter;
 } feature_t;
 
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
 static tss_t *irqs[MAX_IRQ + 1] = { NULL };
-
-/*int streq(char *s1, char *s2)
-{
-  char *cur1 = s1;
-  char *cur2 = s2;
-  for(;;) {
-    if (*cur1 == '\0') {
-      if (*cur2 == '\0') {
-	return 1;
-      }
-      return 0;
-    }
-    if (*cur1 != *cur2) {
-      return 0;
-    }
-    cur1++;
-    cur2++;
-  }
-}*/
 
 void paus()
 {
@@ -80,14 +61,14 @@ void enqueue(tss_t *process)
     schedqueue.schedticks = schedqueue.ticksleft = process->schedticks;
   }
   unsigned count1 = process->schedticks - ((schedqueue.schedticks -
-    schedqueue.ticksleft) * process->schedticks / schedqueue.schedticks);
+   schedqueue.ticksleft) * process->schedticks / schedqueue.schedticks);
   unsigned count2 = process->ticksleft;
   process->ticksleft = count1 < count2 ? count1 : count2;
   schedqueue.schedticks += process->schedticks;
   schedqueue.ticksleft += process->ticksleft;
 }
 
-void showQ()
+void show_queue()
 {
   tss_t *cur = NULL;
   kputstring("showing q"); kputchar(LF);
@@ -97,7 +78,7 @@ void showQ()
   kputchar(LF);
 }
 
-void chargeProc()
+void charge_process()
 {
   if (curptr == &idlestate) {
     return;
@@ -115,15 +96,15 @@ void dequeue(tss_t *process)
   if (schedqueue.schedticks == process->schedticks) {
     schedqueue.schedticks = schedqueue.ticksleft = 0;
     schedqueue.head = NULL;
-    pickNextProc();
+    pick_next_proc();
     return;
   }
   if (schedqueue.head == NULL) {
     nextptr = &idlestate;
   } else if (curptr == process) {
     do {
-      chargeProc();
-      pickNextProc();
+      charge_process();
+      pick_next_proc();
     } while (nextptr == process);
   } else {
   }
@@ -140,7 +121,7 @@ void dequeue(tss_t *process)
   schedqueue.ticksleft -= process->ticksleft;
 }
 
-void showTSS(tss_t *tss)
+void show_tss(tss_t *tss)
 {
   kputstring("backlink: "); kputhex(tss->backlink); kputchar(LF);
   kputstring("zeroes1: "); kputhex(tss->zeroes1); kputchar(' ');
@@ -180,7 +161,6 @@ void showTSS(tss_t *tss)
   kputstring("ldt_sel: "); kputhex(tss->ldt_sel); kputchar(' ');
   kputstring("zeroes11: "); kputhex(tss->zeroes11); kputchar(LF);
   kputstring("debug: "); kputhex(tss->debug); kputchar(' ');
-  //kputstring("features: "); kputhex(tss->features); kputchar(LF);
   kputstring("iomap_base: "); kputhex(tss->iomap_base); kputchar(' ');
   kputstring("next: "); kputhex((uint32_t) tss->next); kputchar(LF);
   kputstring("idx_tss: "); kputhex(tss->idx_tss); kputchar(' ');
@@ -191,16 +171,16 @@ void showTSS(tss_t *tss)
   kputstring("receivingFrom: "); kputhex((uint32_t) tss->receivingFrom); kputchar(LF);
 }
 
-#define vftNumerator(x) \
+#define vft_numerator(x) \
   (((x)->schedticks) - ((x)->ticksleft) + 1)
 
-#define vtrrIsEligible(p,q) \
+#define vtrr_is_eligible(p,q) \
   (((q)->ticksleft > (p)->ticksleft) || \
-  (((vftNumerator(q) * schedqueue.schedticks) - \
-  (vftNumerator(&schedqueue) * q->schedticks)) < \
+  (((vft_numerator(q) * schedqueue.schedticks) - \
+  (vft_numerator(&schedqueue) * q->schedticks)) < \
   schedqueue.schedticks))
 
-void pickNextProc()
+void pick_next_proc()
 {
   if (schedqueue.head == NULL) {
     nextptr = &idlestate;
@@ -216,24 +196,23 @@ void pickNextProc()
     goto finish;
   }
   if (last->next == NULL) {
-	nextptr = schedqueue.head;
-	if (schedqueue.head->ticksleft == 0) {
-	  schedqueue.head->ticksleft = schedqueue.head->schedticks;
-	}
-	goto finish;
+    nextptr = schedqueue.head;
+    if (schedqueue.head->ticksleft == 0) {
+      schedqueue.head->ticksleft = schedqueue.head->schedticks;
+    }
+    goto finish;
   }
   if (last->ticksleft == (last->schedticks - 1)) {
-	nextptr = last->next;
-	nextptr->ticksleft = nextptr->schedticks;
-	goto finish;
+    nextptr = last->next;
+    nextptr->ticksleft = nextptr->schedticks;
+    goto finish;
   }
-  if (vtrrIsEligible(last, (last->next))) {
-	nextptr = last->next;
-	goto finish;
+  if (vtrr_is_eligible(last, (last->next))) {
+    nextptr = last->next;
+    goto finish;
   }
   nextptr = schedqueue.head;
 finish:
-//  showTSS(nextptr);
   return;
 }
 
@@ -247,49 +226,6 @@ unsigned isPrimeNumber(unsigned what)
   }
   return 0;
 }
-/*
-void doTask1()
-{
-  char buf;
-  int i;
-  //for (i = 0; i < 10000; i++);
-  disableInterrupts();
-  kputstring("t1:hola");kputchar(LF);
-  enableInterrupts();
-  call_syscall_setFeature(1);
-  disableInterrupts();
-  kputstring("t1:set feature");kputchar(LF);
-  enableInterrupts();
-  for (i = 0; i < 100000; i++);
-  kputstring("t1:will receive");kputchar(LF);
-  call_syscall_receive(ANYPROC, &buf, 1);
-  disableInterrupts();
-  kputstring("t1:received: "); kputunsint(buf); kputchar(LF);
-  enableInterrupts();
-  for(;;) {
-    halt();
-  }
-}
-
-void doTask2()
-{
-  err_t error = OK;
-  char buf = 78;
-  tss_t *proc;
-  int i;
-  disableInterrupts();
-  kputstring("t2:hola");kputchar(LF);
-  enableInterrupts();
-  for (i = 0; i < 100000; i++);
-  kputstring("t2:will send by feature");kputchar(LF);
-  call_syscall_send_by_feature(1,&buf,1,FALSE, &error);
-  disableInterrupts();
-  kputstring("t2:send!");kputchar(LF);
-  enableInterrupts();
-  for(;;) {
-    halt();
-  }
-}*/
 
 void writer()
 {
@@ -304,62 +240,62 @@ void writer()
   }
 }
 
-unsigned validateDataArea(tss_t *process, void *mem, unsigned size)
+unsigned validate_data_area(tss_t *process, void *mem, unsigned size)
 {
   unsigned index = process->ds_reg & 0xfff8;
   //TODO: verify this!
-  if (getLimit(index) < ((uint32_t) mem + size)) {
+  if (get_limit(index) < ((uint32_t) mem + size)) {
     return -1;
   }
   return 0;
 }
 
-tss_t *getSender(tss_t *desiredSender, tss_t *receiver)
+tss_t *get_sender(tss_t *desiredSender, tss_t *receiver)
 {
-	tss_t *result = NULL;
-	if (receiver->firstSender == NULL) {
-		result = NULL;
-		goto finish;
-	}
-	if (desiredSender == ANYPROC) {
-		result = receiver->firstSender;
-		goto finish;
-	}
-	tss_t *cur = receiver->firstSender;
-	for(;;) {
-		if (cur == NULL) {
-			result = NULL;
-			goto finish;
-		}
-		if (cur == desiredSender) {
-			result = desiredSender;
-			goto finish;
-		}
-		cur = cur->nextSender;
-	}
+  tss_t *result = NULL;
+  if (receiver->firstSender == NULL) {
+    result = NULL;
+    goto finish;
+  }
+  if (desiredSender == ANYPROC) {
+    result = receiver->firstSender;
+    goto finish;
+  }
+  tss_t *cur = receiver->firstSender;
+  for(;;) {
+    if (cur == NULL) {
+      result = NULL;
+      goto finish;
+    }
+    if (cur == desiredSender) {
+      result = desiredSender;
+      goto finish;
+    }
+    cur = cur->nextSender;
+  }
 finish:
-	return result;
+  return result;
 }
 
-boolean_t receivingFrom(tss_t *receiver, tss_t *sender)
+boolean_t receiving_from(tss_t *receiver, tss_t *sender)
 {
-	boolean_t result = FALSE;
-	if (!(receiver->state & RECEIVING)) {
-	  goto finish;
-	}
-	if (receiver->receivingFrom == ANYPROC) {
-	  result = TRUE;
-	  goto finish;
-	}
-	if ((receiver->receivingFrom) == sender) {
-	  result = TRUE;
-	  goto finish;
-	}
+  boolean_t result = FALSE;
+  if (!(receiver->state & RECEIVING)) {
+    goto finish;
+  }
+  if (receiver->receivingFrom == ANYPROC) {
+    result = TRUE;
+    goto finish;
+  }
+  if ((receiver->receivingFrom) == sender) {
+    result = TRUE;
+    goto finish;
+  }
 finish:
-	return result;
+  return result;
 }
 
-void removeFromSenderList(tss_t *sender, tss_t *receiver)
+void remove_from_senders_list(tss_t *sender, tss_t *receiver)
 {
   tss_t *previous = NULL;
   tss_t *cur = receiver->firstSender;
@@ -379,19 +315,19 @@ void removeFromSenderList(tss_t *sender, tss_t *receiver)
   unsetStateFlag(sender, SENDING);
 }
 
-void markAsReceivingFrom(tss_t *receiver, tss_t *sender)
+void mark_as_receiving_from(tss_t *receiver, tss_t *sender)
 {
   receiver->receivingFrom = sender;
   setStateFlag(receiver, RECEIVING);
 }
 
-void clearReceivingFrom(tss_t *receiver)
+void clear_receiving_from(tss_t *receiver)
 {
   receiver->receivingFrom = NULL;
   unsetStateFlag(receiver, RECEIVING);
 }
 
-void addToSenderList(tss_t *sender, tss_t *receiver)
+void add_to_senders_list(tss_t *sender, tss_t *receiver)
 {
   tss_t *previous = NULL;
   tss_t *cur = receiver->firstSender;
@@ -410,71 +346,70 @@ void addToSenderList(tss_t *sender, tss_t *receiver)
 
 void add_waiting_for_feature(tss_t *process, uint32_t feature)
 {
-	tss_t **cur = NULL;
-	uint32_t mask = 1;
-	uint32_t idx = 0;
-	while ((mask & feature) != 1) {
-	  idx++;
-	  mask <<= 1;
-	}
-	cur = &(featureTable[idx].waiter);
-	while ((*cur) != NULL) {
-	    cur = &((*cur)->nextSender);
-	}
-	(*cur) = process;
-	process->nextSender = NULL;
+  tss_t **cur = NULL;
+  uint32_t mask = 1;
+  uint32_t idx = 0;
+  while ((mask & feature) != 1) {
+    idx++;
+    mask <<= 1;
+  }
+  cur = &(featureTable[idx].waiter);
+  while ((*cur) != NULL) {
+    cur = &((*cur)->nextSender);
+  }
+  (*cur) = process;
+  process->nextSender = NULL;
 }
 
 int check_feature(uint32_t feature)
 {
   uint8_t found = 0;
-	uint32_t mask = 1;
-	while (mask > 0) {
-	    if ((feature & mask) != 0) {
-	      found++;
-	    }
-	    if (found > 1) {
-		break;
-	    }
-	    mask <<= 1;
-	}
-
+  uint32_t mask = 1;
+  while (mask > 0) {
+    if ((feature & mask) != 0) {
+      found++;
+    }
+    if (found > 1) {
+      break;
+    }
+    mask <<= 1;
+  }
   return (found == 1) ? 0 : -1;
 }
 
 void set_feature(tss_t *context, tss_t *process, uint32_t feature)
 {
-	uint32_t mask = 1;
-	uint32_t idx = 0;
+  uint32_t mask = 1;
+  uint32_t idx = 0;
 	
-	if (check_feature(feature) != 0) {
-	      err = INVALIDFEATURE;
-	      set_error(context, process);
-	      goto finish;
-	}
+  if (check_feature(feature) != 0) {
+    err = INVALIDFEATURE;
+    set_error(context, process);
+    goto finish;
+  }
 	
-	while ((mask & feature) != 1) {
-	  idx++;
-	  mask <<= 1;
-	}
-	if (featureTable[idx].supplier == NULL) {
-		featureTable[idx].supplier = process;
-		process->firstSender = featureTable[idx].waiter;
-		featureTable[idx].waiter = NULL;
-	}
+  while ((mask & feature) != 1) {
+    idx++;
+    mask <<= 1;
+  }
+  if (featureTable[idx].supplier == NULL) {
+    featureTable[idx].supplier = process;
+    process->firstSender = featureTable[idx].waiter;
+    featureTable[idx].waiter = NULL;
+  }
 finish:
-	return;
+  return;
 }
 
-tss_t *getProcessByFeature(uint32_t feature)
+tss_t *get_process_by_feature(uint32_t feature)
 {
-	uint32_t mask = 1;
-	uint32_t idx = 0;
-	while ((mask & feature) != 1) {
-	  idx++;
-	  mask <<= 1;
-	}
-	return featureTable[idx].supplier;
+  uint32_t mask = 1;
+  uint32_t idx = 0;
+  while ((mask & feature) != 1) {
+    idx++;
+    mask <<= 1;
+  }
+  return featureTable[idx].supplier;
 }
 
 void request_irq(tss_t *context, tss_t *process, uint32_t irq)

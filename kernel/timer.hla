@@ -7,34 +7,33 @@ unit Timer;
 
 procedure clock_int; @nodisplay; @noalignstack; @noframe;
 begin clock_int;
-	forever
-		if (dl = 0) then //a second has passed
-			inc(cl);
-			if (cl = 60) then
-				zerify(cl);
-				inc(ch);
-				if (ch = 60) then
-					zerify(cl);
-					inc(edi);
-					mov(edi,hours);
-				endif;
-				mov(ch,minutes);
-			endif;
-			mov(cl,seconds);
-			mov(31,dl);
+  forever
+    if (dl = 0) then //a second has passed
+      inc(cl);
+      if (cl = 60) then
+	zerify(cl);
+	inc(ch);
+	if (ch = 60) then
+	  zerify(cl);
+	  inc(edi);
+	  mov(edi,hours);
+	endif;
+	mov(ch,minutes);
+      endif;
+      mov(cl,seconds);
+      mov(31,dl);
+    else
+      dec(dl);
+    endif;
 
-		else
-			dec(dl);
-		endif;
+    charge_process();
+    pick_next_proc();
+    schedule(&clockintstate);
 
-		chargeProc();
-		pickNextProc();
-		schedule(&clockintstate);
-
-		mov(PIC_EOI,al);
-		out(al,PIC1_COMMAND);
-		iret();
-	endfor;
+    mov(PIC_EOI,al);
+    out(al,PIC1_COMMAND);
+    iret();
+  endfor;
 end clock_int;
 
 end Timer;
