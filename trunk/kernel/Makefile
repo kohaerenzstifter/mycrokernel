@@ -11,10 +11,10 @@ gdt.bin: gdt.o Makefile
 	ndisasm -b 32 gdt.bin > gdt.ndisasm
 
 kernel.bin: go.o table.o main.o video.o utilities_HLA.o utilities_C.o ../usrlib/syscall.o \
-	lowlevel.o timer.o syscall.o keyboard.o Makefile
+	lowlevel.o timer.o hardint.o syscall.o keyboard.o Makefile
 	ld -melf_i386 go.o main.o video.o ../usrlib/syscall.o utilities_HLA.o \
 	utilities_C.o keyboard.o \
-	lowlevel.o timer.o syscall.o table.o \
+	lowlevel.o timer.o hardint.o syscall.o table.o \
   -N -M > kernel.mem -o kernel.bin --oformat \
   binary -T ../script
 	  ndisasm -b 32 kernel.bin > kernel.ndisasm
@@ -41,6 +41,9 @@ keyboard.o: keyboard.hla const.hhf prototype.hhf types.hhf external.hhf \
 timer.o: timer.hla const.hhf prototype.hhf external.hhf ../include/always.hhf
 	hla -c timer.hla
 	objdump --disassemble-all -S timer.o > timer.objdump
+hardint.o: hardint.hla const.hhf prototype.hhf external.hhf ../include/always.hhf
+	hla -c hardint.hla
+	objdump --disassemble-all -S hardint.o > hardint.objdump
 table.o: table.hla types.hhf const.hhf prototype.hhf external.hhf
 	hla -c table.hla
 	objdump --disassemble-all -S table.o > table.objdump

@@ -11,4 +11,9 @@
 	dword o;
 	word s;//followed by 32-bit offset and 16-bit segment
 #endmacro;
+
+#macro intrrpt_dummy(string _x_);
+#endmacro
+?intrrpt:text := "intrrpt_dummy";
+
 ?@align:=2;
