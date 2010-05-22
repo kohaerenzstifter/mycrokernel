@@ -78,32 +78,27 @@ begin call_syscall_send_by_feature;
 	call_syscall_send_by_feature_HLA(feature, where, length, block, error);
 end call_syscall_send_by_feature;
 
+procedure call_syscall_request_irq_HLA(irq: dword; error: dword);
+begin call_syscall_request_irq_HLA;
+	push(esi);
+	mov(SYS_REQUEST_IRQ,eax);
+	mov(error,esi);
+	int($22);
+	pop(esi);
+end call_syscall_request_irq_HLA;
+
+procedure call_syscall_request_irq(irq: dword; error: dword); @cdecl; @external;
+procedure call_syscall_request_irq(irq: dword; error: dword);
+begin call_syscall_request_irq;
+	call_syscall_request_irq_HLA(irq, error);
+end call_syscall_request_irq;
+
 procedure call_syscall_exit; @cdecl; @external;
 procedure call_syscall_exit;
 begin call_syscall_exit;
 	mov(SYS_EXIT,eax);
 	int($22);
 end call_syscall_exit;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

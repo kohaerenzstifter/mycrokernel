@@ -1,4 +1,5 @@
 #includeonce("const.hhf")
+#includeonce("always.hhf")
 
 procedure kputchar_HLA(what: dword); @external;
 procedure kputchar(what: dword); @cdecl; @external;
@@ -40,6 +41,10 @@ procedure showSegment(what: dword); @external;
 procedure isPrimeNumber(what: dword); @returns("edx"); @external;
 procedure enqueue(process: dword); @cdecl; @external;
 procedure dequeue(process: dword); @cdecl; @external;
+procedure do_hard_int(number: dword); @cdecl; @external;
+procedure release_irqs_taken(process: dword); @cdecl; @external;
+procedure unblock_waiting_senders(context: dword; process: dword); @cdecl; @external;
+procedure request_irq(context: dword; process: dword; irq: dword); @cdecl; @external;
 procedure pickNextProc; @cdecl; @external;
 procedure getProcessByFeature(feature: dword); @returns("eax"); @cdecl; @external;
 procedure chargeProc; @cdecl; @external;
@@ -68,7 +73,7 @@ procedure markAsReceivingFrom(receiver: dword; sender: dword); @cdecl;
 procedure addToSenderList(sender: dword; receiver: dword); @cdecl;
 @external;
 procedure add_waiting_for_feature(process: dword; feature:dword); @cdecl; @external;
-procedure set_feature(process:dword; feature: dword); @cdecl; @external;
+procedure set_feature(context: dword; process:dword; feature: dword); @cdecl; @external;
 
 procedure doTask1; @cdecl; @external;
 procedure doTask2; @cdecl; @external;
@@ -98,6 +103,14 @@ procedure syscall_send; @external;
 procedure syscall_receive; @external;
 procedure syscall_requestFeature; @external;
 procedure syscall_send_by_feature; @external;
+
+
+#macro intrrpt_procedure_decl(string _x_);
+  procedure @text("hw_intrrpt"+_x_); @external;
+#endmacro
+?@tostring:intrrpt:text := "intrrpt_procedure_decl";
+
+#include("interrupts.hhf");
 
 #macro end_of_buffer(what);
 	&what.buffer[KBD_BUFFER_SIZE-1]

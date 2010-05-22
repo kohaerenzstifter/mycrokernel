@@ -29,4 +29,6 @@
 
 #define MAX_NO_PROCS 100
 
+#define MAX_IRQ 15
+
 #endif

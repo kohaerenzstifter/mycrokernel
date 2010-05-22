@@ -7,8 +7,9 @@
 #define CIRCULARSEND -3
 #define WOULDBLOCK -4
 #define INVALIDFEATURE -5
-
-
+#define INVALIDIRQ -6
+#define IRQINUSE -7
+#define PROCESSDIED -8
 
 #define LF 10
 

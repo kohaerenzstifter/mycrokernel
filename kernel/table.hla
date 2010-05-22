@@ -4,6 +4,7 @@ unit Table;
 #includeonce("const.hhf")
 #includeonce("prototype.hhf")
 #includeonce("external.hhf");
+#includeonce("always.hhf")
 
 static //global variables go here
 	align(4);
@@ -25,7 +26,7 @@ static //global variables go here
 		#endfor
 	];
 	align(4);
-	curptr: pointer to tss_t := NULL;//&idlestate;//&dummystate;
+	curptr: pointer to tss_t := NULL;
 	nextptr: pointer to tss_t := NULL;
 	align(4);
 	proctab: tss_t[MAX_NO_PROCS] :=
@@ -530,6 +531,62 @@ static //global variables go here
 					NULL,
 					NULL
 				];
+
+
+#macro intrrpt_state(string _x_);
+	@text("hw_intrrpt"+_x_+"state"): tss_t := tss_t:[
+					0,
+					0,
+					$fffffffc,
+					IDX_INTSTACK*@size(segdesc_t),
+					0,
+					0,
+					0,
+					0,
+					0,
+					0,
+					PID_SYSCALL,
+					0,
+					0,
+					&@text("hw_intrrpt" +_x_),
+					0,
+					0,
+					0,
+					31,
+					0,
+					$fffffffc,
+					0,
+					0,
+					0,
+					IDX_KERNELDATA*@size(segdesc_t),
+					0,
+					IDX_KERNELCODE*@size(segdesc_t),
+					0,
+					IDX_INTSTACK*@size(segdesc_t),
+					0,
+					IDX_KERNELDATA*@size(segdesc_t),
+					0,
+					IDX_MEMORY*@size(segdesc_t),
+					0,
+					IDX_VIDEO*@size(segdesc_t),
+					0,
+					0,
+					0,
+					0,
+					0,
+					@size(tss_t),
+					0,
+					IDX_SYSCALL*@size(segdesc_t),
+					0,
+					NULL,
+					NULL,
+					NULL,
+					NULL
+				];
+#endmacro
+?@tostring:intrrpt:text := "intrrpt_state";
+
+#include("interrupts.hhf");
 
 storage //uninitialised global variables go here
 	align(4);

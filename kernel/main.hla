@@ -65,7 +65,7 @@ begin start;
 	remap_pics($20,$28);
 
 	hook_int($20,TSS,IDX_CLOCKINTTSS*@size(segdesc_t),0);
-	hook_int($21,TSS,IDX_KEYINTTSS*@size(segdesc_t),0);
+//	hook_int($21,TSS,IDX_KEYINTTSS*@size(segdesc_t),0);
 	hook_int($22,TSS,IDX_SYSCALL*@size(segdesc_t),0);
 	mov(%11111100,al);
 	out(al,$21);

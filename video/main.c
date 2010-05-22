@@ -24,7 +24,7 @@ int main()
 int main()
 {
   err_t error = OK;
-//  terror(call_syscall_request_irq(VIDEO, &error))
+  terror(call_syscall_request_irq(1, &error))
   terror(call_syscall_setFeature(FEATURE_SPEAK, &error))
 
 

@@ -12,6 +12,7 @@ typedef struct _feature {
 } feature_t;
 
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
+static tss_t *irqs[MAX_IRQ + 1] = { NULL };
 
 /*int streq(char *s1, char *s2)
 {
@@ -441,14 +442,14 @@ int check_feature(uint32_t feature)
   return (found == 1) ? 0 : -1;
 }
 
-void set_feature(tss_t *process, uint32_t feature)
+void set_feature(tss_t *context, tss_t *process, uint32_t feature)
 {
 	uint32_t mask = 1;
 	uint32_t idx = 0;
 	
 	if (check_feature(feature) != 0) {
 	      err = INVALIDFEATURE;
-	      set_error(&syscallstate, process);
+	      set_error(context, process);
 	      goto finish;
 	}
 	
@@ -474,4 +475,48 @@ tss_t *getProcessByFeature(uint32_t feature)
 	  mask <<= 1;
 	}
 	return featureTable[idx].supplier;
+}
+
+void request_irq(tss_t *context, tss_t *process, uint32_t irq)
+{
+  if (irq > MAX_IRQ) {
+    err = INVALIDIRQ;
+    set_error(context, process);
+    goto finish;
+  }
+  if (irqs[irq] != NULL) {
+    err = IRQINUSE;
+    set_error(context, process);
+    goto finish;
+  }
+  irqs[irq] = process;
+finish:
+  return;
+}
+void release_irqs_taken(tss_t *process)
+{
+  int i;
+  for (i = 0; i < MAX_IRQ; i++) {
+    if (irqs[i] == process) {
+      irqs[i] = NULL;
+    }
+  }
+}
+
+void unblock_waiting_senders(tss_t *context, tss_t *process)
+{
+  while (process->firstSender != NULL) {
+    tss_t *cur = process->firstSender;
+    err = PROCESSDIED;
+    set_error(context, cur);
+    unsetStateFlag(cur,SENDING);
+    process->firstSender = cur->nextSender;
+    cur->nextSender = NULL;
+  }
+}
+
+//this may unblock the process
+void do_hard_int(uint32_t number)
+{
+  //TODO
 }
