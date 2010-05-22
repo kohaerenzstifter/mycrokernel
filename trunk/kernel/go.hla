@@ -5,7 +5,7 @@ unit Go;
 
 procedure g; @nodisplay; @noalignstack; @noframe;
 begin g;
-	jmp start;
+  jmp start;
 end g;
 
 end Go;

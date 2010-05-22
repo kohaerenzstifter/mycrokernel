@@ -1,15 +1,15 @@
 const
-	NO_COLUMNS: text:="80";		//number of characters per line in text mode
-	NO_LINES: text:="24";		//number of lines per screen in text mode
-	NO_TABSPACES: text:="3";	//number of spaces the TAB character requires
-	LF: text:="10";
-	TAB: text:="9";
+  NO_COLUMNS: text:="80";		//number of characters per line in text mode
+  NO_LINES: text:="24";		//number of lines per screen in text mode
+  NO_TABSPACES: text:="3";	//number of spaces the TAB character requires
+  LF: text:="10";
+  TAB: text:="9";
 
 
-	SYS_EXIT: text:="0";
-	SYS_SETFEATURE: text:="1";
-	SYS_RECEIVE: text:="2";
-	SYS_SEND_BY_FEATURE: text:="3";
-	SYS_REQUEST_IRQ: text:="4";
+  SYS_EXIT: text:="0";
+  SYS_SETFEATURE: text:="1";
+  SYS_RECEIVE: text:="2";
+  SYS_SEND_BY_FEATURE: text:="3";
+  SYS_REQUEST_IRQ: text:="4";
 
-	ANYPROC: text:="NULL";
+  ANYPROC: text:="NULL";

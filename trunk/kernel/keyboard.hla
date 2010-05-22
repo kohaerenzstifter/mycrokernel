@@ -16,97 +16,97 @@ Note that if km[scancode][kbd.modifier].no_args > 1, km[scancode][kbd.modifier].
 will not be interpreted as the actual arguments to the function, but
 as a pointer to where the dword-arguments lie consecutively in memory.*/
 begin key_int;
-	forever
-		zerify(eax);
-		in($60,al);
-		if (eax<=NO_SCANCODES-1) then
-			mul(NO_MODIFIERS,eax);
-			add(kbd.modifier,eax);
-			//putunsint(eax);
-			mov(@size(keymap_t),ebx);
-			mul(ebx,eax);
-			mov(km.fnct[eax],edx);
-			if (edx <> NULL) then
-				mov(km.no_args[eax],ebx);
-				mov(km.args[eax],eax);
-				if (ebx = 1) then
-					push(eax);
-				elseif (ebx > 1) then
-					while(ebx > 0) do
-						mov([eax],ecx);
-						push(ecx);
-						inc(eax);
-						dec(ebx);
-					endwhile;
-				endif;
-				call(edx);
-			endif;
-		endif;
-		mov(PIC_EOI,al);
-		out(al,PIC1_COMMAND);
-		iret();
-	endfor;
+  forever
+    zerify(eax);
+    in($60,al);
+    if (eax<=NO_SCANCODES-1) then
+      mul(NO_MODIFIERS,eax);
+      add(kbd.modifier,eax);
+      //putunsint(eax);
+      mov(@size(keymap_t),ebx);
+      mul(ebx,eax);
+      mov(km.fnct[eax],edx);
+      if (edx <> NULL) then
+	mov(km.no_args[eax],ebx);
+	mov(km.args[eax],eax);
+	if (ebx = 1) then
+	  push(eax);
+	elseif (ebx > 1) then
+	  while(ebx > 0) do
+	    mov([eax],ecx);
+	    push(ecx);
+	    inc(eax);
+	    dec(ebx);
+	  endwhile;
+	endif;
+	call(edx);
+      endif;
+    endif;
+    mov(PIC_EOI,al);
+    out(al,PIC1_COMMAND);
+    iret();
+  endfor;
 end key_int;
 
 procedure readchar(what:dword);
 /*Writes "what" to position kbd.write, increments kbd.write and echoes "what"*/
 begin readchar;
-	push(eax);
-	push(ebx);
-	pushfd();	
-	if (kbd.write < &kbd.buffer[KBD_BUFFER_SIZE - 1]) then
-		mov(kbd.write,eax);
-		mov(what,ebx);
-		mov(bl,[eax]);
-		inc(kbd.write);
-		echo(what);
-	endif;
-	popfd();
-	pop(ebx);
-	pop(eax);
+  push(eax);
+  push(ebx);
+  pushfd();	
+  if (kbd.write < &kbd.buffer[KBD_BUFFER_SIZE - 1]) then
+    mov(kbd.write,eax);
+    mov(what,ebx);
+    mov(bl,[eax]);
+    inc(kbd.write);
+    echo(what);
+  endif;
+  popfd();
+  pop(ebx);
+  pop(eax);
 end readchar;
 
 procedure echo(what:string);
 /*Writes "what" to screen position "echcursor" and advances "echcursor" by 2"*/
 begin echo;
-	push(eax);
-	push(ecx);
-	pushfd();
-	mov(what,ecx);
-	if (character.isPrintable(cl)) then
-		mov(echattrib,ch);
-		movzx(echcursor,eax);
-		if(eax<END_ECHO_LINE) then
-			gseg:mov(cx,[eax]);
-			addToEchCursor(2);
-			//add(2,echcursor);
-			//move_cursor();
-		endif;
-	endif;
-	popfd();
-	pop(ecx);
-	pop(eax);
+  push(eax);
+  push(ecx);
+  pushfd();
+  mov(what,ecx);
+  if (character.isPrintable(cl)) then
+    mov(echattrib,ch);
+    movzx(echcursor,eax);
+    if(eax<END_ECHO_LINE) then
+      gseg:mov(cx,[eax]);
+      addToEchCursor(2);
+      //add(2,echcursor);
+      //move_cursor();
+    endif;
+  endif;
+  popfd();
+  pop(ecx);
+  pop(eax);
 end echo;
 
 procedure clear_echoline;
 /*Clears the echo line*/
 begin clear_echoline;
-	push(eax);
-	push(ebx);
-	pushfd();
-	mov(START_ECHO_LINE,eax);
-	mov(echattrib,bh);
-	mov($00,bl);
-	shl(16,ebx);
-	mov(echattrib,bh);
-	mov($00,bl);
-	while (eax<END_ECHO_LINE) do
-		gseg: mov(ebx,[eax]);
-		add(4,eax);
-	endwhile;
-	popfd();
-	pop(ebx);
-	pop(eax);
+  push(eax);
+  push(ebx);
+  pushfd();
+  mov(START_ECHO_LINE,eax);
+  mov(echattrib,bh);
+  mov($00,bl);
+  shl(16,ebx);
+  mov(echattrib,bh);
+  mov($00,bl);
+  while (eax<END_ECHO_LINE) do
+    gseg: mov(ebx,[eax]);
+    add(4,eax);
+  endwhile;
+  popfd();
+  pop(ebx);
+  pop(eax);
 end clear_echoline;
 
 procedure enter_pressed;
@@ -119,151 +119,150 @@ Then the cmds array will be searched for the command and
 number of parameters. If a match can be found, the corresponding
 function will be called.*/
 begin enter_pressed;
-	push(eax);
-	push(ebx);
-	push(ecx);
-	push(edx);
-	push(esi);
-	pushfd();
+  push(eax);
+  push(ebx);
+  push(ecx);
+  push(edx);
+  push(esi);
+  pushfd();
 
-	mov(kbd.write,ebx);
-	mov(0,(type byte [ebx]));
-	mov(&kbd.buffer[0],kbd.write);
+  mov(kbd.write,ebx);
+  mov(0,(type byte [ebx]));
+  mov(&kbd.buffer[0],kbd.write);
 
-	clear_echoline();
-	moveToEchCursor(START_ECHO_LINE);
+  clear_echoline();
+  moveToEchCursor(START_ECHO_LINE);
 
-	mov(&kbd.buffer[0],eax);
-	mov(&params,ecx);
-	zerify(esi);
+  mov(&kbd.buffer[0],eax);
+  mov(&params,ecx);
+  zerify(esi);
 	
-	forever
-		while (character.isWhitespace((type byte [eax])) && eax<ebx) do
-			inc(eax);
-		endwhile;
-		if (eax = ebx) then
-			break;
-		endif;
-		while (!(character.isWhitespace((type byte [eax]))) && eax<ebx) do
-			mov((type byte [eax]),dl);
-			mov(dl, [ecx]);
-			inc(eax);
-			inc(ecx);
-		endwhile;
-		mov(0, (type byte [ecx]));
-		inc(ecx);
-		inc(esi);
-	endfor;
+  forever
+    while (character.isWhitespace((type byte [eax])) && eax<ebx) do
+      inc(eax);
+    endwhile;
+    if (eax = ebx) then
+      break;
+    endif;
+    while (!(character.isWhitespace((type byte [eax]))) && eax<ebx) do
+      mov((type byte [eax]),dl);
+      mov(dl, [ecx]);
+      inc(eax);
+      inc(ecx);
+    endwhile;
+    mov(0, (type byte [ecx]));
+    inc(ecx);
+    inc(esi);
+  endfor;
 
-	if (esi > 0) then	
-		mov(attrib,al);
-		mov(USER_ATTRIB,attrib);
-		kputstring_HLA(&kbd.buffer[0]);
-		mov(al,attrib);
-		mov(cursor,ax);
-		div(NO_COLUMNS,ax);
-		if (ah <> 0) then
-			kputchar_HLA(LF);
-		endif;
+  if (esi > 0) then
+    mov(attrib,al);
+    mov(USER_ATTRIB,attrib);
+    kputstring_HLA(&kbd.buffer[0]);
+    mov(al,attrib);
+    mov(cursor,ax);
+    div(NO_COLUMNS,ax);
+    if (ah <> 0) then
+      kputchar_HLA(LF);
+    endif;
 
-		mov(&cmds[0],ebx);
+    mov(&cmds[0],ebx);
 
-		forever
-			if
-			(
-				(ebx = &cmds+NO_COMMANDS*@size(command_t))
-				||
-				(esi = (type command_t [ebx]).no_args && streq((type command_t [ebx]).command,&params))
-				||
-				((type command_t [ebx]).no_args = VARIANT && streq((type command_t [ebx]).command,&params))
-			) then
-				break;
-			endif;
-			add(@size(command_t),ebx);
-		endfor;			
+    forever
+      if
+       (
+       (ebx = &cmds+NO_COMMANDS*@size(command_t))
+       ||
+       (esi = (type command_t [ebx]).no_args && streq((type command_t [ebx]).command,&params))
+       ||
+       ((type command_t [ebx]).no_args = VARIANT && streq((type command_t [ebx]).command,&params))
+       ) then
+	  break;
+      endif;
+	add(@size(command_t),ebx);
+      endfor;			
 
-		if (ebx < &cmds+NO_COMMANDS*@size(command_t)) then
-			mov(esi,edx);
-			mov(&params,ecx);
-			forever
-				if (esi = 1) then
-					break;
-				else
-					while ((type byte [ecx]) != 0) do
-						inc(ecx);
-					endwhile;
-					dec(esi);
-					inc(ecx);
-					push(ecx);
-				endif;
-			endfor;
-			if ((type command_t [ebx]).no_args = VARIANT) then
-				push(edx);
-			endif;
-			mov((type command_t [ebx]).fnct,ecx);
-			call(ecx);
-			if ((type command_t [ebx]).no_args = VARIANT) then
-				shl(2,edx);
-				add(edx,esp);
-			endif;
-			mov(cursor,ax);
-			div(NO_COLUMNS,ax);
-			if (ah <> 0) then
-				kputchar_HLA(LF);
-			endif;
-		else
-			kputstring_HLA("No such command or invalid parameter "
-			  "count: ");
-			kputstring_HLA(&params);
-			kputchar_HLA(LF);
-		endif;
+    if (ebx < &cmds+NO_COMMANDS*@size(command_t)) then
+      mov(esi,edx);
+      mov(&params,ecx);
+      forever
+	if (esi = 1) then
+	  break;
+	else
+	  while ((type byte [ecx]) != 0) do
+	    inc(ecx);
+	  endwhile;
+	  dec(esi);
+	  inc(ecx);
+	  push(ecx);
 	endif;
-	popfd();
-	pop(esi);
-	pop(edx);
-	pop(ecx);
-	pop(ebx);
-	pop(eax);
+      endfor;
+      if ((type command_t [ebx]).no_args = VARIANT) then
+	push(edx);
+      endif;
+      mov((type command_t [ebx]).fnct,ecx);
+      call(ecx);
+      if ((type command_t [ebx]).no_args = VARIANT) then
+	shl(2,edx);
+	add(edx,esp);
+      endif;
+      mov(cursor,ax);
+      div(NO_COLUMNS,ax);
+      if (ah <> 0) then
+	kputchar_HLA(LF);
+      endif;
+    else
+      kputstring_HLA("No such command or invalid parameter count: ");
+      kputstring_HLA(&params);
+      kputchar_HLA(LF);
+    endif;
+  endif;
+  popfd();
+  pop(esi);
+  pop(edx);
+  pop(ecx);
+  pop(ebx);
+  pop(eax);
 end enter_pressed;
 
 procedure backspace_pressed;
 /*Decrements "kbd.write", then clears the character at "kbd.write"
 and does the equivalent on the echo line on the screen.*/
 begin backspace_pressed;
-	push(eax);
-	push(ebx);
-	pushfd();
-	if (kbd.write > &kbd.buffer[0]) then
-		dec(kbd.write);
-		subFromEchCursor(2);
-		movzx(echcursor,eax);
-		mov(echattrib,bh);
-		mov($00,bl);
-		gseg: mov(bx,[eax]);
-	endif;
-	popfd();
-	pop(ebx);
-	pop(eax);
+  push(eax);
+  push(ebx);
+  pushfd();
+  if (kbd.write > &kbd.buffer[0]) then
+    dec(kbd.write);
+    subFromEchCursor(2);
+    movzx(echcursor,eax);
+    mov(echattrib,bh);
+    mov($00,bl);
+    gseg: mov(bx,[eax]);
+  endif;
+  popfd();
+  pop(ebx);
+  pop(eax);
 end backspace_pressed;
 
 procedure shift_pressed;
 begin shift_pressed;
-	up(shiftSemaphore);
-	if (shiftSemaphore = 0) then
-		mov(0,kbd.modifier);
-	else
-		mov(1,kbd.modifier);
-	endif;
+  up(shiftSemaphore);
+  if (shiftSemaphore = 0) then
+    mov(0,kbd.modifier);
+  else
+    mov(1,kbd.modifier);
+  endif;
 end shift_pressed;
 
 procedure shift_released;
 begin shift_released;
-	down(shiftSemaphore);
-	if (shiftSemaphore = 0) then
-		mov(0,kbd.modifier);
-	else
-		mov(1,kbd.modifier);
-	endif;
+  down(shiftSemaphore);
+  if (shiftSemaphore = 0) then
+    mov(0,kbd.modifier);
+  else
+    mov(1,kbd.modifier);
+  endif;
 end shift_released;
 
 end Keys;

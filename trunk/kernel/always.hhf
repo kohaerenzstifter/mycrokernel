@@ -1,15 +1,15 @@
 //always.hhf
 
 #macro FAR_JMP(s,o);
-	byte %11101010;
-	dword o;
-	word s;//followed by 32-bit offset and 16-bit segment
+  byte %11101010;
+  dword o;
+  word s;//followed by 32-bit offset and 16-bit segment
 #endmacro;
 
 #macro FAR_CALL(s,o);
-	byte %10011010;
-	dword o;
-	word s;//followed by 32-bit offset and 16-bit segment
+  byte %10011010;
+  dword o;
+  word s;//followed by 32-bit offset and 16-bit segment
 #endmacro;
 
 #macro intrrpt_dummy(string _x_);

@@ -1,147 +1,147 @@
 const
-	//characters
-	ERROR: text:="$FF";
-	BCKSPCE: text:="$8";
-	LCTRL: text:="ERROR";
-	LSHIFT: text:="ERROR";
-	RSHIFT: text:="ERROR";
-	LALT: text:="ERROR";
-	SPACE: text:="' '";
-	CPSLCK: text:="ERROR";
-	F1: text:="ERROR";
-	F2: text:="ERROR";
-	F3: text:="ERROR";
-	F4: text:="ERROR";
-	F5: text:="ERROR";
-	F6: text:="ERROR";
-	F7: text:="ERROR";
-	F8: text:="ERROR";
-	F9: text:="ERROR";
-	F10: text:="ERROR";
-	F11: text:="ERROR";
-	F12: text:="ERROR";
-	NUMLCK: text:="ERROR";
-	SCRLCK: text:="ERROR";
-	HOME: text:="ERROR";
-	KEYPAD8: text:="ERROR";
-	KEYPAD9: text:="ERROR";
-	KEYPADMINUS: text:="ERROR";
-	KEYPAD4: text:="ERROR";
-	KEYPAD5: text:="ERROR";
-	KEYPAD6: text:="ERROR";
-	KEYPADPLUS: text:="ERROR";
-	KEYPAD1: text:="ERROR";
-	KEYPAD2: text:="ERROR";
-	KEYPAD3: text:="ERROR";
-	KEYPAD0: text:="ERROR";
-	KEYPADDEL: text:="ERROR";
+  //characters
+  ERROR: text:="$FF";
+  BCKSPCE: text:="$8";
+  LCTRL: text:="ERROR";
+  LSHIFT: text:="ERROR";
+  RSHIFT: text:="ERROR";
+  LALT: text:="ERROR";
+  SPACE: text:="' '";
+  CPSLCK: text:="ERROR";
+  F1: text:="ERROR";
+  F2: text:="ERROR";
+  F3: text:="ERROR";
+  F4: text:="ERROR";
+  F5: text:="ERROR";
+  F6: text:="ERROR";
+  F7: text:="ERROR";
+  F8: text:="ERROR";
+  F9: text:="ERROR";
+  F10: text:="ERROR";
+  F11: text:="ERROR";
+  F12: text:="ERROR";
+  NUMLCK: text:="ERROR";
+  SCRLCK: text:="ERROR";
+  HOME: text:="ERROR";
+  KEYPAD8: text:="ERROR";
+  KEYPAD9: text:="ERROR";
+  KEYPADMINUS: text:="ERROR";
+  KEYPAD4: text:="ERROR";
+  KEYPAD5: text:="ERROR";
+  KEYPAD6: text:="ERROR";
+  KEYPADPLUS: text:="ERROR";
+  KEYPAD1: text:="ERROR";
+  KEYPAD2: text:="ERROR";
+  KEYPAD3: text:="ERROR";
+  KEYPAD0: text:="ERROR";
+  KEYPADDEL: text:="ERROR";
 
-	//miscellaneous constants
-	INVALID_GDT_IDX: text:="NO_AVL_DSCRPTS * @size(segdesc_t)";
-	NO_AVL_PIDS: text:="$ffff + 1";
-	INVALID_PID: text:="NO_AVL_PIDS";
-	NO_SYSCALLS: text:="4";
-	INVALIDPROC: text:="(&proctab - 1)";
-	NO_AVL_DSCRPTS: text:="8192";	//the number of descriptors available in the gdt
-	MAX_NO_PROCS: text:="100";
-	FRONT: text:="1";
-	BACK: text:="0";
-	TRUE: text:="1";
-	FALSE: text:="0";
-	PAGE_GRANULARITY: text:="1";
-	BYTE_GRANULARITY: text:="0";
-	MAX_MEM_AREAS: text:="10";	//maximum number of memory areas
-	SIZE_RMIVT: text:="$400";	//size of the real mode interrupt vector table
-	SIZE_BDA: text:="$100";		//size of the bios data area
-	SIZE_GDT: text:="$2000";	//size reserved for the gdt
-	SIZE_IDT: text:="$2000";	//size reserved for the idt
-	KBD_BUFFER_SIZE: text:="NO_COLUMNS + 1";
-	NO_SCANCODES: text:="183";	//number of unescaped scancodes defined
-	NO_MODIFIERS: text:="2";
-	NO_COMMANDS: text:="3";		//number of known user commands
-	//CLOCK_DIVIDER: text:="$ffff";
-	CLOCK_DIVIDER: text:="$91A7";
-	VARIANT: text:="0";
-	NO_SCHEDQUEUES: text:="10";
-	NO_BASE: text:="$ffffffff";
-	NO_BITS_IN_BYTE: text:="8";
-	NO_GDTENTRIES_BYDEFAULT: text:="8";
-	PAGE_SIZE: text:="4096";
-	NOQUEUE: text:="-@size(schedqueue_t)";
+  //miscellaneous constants
+  INVALID_GDT_IDX: text:="NO_AVL_DSCRPTS * @size(segdesc_t)";
+  NO_AVL_PIDS: text:="$ffff + 1";
+  INVALID_PID: text:="NO_AVL_PIDS";
+  NO_SYSCALLS: text:="4";
+  INVALIDPROC: text:="(&proctab - 1)";
+  NO_AVL_DSCRPTS: text:="8192";	//the number of descriptors available in the gdt
+  MAX_NO_PROCS: text:="100";
+  FRONT: text:="1";
+  BACK: text:="0";
+  TRUE: text:="1";
+  FALSE: text:="0";
+  PAGE_GRANULARITY: text:="1";
+  BYTE_GRANULARITY: text:="0";
+  MAX_MEM_AREAS: text:="10";	//maximum number of memory areas
+  SIZE_RMIVT: text:="$400";	//size of the real mode interrupt vector table
+  SIZE_BDA: text:="$100";		//size of the bios data area
+  SIZE_GDT: text:="$2000";	//size reserved for the gdt
+  SIZE_IDT: text:="$2000";	//size reserved for the idt
+  KBD_BUFFER_SIZE: text:="NO_COLUMNS + 1";
+  NO_SCANCODES: text:="183";	//number of unescaped scancodes defined
+  NO_MODIFIERS: text:="2";
+  NO_COMMANDS: text:="3";		//number of known user commands
+  //CLOCK_DIVIDER: text:="$ffff";
+  CLOCK_DIVIDER: text:="$91A7";
+  VARIANT: text:="0";
+  NO_SCHEDQUEUES: text:="10";
+  NO_BASE: text:="$ffffffff";
+  NO_BITS_IN_BYTE: text:="8";
+  NO_GDTENTRIES_BYDEFAULT: text:="8";
+  PAGE_SIZE: text:="4096";
+  NOQUEUE: text:="-@size(schedqueue_t)";
 	
-	PID_IDLE: text:="0";
-	PID_CLOCK: text:="1";
-	PID_KEYINT: text:="2";
-	PID_SYSCALL: text:="3";
-	PID_KERNEL: text:="4";
+  PID_IDLE: text:="0";
+  PID_CLOCK: text:="1";
+  PID_KEYINT: text:="2";
+  PID_SYSCALL: text:="3";
+  PID_KERNEL: text:="4";
 
-	//PIC constants
-	PIC1_COMMAND: text:="$20";
-	PIC1_DATA: text:="$21";
-	PIC2_COMMAND: text:="$A0";
-	PIC2_DATA: text:="$A1";
-	PIC_EOI: text:="$20";
-	ICW1_ICW4: text:="$1";
-	ICW_SINGLE: text:="$2";
-	ICW1_INTERVAL4: text:="$4";
-	ICW1_LEVEL: text:="$8";
-	ICW1_INIT: text:="$10";
-	ICW4_8086: text:="$1";
-	ICW4_AUTO: text:="$2";
-	ICW4_BUF_SLAVE: text:="$8";
-	ICW4_BUF_MASTER: text:="$C";
-	ICW4_SFNM: text:="$10";
+  //PIC constants
+  PIC1_COMMAND: text:="$20";
+  PIC1_DATA: text:="$21";
+  PIC2_COMMAND: text:="$A0";
+  PIC2_DATA: text:="$A1";
+  PIC_EOI: text:="$20";
+  ICW1_ICW4: text:="$1";
+  ICW_SINGLE: text:="$2";
+  ICW1_INTERVAL4: text:="$4";
+  ICW1_LEVEL: text:="$8";
+  ICW1_INIT: text:="$10";
+  ICW4_8086: text:="$1";
+  ICW4_AUTO: text:="$2";
+  ICW4_BUF_SLAVE: text:="$8";
+  ICW4_BUF_MASTER: text:="$C";
+  ICW4_SFNM: text:="$10";
 
-	//absolute memory addresses
-	GDT_BASE: text:="$10700";
-	IDT_BASE: text:="$12700";
-	_512_BASE: text:="$500";
-	KERNEL_BASE: text:="$14800"; 
+  //absolute memory addresses
+  GDT_BASE: text:="$10700";
+  IDT_BASE: text:="$12700";
+  _512_BASE: text:="$500";
+  KERNEL_BASE: text:="$14800"; 
 
-	//indices into global descriptor table
-	IDX_KERNELCODE:text:="1";
-	IDX_KERNELDATA:text:="2";
-	IDX_KERNELSTACK:text:="3";
-	IDX_INTERMEDIARYCODE:text:="4"; //this segment shall not be used
-	IDX_VIDEO:text:="5";
-	IDX_MEMORY:text:="6";
-	IDX_INTSTACK:text:="7";
+  //indices into global descriptor table
+  IDX_KERNELCODE:text:="1";
+  IDX_KERNELDATA:text:="2";
+  IDX_KERNELSTACK:text:="3";
+  IDX_INTERMEDIARYCODE:text:="4"; //this segment shall not be used
+  IDX_VIDEO:text:="5";
+  IDX_MEMORY:text:="6";
+  IDX_INTSTACK:text:="7";
 
-	IDX_KERNELTSS:text:="8";
-	IDX_IDLETASKTSS:text:="9";
-	IDX_CLOCKINTTSS:text:="10";
-	IDX_KEYINTTSS:text:="11";
+  IDX_KERNELTSS:text:="8";
+  IDX_IDLETASKTSS:text:="9";
+  IDX_CLOCKINTTSS:text:="10";
+  IDX_KEYINTTSS:text:="11";
 
 
-	IDX_TASK1TSS:text:="12";
-	IDX_PRIV3CODE:text:="13";
-	IDX_PRIV3DATA:text:="14";
-	IDX_TASK1STACK:text:="15";
-	IDX_SYSCALL:text:="16";
+  IDX_TASK1TSS:text:="12";
+  IDX_PRIV3CODE:text:="13";
+  IDX_PRIV3DATA:text:="14";
+  IDX_TASK1STACK:text:="15";
+  IDX_SYSCALL:text:="16";
 
-	//memory descriptor types (as returned by bios)
-	RAM: text:="1";
-	RESERVED: text:="2";
+  //memory descriptor types (as returned by bios)
+  RAM: text:="1";
+  RESERVED: text:="2";
 
-	//video display constants
-	USER_ATTRIB: text:="25";
-	END_ECHO_LINE: text:="NO_COLUMNS*25*2";
-	START_ECHO_LINE: text:="NO_COLUMNS*24*2";
+  //video display constants
+  USER_ATTRIB: text:="25";
+  END_ECHO_LINE: text:="NO_COLUMNS*25*2";
+  START_ECHO_LINE: text:="NO_COLUMNS*24*2";
 
-	//process constants
-	EMPTY: text:="%1";		//the process table slot is empty
-	RECEIVING: text:="%10";		//the process wants to receive
-	SENDING: text:="%10";		//the process wants to send
+  //process constants
+  EMPTY: text:="%1";		//the process table slot is empty
+  RECEIVING: text:="%10";		//the process wants to receive
+  SENDING: text:="%10";		//the process wants to send
 
-	NO_PROCSEGMENTS: text:="6";
-	E_NONEWPROCESS: text:="MAX_NO_PROCS*@size(dword)";
+  NO_PROCSEGMENTS: text:="6";
+  E_NONEWPROCESS: text:="MAX_NO_PROCS*@size(dword)";
 
-	//generic system call replies
-	OK: text:="0";
-	UNKNOWNSYSCALL: text:="-1";
-	INVALIDBUFFER: text:="-2";
-	CIRCULARSEND: text:="-3";
-	WOULDBLOCK: text:="-4";
-	INVALIDFEATURE: text:="-5";
+  //generic system call replies
+  OK: text:="0";
+  UNKNOWNSYSCALL: text:="-1";
+  INVALIDBUFFER: text:="-2";
+  CIRCULARSEND: text:="-3";
+  WOULDBLOCK: text:="-4";
+  INVALIDFEATURE: text:="-5";
 
-	TESTFEATURE: text:="1";
+  TESTFEATURE: text:="1";

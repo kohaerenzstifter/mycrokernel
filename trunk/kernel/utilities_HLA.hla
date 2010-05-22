@@ -6,272 +6,272 @@ unit Utilities_HLA;
 
 procedure set_error(context: dword; process:dword);
 begin set_error;
-	push(eax);
-	push(ebx);
-	push(ecx);
-	mov(context,eax);
-	mov(4, (type tss_t [eax]).ecx_reg);
-	mov(process,ebx);
-	mov(4, (type tss_t [ebx]).ecx_reg);
+  push(eax);
+  push(ebx);
+  push(ecx);
+  mov(context,eax);
+  mov(4, (type tss_t [eax]).ecx_reg);
+  mov(process,ebx);
+  mov(4, (type tss_t [ebx]).ecx_reg);
 
-	mov(&err, (type tss_t [eax]).edx_reg);
-	mov((type tss_t [ebx]).esi_reg, ecx);
-	mov(ecx,(type tss_t [ebx]).edx_reg);
+  mov(&err, (type tss_t [eax]).edx_reg);
+  mov((type tss_t [ebx]).esi_reg, ecx);
+  mov(ecx,(type tss_t [ebx]).edx_reg);
 
-	exchangeData(eax, ebx);
+  exchange_data(eax, ebx);
 
-	pop(ecx);
-	pop(ebx);
-	pop(eax);
+  pop(ecx);
+  pop(ebx);
+  pop(eax);
 end set_error;
 
 procedure getFreeBitInBitfield(bitfield: dword; bits: uns32);
 begin getFreeBitInBitfield;
-	push(ebx);
-	push(ecx);
-	push(edx);
-	pushfd();
-	zerify(eax);
-	mov(%1,ebx);
-	mov(bitfield,edx);
-	forever
-		if (eax = bits) then
-			break;
-		endif;
-		mov(ebx,ecx);
-		and([edx],ecx);
-		if (!ecx) then
-			break;
-		else
-			inc(eax);
-			rol(1,ebx);
-			if (ebx = %1) then
-				add(@size(dword),edx);
-			endif;
-		endif;
-	endfor;
-	popfd();
-	pop(edx);
-	pop(ecx);
-	pop(ebx);
+  push(ebx);
+  push(ecx);
+  push(edx);
+  pushfd();
+  zerify(eax);
+  mov(%1,ebx);
+  mov(bitfield,edx);
+  forever
+    if (eax = bits) then
+      break;
+    endif;
+    mov(ebx,ecx);
+    and([edx],ecx);
+    if (!ecx) then
+      break;
+    else
+      inc(eax);
+      rol(1,ebx);
+      if (ebx = %1) then
+	add(@size(dword),edx);
+      endif;
+    endif;
+  endfor;
+  popfd();
+  pop(edx);
+  pop(ecx);
+  pop(ebx);
 end  getFreeBitInBitfield;
 
 procedure unfreeBitInBitfield(bitfield: dword; what: dword);
 begin unfreeBitInBitfield;
-	push(eax);
-	push(ebx);
-	push(ecx);
-	push(edx);
-	pushfd();
-	mov(what,eax);
-	mov(bitfield,ebx);
-	zerify(edx);
-	div(8,edx:eax);
-	add(eax,ebx);
-	mov(edx,ecx);
-	mov(%1,dl);
-	rol(cl,dl);
-	or(dl,(type byte [ebx]));
-	popfd();
-	pop(edx);
-	pop(ecx);
-	pop(ebx);
-	pop(eax);
+  push(eax);
+  push(ebx);
+  push(ecx);
+  push(edx);
+  pushfd();
+  mov(what,eax);
+  mov(bitfield,ebx);
+  zerify(edx);
+  div(8,edx:eax);
+  add(eax,ebx);
+  mov(edx,ecx);
+  mov(%1,dl);
+  rol(cl,dl);
+  or(dl,(type byte [ebx]));
+  popfd();
+  pop(edx);
+  pop(ecx);
+  pop(ebx);
+  pop(eax);
 end unfreeBitInBitfield;
 
 procedure freeBitInBitfield(bitfield: dword; what: dword);
 begin freeBitInBitfield;
-	push(eax);
-	push(ebx);
-	push(ecx);
-	push(edx);
-	pushfd();
-	mov(what,eax);
-	mov(bitfield,ebx);
-	zerify(edx);
-	div(8,edx:eax);
-	add(eax,ebx);
-	mov(edx,ecx);
-	mov(%11111110,dl);
-	rol(cl,dl);
-	and(dl,(type byte [eax]));
-	popfd();
-	pop(edx);
-	pop(ecx);
-	pop(ebx);
-	pop(eax);
+  push(eax);
+  push(ebx);
+  push(ecx);
+  push(edx);
+  pushfd();
+  mov(what,eax);
+  mov(bitfield,ebx);
+  zerify(edx);
+  div(8,edx:eax);
+  add(eax,ebx);
+  mov(edx,ecx);
+  mov(%11111110,dl);
+  rol(cl,dl);
+  and(dl,(type byte [eax]));
+  popfd();
+  pop(edx);
+  pop(ecx);
+  pop(ebx);
+  pop(eax);
 end freeBitInBitfield;
 
-procedure getFreeGDTIDX;
-begin getFreeGDTIDX;
-	push(edx);
-	pushfd();
-	getFreeBitInBitfield(&gdtBitmap, NO_AVL_DSCRPTS);
-	mul(@size(segdesc_t),eax);
-	popfd();
-	pop(edx);
-end  getFreeGDTIDX;
+procedure get_free_gdt_idx;
+begin get_free_gdt_idx;
+  push(edx);
+  pushfd();
+  getFreeBitInBitfield(&gdtBitmap, NO_AVL_DSCRPTS);
+  mul(@size(segdesc_t),eax);
+  popfd();
+  pop(edx);
+end  get_free_gdt_idx;
 
-procedure unfreeGDTIDX(what: dword);
-begin unfreeGDTIDX;
-	push(eax);
-	push(edx);
-	pushfd();
-	mov(what,eax);
-	zerify(edx);
-	div(@size(segdesc_t),edx:eax);
-	unfreeBitInBitfield(&gdtBitmap, eax);
-	popfd();
-	pop(edx);
-	pop(eax);
-end unfreeGDTIDX;
+procedure unfree_gdt_idx(what: dword);
+begin unfree_gdt_idx;
+  push(eax);
+  push(edx);
+  pushfd();
+  mov(what,eax);
+  zerify(edx);
+  div(@size(segdesc_t),edx:eax);
+  unfreeBitInBitfield(&gdtBitmap, eax);
+  popfd();
+  pop(edx);
+  pop(eax);
+end unfree_gdt_idx;
 
-procedure freeGDTIDX(what: dword);
-begin freeGDTIDX;
-	push(eax);
-	push(edx);
-	pushfd();
-	mov(what,eax);
-	zerify(edx);
-	div(@size(segdesc_t),edx:eax);
-	freeBitInBitfield(&gdtBitmap, eax);
-	popfd();
-	pop(edx);
-	pop(eax);
-end freeGDTIDX;
+procedure free_gdt_idx(what: dword);
+begin free_gdt_idx;
+  push(eax);
+  push(edx);
+  pushfd();
+  mov(what,eax);
+  zerify(edx);
+  div(@size(segdesc_t),edx:eax);
+  freeBitInBitfield(&gdtBitmap, eax);
+  popfd();
+  pop(edx);
+  pop(eax);
+end free_gdt_idx;
 
-procedure getFreePID;
-begin getFreePID;
-	getFreeBitInBitfield(&pidBitmap, NO_AVL_PIDS);
-end  getFreePID;
+procedure get_free_pid;
+begin get_free_pid;
+  getFreeBitInBitfield(&pidBitmap, NO_AVL_PIDS);
+end  get_free_pid;
 
-procedure unfreePID(what: dword);
-begin unfreePID;
-	push(eax);
-	pushfd();
-	mov(what,eax);
-	unfreeBitInBitfield(&pidBitmap, eax);
-	popfd();
-	pop(eax);
-end unfreePID;
+procedure unfree_pid(what: dword);
+begin unfree_pid;
+  push(eax);
+  pushfd();
+  mov(what,eax);
+  unfreeBitInBitfield(&pidBitmap, eax);
+  popfd();
+  pop(eax);
+end unfree_pid;
 
-procedure freePID(what: dword);
-begin freePID;
-	push(eax);
-	pushfd();
-	mov(what,eax);
-	freeBitInBitfield(&pidBitmap, eax);
-	popfd();
-	pop(eax);
-end freePID;
+procedure free_pid(what: dword);
+begin free_pid;
+  push(eax);
+  pushfd();
+  mov(what,eax);
+  freeBitInBitfield(&pidBitmap, eax);
+  popfd();
+  pop(eax);
+end free_pid;
 
 procedure streq(s1: string; s2: string);
 /*Compares s1 to s2. If they are equal, 1 will be returned in eax.
 If they are not equal, 0 will be returned in eax.*/
 begin streq;
-	push(ebx);
-	push(ecx);
-	push(edx);
-	pushfd();
-	mov(s1,ebx);
-	mov(s2,ecx);
-	mov((type byte [ebx]),dh);
-	mov((type byte [ecx]),dl);
-	forever
-		if (dh = 0 && dl = 0) then
-			mov(1,eax);
-			break;
-		elseif (dh != dl) then
-			zerify(eax);
-			break;
-		else
-			inc(ebx);
-			inc(ecx);
-			mov((type byte [ebx]),dh);
-			mov((type byte [ecx]),dl);
-		endif;
-	endfor;
-	popfd();
-	pop(edx);
-	pop(ecx);
-	pop(ebx);
+  push(ebx);
+  push(ecx);
+  push(edx);
+  pushfd();
+  mov(s1,ebx);
+  mov(s2,ecx);
+  mov((type byte [ebx]),dh);
+  mov((type byte [ecx]),dl);
+  forever
+    if (dh = 0 && dl = 0) then
+      mov(1,eax);
+      break;
+    elseif (dh != dl) then
+      zerify(eax);
+      break;
+    else
+      inc(ebx);
+      inc(ecx);
+      mov((type byte [ebx]),dh);
+      mov((type byte [ecx]),dl);
+    endif;
+  endfor;
+  popfd();
+  pop(edx);
+  pop(ecx);
+  pop(ebx);
 end streq;
 
-procedure exchangeData(sender: dword; receiver: dword);
-begin exchangeData;
-	push(ebx);
-	push(ecx);
-	push(edx);
-	push(esi);
-	push(edi);
-	pushfd();
-	mov(sender, eax);
-	mov(receiver, ebx);
-	mov((type tss_t [eax]).ecx_reg, ecx);
-	if (ecx > (type tss_t [ebx]).ecx_reg) then
-	  mov((type tss_t [ebx]).ecx_reg, ecx);
-	endif;
-	//ecx now contains number of bytes to copy
-	push(ecx);
+procedure exchange_data(sender: dword; receiver: dword);
+begin exchange_data;
+  push(ebx);
+  push(ecx);
+  push(edx);
+  push(esi);
+  push(edi);
+  pushfd();
+  mov(sender, eax);
+  mov(receiver, ebx);
+  mov((type tss_t [eax]).ecx_reg, ecx);
+  if (ecx > (type tss_t [ebx]).ecx_reg) then
+    mov((type tss_t [ebx]).ecx_reg, ecx);
+  endif;
+  //ecx now contains number of bytes to copy
+  push(ecx);
 
-	movzx((type tss_t [ebx]).ds_reg,edi);
-	and($fff8,edi);
-	add(GDT_BASE, edi);
-	zerify(edx);
-	fseg: mov((type segdesc_t [edi]).base3, dh);
-	fseg: movzx((type segdesc_t [edi]).base2, esi);
-	or(edx,esi);
-	fseg: movzx((type segdesc_t [edi]).base1,edx);
-	shl(16,esi);
-	or(edx,esi);
-	add((type tss_t [ebx]).edx_reg,esi);
+  movzx((type tss_t [ebx]).ds_reg,edi);
+  and($fff8,edi);
+  add(GDT_BASE, edi);
+  zerify(edx);
+  fseg: mov((type segdesc_t [edi]).base3, dh);
+  fseg: movzx((type segdesc_t [edi]).base2, esi);
+  or(edx,esi);
+  fseg: movzx((type segdesc_t [edi]).base1,edx);
+  shl(16,esi);
+  or(edx,esi);
+  add((type tss_t [ebx]).edx_reg,esi);
 
-	movzx((type tss_t [eax]).ds_reg,edx);
-	and($fff8,edx);
-	add(GDT_BASE, edx);
-	push(eax);
-	zerify(eax);
-	fseg: mov((type segdesc_t [edx]).base3, ah);
-	fseg: movzx((type segdesc_t [edx]).base2, edi);
-	or(eax,edi);
-	fseg: movzx((type segdesc_t [edx]).base1,eax);
-	shl(16,edi);
-	or(eax,edi);
-	pop(eax);
-	add((type tss_t [eax]).edx_reg,edi);
+  movzx((type tss_t [eax]).ds_reg,edx);
+  and($fff8,edx);
+  add(GDT_BASE, edx);
+  push(eax);
+  zerify(eax);
+  fseg: mov((type segdesc_t [edx]).base3, ah);
+  fseg: movzx((type segdesc_t [edx]).base2, edi);
+  or(eax,edi);
+  fseg: movzx((type segdesc_t [edx]).base1,eax);
+  shl(16,edi);
+  or(eax,edi);
+  pop(eax);
+  add((type tss_t [eax]).edx_reg,edi);
 
-	mov(ecx,(type tss_t [eax]).eax_reg);
-	mov(ecx,(type tss_t [ebx]).eax_reg);
+  mov(ecx,(type tss_t [eax]).eax_reg);
+  mov(ecx,(type tss_t [ebx]).eax_reg);
 
-	while (ecx > 3) do
-	  fseg:mov([edi],edx);
-	  fseg:mov(edx,[esi]);
-	  sub(4,ecx);
-	  add(4,edi);
-	  add(4,esi);
-	endwhile;
-	if (ecx > 1) then
-	  fseg:mov([edi],dx);
-	  fseg:mov(dx,[esi]);
-	  sub(2,ecx);
-	  add(2,edi);
-	  add(2,esi);
-	endif;
-	if (ecx > 0) then
-	  fseg:mov([edi],dl);
-	  movzx(dl, edx);
-	  fseg:mov(dl,[esi]);
-	  sub(1,ecx);
-	  add(1,edi);
-	  add(1,esi);
-	endif;
-	pop(eax); //was pushed from ecx before: number of bytes copied
-	popfd();
-	pop(edi);
-	pop(esi);
-	pop(edx);
-	pop(ecx);
-	pop(ebx);
-end exchangeData;
+  while (ecx > 3) do
+    fseg:mov([edi],edx);
+    fseg:mov(edx,[esi]);
+    sub(4,ecx);
+    add(4,edi);
+    add(4,esi);
+  endwhile;
+  if (ecx > 1) then
+    fseg:mov([edi],dx);
+    fseg:mov(dx,[esi]);
+    sub(2,ecx);
+    add(2,edi);
+    add(2,esi);
+    endif;
+  if (ecx > 0) then
+    fseg:mov([edi],dl);
+    movzx(dl, edx);
+    fseg:mov(dl,[esi]);
+    sub(1,ecx);
+    add(1,edi);
+    add(1,esi);
+  endif;
+  pop(eax); //was pushed from ecx before: number of bytes copied
+  popfd();
+  pop(edi);
+  pop(esi);
+  pop(edx);
+  pop(ecx);
+  pop(ebx);
+end exchange_data;
 
 end Utilities_HLA;

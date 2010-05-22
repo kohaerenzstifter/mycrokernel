@@ -3,14 +3,14 @@ unit Table;
 #includeonce("external.hhf");
 
 static //global variables go here
-	align(4);
-	cursor: uns16:=0; //the position of the cursor (absolute memory offset from gs, i.e. ALWAYS even)
-	align(4);
-	attrib: byte:=15; //the current attribute byte of text written to screen
+  align(4);
+  cursor: uns16:=0; //the position of the cursor (absolute memory offset from gs, i.e. ALWAYS even)
+  align(4);
+  attrib: byte:=15; //the current attribute byte of text written to screen
 
 storage //uninitialised global variables go here
-	align(4);
+  align(4);
 
 readonly //global, initialised, read-only variables go here; (better not use readonly section)
-	align(4);
+  align(4);
 end Table;

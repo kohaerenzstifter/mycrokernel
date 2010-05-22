@@ -10,13 +10,13 @@ unit Hardint;
 
 procedure @text("hw_intrrpt" +_x_); @nodisplay; @noalignstack; @noframe;
 begin @text("hw_intrrpt" +_x_);
-	forever
-	    do_hard_int(@text(_x_));
-	    add(4,esp);
-	    mov(PIC_EOI,al);
-	    out(al,PIC1_COMMAND);
-	    iret();
-	endfor;
+  forever
+    do_hard_int(@text(_x_));
+    add(4,esp);
+    mov(PIC_EOI,al);
+    out(al,PIC1_COMMAND);
+    iret();
+  endfor;
 end @text("hw_intrrpt" +_x_);
 
 #endmacro

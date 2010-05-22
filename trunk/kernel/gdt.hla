@@ -3,40 +3,26 @@ unit Gdt;
 #includeonce("const.hhf")
 #includeonce("types.hhf")
 
-/*const
-#if (@text(@env("KERNEL_SIZE")) mod PAGE_SIZE = 0)
-	#print("IS NULL");
-	KERNEL_PAGES_EXTRA: text:="0";
-#else
-	KERNEL_PAGES_EXTRA: text:="1";
-#endif*/
-
-//#print("_KERNEL_SIZE: ", @text(@env("_KERNEL_SIZE")));
-
-//(@text(@env("KERNEL_SIZE")) mod PAGE_SIZE) + KERNEL_PAGES_EXTRA
-
 static
-	globalDT: segdesc_t[NO_GDTENTRIES_BYDEFAULT] :=
-	[
-		segdesc_t:[0, 0, 0, 0, 0, 0],
-		segdesc_t:[(@text(@env("_KERNEL_SIZE")) &
-		  %1111111111111111),
-		  $ffff & KERNEL_BASE,
-		  KERNEL_BASE >> 16, %10011010,
-		  (%01000000 | (@text(@env("_KERNEL_SIZE")) >> 16)),
-		  KERNEL_BASE >> 24],
-		segdesc_t:[(@text(@env("_KERNEL_SIZE")) &
-		  %1111111111111111),
-		  $ffff & KERNEL_BASE,
-		  KERNEL_BASE >> 16, %10010010, (%01000000 |
-		  (@text(@env("_KERNEL_SIZE")) >> 16)),
-		  KERNEL_BASE >> 24],
-		//segdesc_t:[$ffff, $4800, $1, %10011010, %01001111, 0],
-		//segdesc_t:[$ffff, $4800, $1, %10010010, %01001111, 0],
-		segdesc_t:[$fff8, $700, $10, %10010110, %11001111, 0],
-		segdesc_t:[$0200, $0500, 0, %10011010, %01001111, 0],
-		segdesc_t:[$0fa2, $8000, $b, %10010010, %01000000, 0],
-		segdesc_t:[$ffff, 0, 0, %10010010, %11001111, 0],
-		segdesc_t:[$fff8, $8700, 0, %10010110, %11001111, 0]
-	];
+  globalDT: segdesc_t[NO_GDTENTRIES_BYDEFAULT] :=
+  [
+    segdesc_t:[0, 0, 0, 0, 0, 0],
+    segdesc_t:[(@text(@env("_KERNEL_SIZE")) &
+     %1111111111111111),
+     $ffff & KERNEL_BASE,
+     KERNEL_BASE >> 16, %10011010,
+     (%01000000 | (@text(@env("_KERNEL_SIZE")) >> 16)),
+     KERNEL_BASE >> 24],
+     segdesc_t:[(@text(@env("_KERNEL_SIZE")) &
+     %1111111111111111),
+     $ffff & KERNEL_BASE,
+     KERNEL_BASE >> 16, %10010010, (%01000000 |
+     (@text(@env("_KERNEL_SIZE")) >> 16)),
+     KERNEL_BASE >> 24],
+     segdesc_t:[$fff8, $700, $10, %10010110, %11001111, 0],
+     segdesc_t:[$0200, $0500, 0, %10011010, %01001111, 0],
+    segdesc_t:[$0fa2, $8000, $b, %10010010, %01000000, 0],
+    segdesc_t:[$ffff, 0, 0, %10010010, %11001111, 0],
+    segdesc_t:[$fff8, $8700, 0, %10010110, %11001111, 0]
+  ];
 end Gdt;
