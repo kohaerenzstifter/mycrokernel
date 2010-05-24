@@ -7,7 +7,7 @@ unit Timer;
 
 procedure clock_int; @nodisplay; @noalignstack; @noframe;
 begin clock_int;
-  forever
+/*  forever
     if (dl = 0) then //a second has passed
       inc(cl);
       if (cl = 60) then
@@ -33,7 +33,7 @@ begin clock_int;
     mov(PIC_EOI,al);
     out(al,PIC1_COMMAND);
     iret();
-  endfor;
+  endfor;*/
 end clock_int;
 
 end Timer;

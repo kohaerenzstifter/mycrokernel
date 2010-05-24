@@ -453,5 +453,5 @@ void unblock_waiting_senders(tss_t *context, tss_t *process)
 //this may unblock the process
 void do_hard_int(uint32_t number)
 {
-  //TODO
+  kputstring("interrupt: "); kputhex(number); kputchar(LF);
 }
