@@ -1,3 +1,5 @@
+#includeonce("always.hhf")
+
 const
   //characters
   ERROR: text:="$FF";
@@ -70,10 +72,22 @@ const
   NOQUEUE: text:="-@size(schedqueue_t)";
 	
   PID_IDLE: text:="0";
-  PID_CLOCK: text:="1";
-  PID_KEYINT: text:="2";
-  PID_SYSCALL: text:="3";
-  PID_KERNEL: text:="4";
+  PID_KERNEL: text:="1";
+
+
+/*  PID_CLOCK: text:="2";
+  PID_KEYINT: text:="3";*/
+  PID_SYSCALL: text:="0"; //deprecated
+
+  PID_INTERRUPT: text:="2";
+#macro intrrpt_pid(string _x_);
+  @text("PID_INTERRUPT"+_x_):text:=@text("""PID_INTERRUPT + " + _x_ + """");
+#endmacro
+
+?@tostring:intrrpt:text := "intrrpt_pid";
+  #include("interrupts.hhf");
+
+
 
   //PIC constants
   PIC1_COMMAND: text:="$20";
@@ -109,9 +123,32 @@ const
 
   IDX_KERNELTSS:text:="8";
   IDX_IDLETASKTSS:text:="9";
-  IDX_CLOCKINTTSS:text:="10";
-  IDX_KEYINTTSS:text:="11";
+/*  IDX_CLOCKINTTSS:text:="10";
+  IDX_KEYINTTSS:text:="11";*/
+ /* IDX_INTERRUPT:text:="10";
 
+#macro intrrpt_idx(string _x_);
+  @text("IDX_INTERRUPT"+_x_):text:=@text("""IDX_INTERRUPT + " + _x_ + """");
+#endmacro
+
+?@tostring:intrrpt:text := "intrrpt_idx";
+  #include("interrupts.hhf");*/
+  IDX_INTERRUPT0:text:="10";
+  IDX_INTERRUPT1:text:="11";
+  IDX_INTERRUPT2:text:="12";
+  IDX_INTERRUPT3:text:="13";
+  IDX_INTERRUPT4:text:="14";
+  IDX_INTERRUPT5:text:="15";
+  IDX_INTERRUPT6:text:="16";
+  IDX_INTERRUPT7:text:="17";
+  IDX_INTERRUPT8:text:="18";
+  IDX_INTERRUPT9:text:="19";
+  IDX_INTERRUPT10:text:="20";
+  IDX_INTERRUPT11:text:="21";
+  IDX_INTERRUPT12:text:="22";
+  IDX_INTERRUPT13:text:="23";
+  IDX_INTERRUPT14:text:="24";
+  IDX_INTERRUPT15:text:="25";
 
   IDX_TASK1TSS:text:="12";
   IDX_PRIV3CODE:text:="13";

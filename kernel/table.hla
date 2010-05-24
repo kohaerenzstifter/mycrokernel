@@ -381,7 +381,7 @@ static //global variables go here
     NULL,
     NULL
   ];
-
+/*
   clockintstate: tss_t := tss_t:[
     0,
     0,
@@ -430,8 +430,8 @@ static //global variables go here
     NULL,
     NULL,
     NULL
-  ];
-
+  ];*/
+/*
   keyintstate: tss_t := tss_t:[
     0,
     0,
@@ -480,7 +480,7 @@ static //global variables go here
     NULL,
     NULL,
     NULL
-  ];
+  ];*/
 
   syscallstate: tss_t := tss_t:[
     0,
@@ -534,7 +534,7 @@ static //global variables go here
 
 
 #macro intrrpt_state(string _x_);
-  @text("hw_intrrpt"+_x_+"state"): tss_t := tss_t:[
+  @text("intrrpt" + _x_ + "state"): tss_t := tss_t:[
     0,
     0,
     $fffffffc,
@@ -545,7 +545,7 @@ static //global variables go here
     0,
     0,
     0,
-    PID_SYSCALL,
+    @text("PID_INTERRUPT"+_x_),
     0,
     0,
     &@text("hw_intrrpt" +_x_),
@@ -576,7 +576,7 @@ static //global variables go here
     0,
     @size(tss_t),
     0,
-    IDX_SYSCALL*@size(segdesc_t),
+    @text("IDX_INTERRUPT"+_x_)*@size(segdesc_t),
     0,
     NULL,
     NULL,

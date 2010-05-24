@@ -203,7 +203,6 @@ begin write_tss_desc;
   push(ebx);
   push(edx);
   pushfd();
-
   mov(index,eax);
   if (gdt.limit < ax) then
     add(@size(segdesc_t),eax);
@@ -596,8 +595,8 @@ unset:
     forever
       if (ebx = ecx) then
 	break;
-	sseg:mov([ecx],edx);
       endif;
+      sseg:mov([ecx],edx);
       free_gdt_idx(edx);
       sseg:sub(@size(dword),ecx);
     endfor;
