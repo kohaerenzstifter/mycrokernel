@@ -53,7 +53,6 @@ begin start;
   write_tss_desc(IDX_KEYINTTSS*@size(segdesc_t),104,&keyintstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
   write_tss_desc(IDX_SYSCALL*@size(segdesc_t),104,&syscallstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);*/
 
-kputstring_HLA("writing now "); kputchar_HLA(LF);
 #macro intrrpt_write_tss(string _x_);
   write_tss_desc(@text("IDX_INTERRUPT"+_x_+"*@size(segdesc_t)"),104,&@text("intrrpt" + _x_ + "state")+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
 #endmacro
@@ -83,7 +82,7 @@ kputstring_HLA("writing now "); kputchar_HLA(LF);
 
 
 #macro intrrpt_hook(string _x_);
-  hook_int(@text("20 + "+_x_),TSS,@text("IDX_INTERRUPT"+_x_)*@size(segdesc_t),0);
+  hook_int(@text("$20 + "+_x_),TSS,@text("IDX_INTERRUPT"+_x_)*@size(segdesc_t),0);
 #endmacro
 ?@tostring:intrrpt:text := "intrrpt_hook";
 
@@ -124,15 +123,15 @@ kputstring_HLA("writing now "); kputchar_HLA(LF);
 
   kputstring_HLA("video base: "); kputhex_HLA(edx); kputchar_HLA(LF);
   kputstring_HLA("video size: "); kputhex_HLA(@text(@env("VIDEO_SIZE"))); kputchar_HLA(LF);
-/*
-  create_process(3,400,0,edx,edx,NO_BASE,NO_BASE,$b8000,edx, $fffc,$fffc,0,0, 4096,$fffc);
+
+  create_process(3,100,0,edx,edx,NO_BASE,NO_BASE,$b8000,edx, $fffc,$fffc,0,0, 4096,$fffc);
   enqueue(pproctab[eax]);
   add(4,esp);
 
   create_process(0,100,&writer,KERNEL_BASE, KERNEL_BASE,NO_BASE,NO_BASE,$b8000, KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$ffc);
   enqueue(pproctab[eax]);
   add(4,esp);
-*/
+
 
   sti;
 here:	hlt;

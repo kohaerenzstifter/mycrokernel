@@ -125,14 +125,17 @@ const
   IDX_IDLETASKTSS:text:="9";
 /*  IDX_CLOCKINTTSS:text:="10";
   IDX_KEYINTTSS:text:="11";*/
- /* IDX_INTERRUPT:text:="10";
+/*  IDX_INTERRUPT:text:="10";
 
 #macro intrrpt_idx(string _x_);
   @text("IDX_INTERRUPT"+_x_):text:=@text("""IDX_INTERRUPT + " + _x_ + """");
 #endmacro
 
 ?@tostring:intrrpt:text := "intrrpt_idx";
-  #include("interrupts.hhf");*/
+  #include("interrupts.hhf");
+
+*/
+
   IDX_INTERRUPT0:text:="10";
   IDX_INTERRUPT1:text:="11";
   IDX_INTERRUPT2:text:="12";
