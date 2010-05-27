@@ -11,7 +11,7 @@ void kputunsint(uint32_t what);
 void kputstring(char *what);
 void kputchar(char what);
 void pickNextProc();
-uint32_t getLimit(uint32_t gdtIndex);
+uint32_t get_limit(uint32_t gdtIndex);
 //void call_syscall_setFeatures_C(uint8_t features);
 //TODO: should return error (parameter)
 //tss_t *call_syscall_requestFeatures_C(uint8_t features);
