@@ -121,14 +121,11 @@ begin start;
   or(ecx,edx);
   add(KERNEL_BASE,edx);					//the base address of the video driver is now in edx!
 
-  kputstring_HLA("video base: "); kputhex_HLA(edx); kputchar_HLA(LF);
-  kputstring_HLA("video size: "); kputhex_HLA(@text(@env("VIDEO_SIZE"))); kputchar_HLA(LF);
-
   create_process(3,100,0,edx,edx,NO_BASE,NO_BASE,$b8000,edx, $fffc,$fffc,0,0, 4096,$fffc);
   enqueue(pproctab[eax]);
   add(4,esp);
 
-  create_process(0,100,&writer,KERNEL_BASE, KERNEL_BASE,NO_BASE,NO_BASE,$b8000, KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$ffc);
+  create_process(0,100,&writer,KERNEL_BASE, KERNEL_BASE,NO_BASE,NO_BASE,$b8000, KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$fffc);
   enqueue(pproctab[eax]);
   add(4,esp);
 
