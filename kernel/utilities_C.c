@@ -14,7 +14,6 @@ typedef struct _feature {
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
 static tss_t *irqs[MAX_IRQ + 1] = { NULL };
 
-
 void paus()
 {
   int i;
@@ -77,68 +76,6 @@ void show_queue()
     kputhex(cur); kputchar(' ');
   }
   kputchar(LF);
-}
-
-void charge_process()
-{
-kputstring("charge"); kputchar(LF);
-  if (curptr == &idlestate) {
-//kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
-    return;
-//kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
-  }
-//kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
- // kputstring("curptr "); kputhex(curptr); kputchar(LF);
-//kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
-  curptr->ticksleft--;
-//kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
-  schedqueue.ticksleft--;
-//kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
-}
-
-#define vft_numerator(x) \
-  (((x)->schedticks) - ((x)->ticksleft) + 1)
-
-#define vtrr_is_eligible(p,q) \
-  (((q)->ticksleft > (p)->ticksleft) || \
-  (((vft_numerator(q) * schedqueue.schedticks) - \
-  (vft_numerator(&schedqueue) * q->schedticks)) < \
-  schedqueue.schedticks))
-
-void pick_next_proc()
-{
-  if (schedqueue.head == NULL) {
-    nextptr = &idlestate;
-    goto finish;
-  }
-  tss_t *last = nextptr == NULL ? curptr : nextptr;
-  if (last == NULL) {
-    nextptr = schedqueue.head;
-    goto finish;
-  }
-  if (last == &idlestate) {
-    nextptr = schedqueue.head;
-    goto finish;
-  }
-  if (last->next == NULL) {
-    nextptr = schedqueue.head;
-    if (schedqueue.head->ticksleft == 0) {
-      schedqueue.head->ticksleft = schedqueue.head->schedticks;
-    }
-    goto finish;
-  }
-  if (last->ticksleft == (last->schedticks - 1)) {
-    nextptr = last->next;
-    nextptr->ticksleft = nextptr->schedticks;
-    goto finish;
-  }
-  if (vtrr_is_eligible(last, (last->next))) {
-    nextptr = last->next;
-    goto finish;
-  }
-  nextptr = schedqueue.head;
-finish:
-  return;
 }
 
 void dequeue(tss_t *process)
@@ -243,7 +180,7 @@ void writer()
   for(;;) {
     call_syscall_send_by_feature(25,"Hallo Welt der Micokernel-Programmierung",40,TRUE, &error);
     if (error != OK) {
-      //kputstring("hat leider nicht geklappt!");kputchar(LF);
+      kputstring("hat leider nicht geklappt!");kputchar(LF);
       error = OK;
     }
   }
@@ -472,6 +409,60 @@ void clockIsr()
   }
 }
 
+void charge_process()
+{
+  if (curptr == &idlestate) {
+    return;
+  }
+  curptr->ticksleft--;
+  schedqueue.ticksleft--;
+}
+
+#define vft_numerator(x) \
+  (((x)->schedticks) - ((x)->ticksleft) + 1)
+
+#define vtrr_is_eligible(p,q) \
+  (((q)->ticksleft > (p)->ticksleft) || \
+  (((vft_numerator(q) * schedqueue.schedticks) - \
+  (vft_numerator(&schedqueue) * q->schedticks)) < \
+  schedqueue.schedticks))
+
+void pick_next_proc()
+{
+  if (schedqueue.head == NULL) {
+    nextptr = &idlestate;
+    goto finish;
+  }
+  tss_t *last = nextptr == NULL ? curptr : nextptr;
+  if (last == NULL) {
+    nextptr = schedqueue.head;
+    goto finish;
+  }
+  if (last == &idlestate) {
+    nextptr = schedqueue.head;
+    goto finish;
+  }
+  if (last->next == NULL) {
+    nextptr = schedqueue.head;
+    if (schedqueue.head->ticksleft == 0) {
+      schedqueue.head->ticksleft = schedqueue.head->schedticks;
+    }
+    goto finish;
+  }
+  if (last->ticksleft == (last->schedticks - 1)) {
+    nextptr = last->next;
+    nextptr->ticksleft = nextptr->schedticks;
+    goto finish;
+  }
+  if (vtrr_is_eligible(last, (last->next))) {
+    nextptr = last->next;
+    goto finish;
+  }
+  nextptr = schedqueue.head;
+finish:
+  return;
+}
+
 //this may unblock the process
 void do_hard_int(uint32_t number)
 {
@@ -479,18 +470,9 @@ void do_hard_int(uint32_t number)
     clockIsr();
     goto finish;
   }
-kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
-  if (nextptr == NULL) {
-kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
-    nextptr = curptr;
-kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
-  }
-kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
+
 finish:
-kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
   charge_process();
-kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
   pick_next_proc();
-kputchar(LF); kputunsint(__LINE__); kputchar(LF);  
   return;
 }

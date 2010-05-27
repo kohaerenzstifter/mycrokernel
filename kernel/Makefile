@@ -10,8 +10,8 @@ gdt.bin: gdt.o Makefile
 	../script
 	ndisasm -b 32 gdt.bin > gdt.ndisasm
 
-kernel.bin: go.o table.o main.o video.o utilities_HLA.o utilities_C.o ../usrlib/syscall.o \
-	lowlevel.o timer.o interrupt.o syscall.o keyboard.o Makefile
+kernel.bin: go.o main.o video.o utilities_HLA.o utilities_C.o ../usrlib/syscall.o \
+	lowlevel.o timer.o syscall.o keyboard.o table.o interrupt.o Makefile
 	ld -melf_i386 go.o main.o video.o ../usrlib/syscall.o utilities_HLA.o \
 	utilities_C.o keyboard.o \
 	lowlevel.o timer.o interrupt.o syscall.o table.o \
