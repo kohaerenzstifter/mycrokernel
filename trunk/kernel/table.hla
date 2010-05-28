@@ -257,15 +257,15 @@ static //global variables go here
     keymap_t:[NULL, 1, 17], keymap_t:[NULL, 0, 0],
     keymap_t:[&shift_released, 0, NULL], keymap_t:[&shift_released, 0, NULL]
   ];
-	
-  align(4);
+
+/*  align(4);
   syscalls: syscall_t[NO_SYSCALLS]:=
   [
     syscall_t:[&syscall_exit],
     syscall_t:[&syscall_setFeature],
     syscall_t:[&syscall_receive],
     syscall_t:[&syscall_send_by_feature]
-  ];
+  ];*/
 	
   align(4);
   cmds: command_t[NO_COMMANDS]:=
@@ -480,7 +480,7 @@ static //global variables go here
     NULL,
     NULL,
     NULL
-  ];*/
+  ];
 
   syscallstate: tss_t := tss_t:[
     0,
@@ -531,7 +531,7 @@ static //global variables go here
     NULL,
     NULL
   ];
-
+*/
 
 #macro intrrpt_state(string _x_);
   @text("intrrpt" + _x_ + "state"): tss_t := tss_t:[

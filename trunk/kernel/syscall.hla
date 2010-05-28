@@ -5,14 +5,14 @@ unit Syscall;
 #includeonce("external.hhf")
 #includeonce("../include/always.hhf")
 
-procedure sys_call; @nodisplay; @noalignstack; @noframe;
+/*procedure sys_call; @nodisplay; @noalignstack; @noframe;
 begin sys_call;
   forever
     mov(curptr,eax);
     mov((type tss_t [eax]).eax_reg,eax);
     if ((type uns32 eax) > NO_SYSCALLS - 1) then
       mov(UNKNOWNSYSCALL,err);
-      set_error(&syscallstate, curptr);
+      set_error(&intrrpt2state, curptr);
       add(8,esp);
     else
       mov(@size(syscall_t),ebx);
@@ -24,12 +24,12 @@ begin sys_call;
     if (nextptr == NULL) then
       pick_next_proc();
     endif;
-    schedule(&syscallstate);
+    schedule(&intrrpt2state);
     mov(PIC_EOI,al);
     out(al,PIC1_COMMAND);
     iret();
   endfor;
-end sys_call;
+end sys_call;*/
 
 procedure syscall_exit;
 begin syscall_exit;
@@ -84,7 +84,7 @@ begin syscall_exit;
   free_pid(ebx);
   release_irqs_taken(curptr);
   add(4,esp);
-  unblock_waiting_senders(&syscallstate, curptr);
+  unblock_waiting_senders(&intrrpt2state, curptr);
   add(8,esp);
   dequeue(curptr);
   add(4,esp);
@@ -94,7 +94,7 @@ procedure syscall_setFeature;
 begin syscall_setFeature;
   push(eax);
   mov(curptr, eax);
-  set_feature(&syscallstate,curptr,(type tss_t [eax]).ebx_reg);
+  set_feature(&intrrpt2state,curptr,(type tss_t [eax]).ebx_reg);
   add(12,esp);
   pop(eax);
 end syscall_setFeature;
@@ -104,7 +104,7 @@ begin syscall_request_irq;
   push(ebx);
   mov(curptr, eax);
   mov((type tss_t [eax]).eax_reg, ebx);
-  request_irq(&syscallstate,eax,ebx);
+  request_irq(&intrrpt2state,eax,ebx);
   add(12,esp);
   pop(ebx);
 end syscall_request_irq;
@@ -122,7 +122,7 @@ begin syscall_receive;
   add(12,esp);
   if (eax != 0) then
     mov(INVALIDBUFFER,err);
-    set_error(&syscallstate, curptr);
+    set_error(&intrrpt2state, curptr);
     add(8,esp);
     exit syscall_receive;
   endif;
@@ -159,7 +159,7 @@ begin syscall_send;
   add(12,esp);
   if (eax != 0) then
     mov(INVALIDBUFFER,err);
-    set_error(&syscallstate, curptr);
+    set_error(&intrrpt2state, curptr);
     add(8,esp);
     exit syscall_send;
   endif;
@@ -191,14 +191,14 @@ begin syscall_send_by_feature;
   add(4,esp);
   if (eax != 0) then
     mov(INVALIDFEATURE,err);
-    set_error(&syscallstate, curptr);
+    set_error(&intrrpt2state, curptr);
     exit syscall_send_by_feature;
   endif;
   get_process_by_feature((type tss_t [edi]).ebx_reg);
   add(4,esp);
   if (eax == edi) then
     mov(CIRCULARSEND,err);
-    set_error(&syscallstate, curptr);
+    set_error(&intrrpt2state, curptr);
     add(8,esp);
     exit syscall_send_by_feature;
   endif;
@@ -216,7 +216,7 @@ begin syscall_send_by_feature;
   add(4,esp);
   else
     mov(WOULDBLOCK,err);
-    set_error(&syscallstate, curptr);
+    set_error(&intrrpt2state, curptr);
     add(8,esp);
   endif;
 end syscall_send_by_feature;

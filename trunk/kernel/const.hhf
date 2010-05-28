@@ -183,5 +183,3 @@ const
   CIRCULARSEND: text:="-3";
   WOULDBLOCK: text:="-4";
   INVALIDFEATURE: text:="-5";
-
-  TESTFEATURE: text:="1";
