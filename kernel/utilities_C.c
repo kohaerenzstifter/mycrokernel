@@ -11,8 +11,23 @@ typedef struct _feature {
   tss_t *waiter;
 } feature_t;
 
+typedef  void (*syscallFunc_t)(void) ;
+
+void syscall_exit(void);
+void syscall_setFeature(void);
+void syscall_receive(void);
+void syscall_send_by_feature(void);
+
+static syscallFunc_t syscalls[] = {
+  &syscall_exit,
+  &syscall_setFeature,
+  &syscall_receive,
+  &syscall_send_by_feature
+};
+
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
 static tss_t *irqs[MAX_IRQ + 1] = { NULL };
+
 
 void paus()
 {
@@ -76,6 +91,60 @@ void show_queue()
     kputhex(cur); kputchar(' ');
   }
   kputchar(LF);
+}
+
+void charge_process()
+{
+  if (curptr == &idlestate) {
+    return;
+  }
+  curptr->ticksleft--;
+  schedqueue.ticksleft--;
+}
+
+#define vft_numerator(x) \
+  (((x)->schedticks) - ((x)->ticksleft) + 1)
+
+#define vtrr_is_eligible(p,q) \
+  (((q)->ticksleft > (p)->ticksleft) || \
+  (((vft_numerator(q) * schedqueue.schedticks) - \
+  (vft_numerator(&schedqueue) * q->schedticks)) < \
+  schedqueue.schedticks))
+
+void pick_next_proc()
+{
+  if (schedqueue.head == NULL) {
+    nextptr = &idlestate;
+    goto finish;
+  }
+  tss_t *last = nextptr == NULL ? curptr : nextptr;
+  if (last == NULL) {
+    nextptr = schedqueue.head;
+    goto finish;
+  }
+  if (last == &idlestate) {
+    nextptr = schedqueue.head;
+    goto finish;
+  }
+  if (last->next == NULL) {
+    nextptr = schedqueue.head;
+    if (schedqueue.head->ticksleft == 0) {
+      schedqueue.head->ticksleft = schedqueue.head->schedticks;
+    }
+    goto finish;
+  }
+  if (last->ticksleft == (last->schedticks - 1)) {
+    nextptr = last->next;
+    nextptr->ticksleft = nextptr->schedticks;
+    goto finish;
+  }
+  if (vtrr_is_eligible(last, (last->next))) {
+    nextptr = last->next;
+    goto finish;
+  }
+  nextptr = schedqueue.head;
+finish:
+  return;
 }
 
 void dequeue(tss_t *process)
@@ -176,11 +245,12 @@ unsigned isPrimeNumber(unsigned what)
 void writer()
 {
   err_t error = OK;
-  int i;
   for(;;) {
-    call_syscall_send_by_feature(25,"Hallo Welt der Micokernel-Programmierung",40,TRUE, &error);
+    kputstring("before");
+    call_syscall_send_by_feature(1,"Hallo Welt der Micokernel-Programmierung",40,TRUE, &error);
+    kputstring("after");
     if (error != OK) {
-      kputstring("hat leider nicht geklappt!");kputchar(LF);
+      //kputstring("hat leider nicht geklappt!");kputchar(LF);
       error = OK;
     }
   }
@@ -409,56 +479,18 @@ void clockIsr()
   }
 }
 
-void charge_process()
+#define NO_SYSCALLS (sizeof(syscalls) / sizeof(syscalls[0]))
+extern tss_t intrrpt2state;
+#define syscallstate intrrpt2state
+
+void syscallIsr()
 {
-  if (curptr == &idlestate) {
-    return;
-  }
-  curptr->ticksleft--;
-  schedqueue.ticksleft--;
-}
-
-#define vft_numerator(x) \
-  (((x)->schedticks) - ((x)->ticksleft) + 1)
-
-#define vtrr_is_eligible(p,q) \
-  (((q)->ticksleft > (p)->ticksleft) || \
-  (((vft_numerator(q) * schedqueue.schedticks) - \
-  (vft_numerator(&schedqueue) * q->schedticks)) < \
-  schedqueue.schedticks))
-
-void pick_next_proc()
-{
-  if (schedqueue.head == NULL) {
-    nextptr = &idlestate;
+  if (curptr->eax_reg > NO_SYSCALLS - 1) {
+    err = UNKNOWNSYSCALL;
+    set_error(&syscallstate, curptr);
     goto finish;
   }
-  tss_t *last = nextptr == NULL ? curptr : nextptr;
-  if (last == NULL) {
-    nextptr = schedqueue.head;
-    goto finish;
-  }
-  if (last == &idlestate) {
-    nextptr = schedqueue.head;
-    goto finish;
-  }
-  if (last->next == NULL) {
-    nextptr = schedqueue.head;
-    if (schedqueue.head->ticksleft == 0) {
-      schedqueue.head->ticksleft = schedqueue.head->schedticks;
-    }
-    goto finish;
-  }
-  if (last->ticksleft == (last->schedticks - 1)) {
-    nextptr = last->next;
-    nextptr->ticksleft = nextptr->schedticks;
-    goto finish;
-  }
-  if (vtrr_is_eligible(last, (last->next))) {
-    nextptr = last->next;
-    goto finish;
-  }
-  nextptr = schedqueue.head;
+  syscalls[curptr->eax_reg]();
 finish:
   return;
 }
@@ -470,9 +502,13 @@ void do_hard_int(uint32_t number)
     clockIsr();
     goto finish;
   }
-
+  if (number == 2) {
+    syscallIsr();
+    goto finish;
+  }
 finish:
   charge_process();
   pick_next_proc();
+  kputstring("next: "); kputhex(nextptr); kputchar(LF);
   return;
 }

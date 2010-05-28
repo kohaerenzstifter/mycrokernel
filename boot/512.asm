@@ -14,9 +14,13 @@
 ;(idt: 12700-146ff) not yet written
 ;boot: 14700-(09ffff)
 
+%define MINSECTOR 1
 %define MAXSECTOR 18
-%define NO_SECTORS 18
+%define MINCYLINDER 0
+%define MAXCYLINDER 79
+%define MINHEAD 0
 %define MAXHEAD 1
+%define NO_SECTORS 18
 %define NO_HEADS 2
 %define _512_BASE 0500h
 %define STACK_BASE 0700h
@@ -138,6 +142,7 @@ lderr:
   cli
   hlt
 align 2
+
 loop_load:
   cmp si, 0h
   je end_loop_load
@@ -150,26 +155,44 @@ loop_load:
   jmp loop_load
 end_loop_load:
   ret
+
 align 2
 loadSector:
-head_increase:
   cmp cl, MAXSECTOR + 1
-  jne cylinder_increase
-  sub cl, NO_SECTORS
+  jne do_load_sector
+  mov cl, MINSECTOR
   inc dh
-  jmp head_increase
-cylinder_increase:
   cmp dh, MAXHEAD + 1
-  jne over_cylinder_increase
-  sub dh, NO_HEADS
+  jne do_load_sector
+  mov dh, MINHEAD
   inc ch
-  jmp cylinder_increase
-over_cylinder_increase:
+do_load_sector:
   mov ah, 02h		;Function to read from drive
   mov al, 1
   int 13h
   jc lderr
   ret
+
+;align 2
+;loadSector:
+;head_increase:
+;  cmp cl, MAXSECTOR + 1
+;  jne cylinder_increase
+;  sub cl, NO_SECTORS
+;  inc dh
+;  jmp head_increase
+;cylinder_increase:
+;  cmp dh, MAXHEAD + 1
+;  jne over_cylinder_increase
+;  sub dh, NO_HEADS
+;  inc ch
+;  jmp cylinder_increase
+;over_cylinder_increase:
+;  mov ah, 02h		;Function to read from drive
+;  mov al, 1
+;  int 13h
+;  jc lderr
+;  ret
 align 2
 ;routine printstring: will print zero-terminated string from ds:si.
 printstring:
