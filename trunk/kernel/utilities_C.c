@@ -51,8 +51,10 @@ void uptime()
 
 void enqueue(tss_t *process)
 {
+  tss_t *curr;
+  kputstring("enqueue "); kputhex(process); kputchar(LF);
   if (process->misc & ENQUEUED) {
-    return;
+    goto finish;
   }
   process->misc |= ENQUEUED;
   tss_t **cur;
@@ -65,14 +67,32 @@ void enqueue(tss_t *process)
     }
   } else {
     cur = &(schedqueue.head);
+    
     while ((*cur != NULL)&&((*cur)->schedticks > process->schedticks)) {
       cur = &((*cur)->next);
     }
     process->next = *cur;
+    
     if ((*cur) != NULL) {
       (*cur)->previous = process;
     }
     *cur = process;
+    
+    
+    for (curr = schedqueue.head; curr != NULL; curr = curr->next) {
+    if ((curr->previous != NULL)&&(curr->previous == curr->next)) {
+      kputstring("KKKKK HILFE ");
+      kputstring("previous: "); kputhex(curr->previous) ,kputchar(LF);
+      //kputstring("next: "); kputhex(curr->next) ,kputchar(LF);
+      if (curr == schedqueue.head) { kputstring("encima "); } for(;;);
+    }
+  }
+    
+    
+    
+    
+    
+    
   }
   if (schedqueue.schedticks == 0) {
     schedqueue.schedticks = schedqueue.ticksleft = process->schedticks;
@@ -83,6 +103,9 @@ void enqueue(tss_t *process)
   process->ticksleft = count1 < count2 ? count1 : count2;
   schedqueue.schedticks += process->schedticks;
   schedqueue.ticksleft += process->ticksleft;
+
+finish:
+  return;
 }
 
 void show_queue()
@@ -90,11 +113,7 @@ void show_queue()
   tss_t *cur = NULL;
   kputstring("showing q"); kputchar(LF);
   for (cur = schedqueue.head; cur != NULL; cur = cur->next) {
-    kputhex(cur); kputstring(" (");
-    /*kputunsint(cur->schedticks - cur->ticksleft);
-    kputchar('/');
-    kputunsint(cur->schedticks); */
-    kputunsint(cur->ticksleft); kputstring(") ");
+    kputstring("process "); kputhex(cur); kputstring(" ");
   }
   kputchar(LF);
 }
@@ -158,6 +177,7 @@ finish:
 
 void dequeue(tss_t *process)
 {
+  kputstring("dequeue "); kputhex(process); kputchar(LF);
   if (!(process->misc & ENQUEUED)) {
     goto finish;
   }
@@ -179,9 +199,28 @@ void dequeue(tss_t *process)
       nextptr = NULL;
     } while (nextptr == process);
   }
+
+  tss_t *cur;
+  for (cur = schedqueue.head; cur != NULL; cur = cur->next) {
+    if (cur->previous == cur->next) {
+      kputstring("???HILFE ");
+      kputstring("previous: "); kputhex(cur->previous) ,kputchar(LF);
+      kputstring("next: "); kputhex(cur->next) ,kputchar(LF);
+      if (cur == schedqueue.head) { kputstring("encima "); } for(;;);
+    }
+  }
+
   if (process->previous != NULL) {
     process->previous->next = process->next;
   }
+
+  for (cur = schedqueue.head; cur != NULL; cur = cur->next) {
+    if (cur->next == cur) {
+      kputstring("!!!!HILFE ");
+      if (cur == schedqueue.head) { kputstring("encima "); } for(;;);
+    }
+  }
+
   if (process->next != NULL) {
     process->next->previous = process->previous;
   }
@@ -190,8 +229,19 @@ void dequeue(tss_t *process)
   }
   schedqueue.schedticks -= process->schedticks;
   schedqueue.ticksleft -= process->ticksleft;
-  
+
 finish:
+  for (cur = schedqueue.head; cur != NULL; cur = cur->next) {
+    if (cur->next == cur) {
+      kputstring("HILFE ");
+      if (cur == schedqueue.head) { kputstring("encima "); } for(;;);
+    }
+    if (cur == process) {
+      kputstring("hilfe "); for(;;);
+    }
+  }
+  kputstring("head: "); kputhex(schedqueue.head); kputchar(LF);
+  kputstring("head->next: "); kputhex(schedqueue.head->next); kputchar(LF);
   return;
 }
 
