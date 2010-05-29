@@ -185,16 +185,16 @@ end syscall_send;
 procedure syscall_send_by_feature;
 begin syscall_send_by_feature;
   mov(curptr,edi);
-
   //which feature is the process requesting?
-  check_feature((type tss_t [edi]).ebx_reg);
+  mov((type tss_t [edi]).ebx_reg, ebx);
+  check_feature(ebx);
   add(4,esp);
   if (eax != 0) then
     mov(INVALIDFEATURE,err);
     set_error(&intrrpt2state, curptr);
     exit syscall_send_by_feature;
   endif;
-  get_process_by_feature((type tss_t [edi]).ebx_reg);
+  get_process_by_feature(ebx);
   add(4,esp);
   if (eax == edi) then
     mov(CIRCULARSEND,err);
@@ -213,7 +213,7 @@ begin syscall_send_by_feature;
     add_waiting_for_feature(edi,ebx);
     add(8,esp);
     dequeue(edi);
-  add(4,esp);
+    add(4,esp);
   else
     mov(WOULDBLOCK,err);
     set_error(&intrrpt2state, curptr);

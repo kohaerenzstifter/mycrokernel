@@ -7,17 +7,21 @@ int main()
 {
   err_t error = OK;
   int i;
-  char buffer[100];
+  int j = 0;
+  char buffer[42];
   uint32_t bytes = 0;
   putstring("video: hallo"); putchar(LF);
   call_syscall_setFeature(1, &error);
   putstring("video: set feature"); putchar(LF);
   for(;;) {
+    j++;
     bytes = call_syscall_receive(ANYPROC, buffer, sizeof(buffer), &error);
-    putstring("video: received ");putunsint(bytes); putstring(" bytes"); putchar(LF);
+    putunsint(j);
+    putstring(") received ");putunsint(bytes); putstring(" bytes: "); putchar(LF);
+    bytes = (bytes < sizeof(buffer)) ? bytes : (sizeof(buffer) - 1);
     buffer[bytes] = '\0';
     putstring(buffer);
-    putchar(LF);
+    //putchar(LF);
   }
 }
 

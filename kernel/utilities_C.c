@@ -69,7 +69,9 @@ void enqueue(tss_t *process)
       cur = &((*cur)->next);
     }
     process->next = *cur;
-    (*cur)->previous = process;
+    if ((*cur) != NULL) {
+      (*cur)->previous = process;
+    }
     *cur = process;
   }
   if (schedqueue.schedticks == 0) {
@@ -88,7 +90,11 @@ void show_queue()
   tss_t *cur = NULL;
   kputstring("showing q"); kputchar(LF);
   for (cur = schedqueue.head; cur != NULL; cur = cur->next) {
-    kputhex(cur); kputchar(' ');
+    kputhex(cur); kputstring(" (");
+    /*kputunsint(cur->schedticks - cur->ticksleft);
+    kputchar('/');
+    kputunsint(cur->schedticks); */
+    kputunsint(cur->ticksleft); kputstring(") ");
   }
   kputchar(LF);
 }
@@ -128,8 +134,8 @@ void pick_next_proc()
   }
   if (last->next == NULL) {
     nextptr = schedqueue.head;
-    if (schedqueue.head->ticksleft == 0) {
-      schedqueue.head->ticksleft = schedqueue.head->schedticks;
+    if (nextptr->ticksleft == 0) {
+      nextptr->ticksleft = nextptr->schedticks;
     }
     goto finish;
   }
@@ -143,6 +149,9 @@ void pick_next_proc()
     goto finish;
   }
   nextptr = schedqueue.head;
+  if (nextptr->ticksleft == 0) {
+    nextptr->ticksleft = nextptr->schedticks;
+  }
 finish:
   return;
 }
@@ -150,23 +159,25 @@ finish:
 void dequeue(tss_t *process)
 {
   if (!(process->misc & ENQUEUED)) {
-    return;
+    goto finish;
   }
   process->misc &= (~(ENQUEUED));
   if (schedqueue.schedticks == process->schedticks) {
     schedqueue.schedticks = schedqueue.ticksleft = 0;
     schedqueue.head = NULL;
     pick_next_proc();
-    return;
+    goto finish;
   }
-  if (schedqueue.head == NULL) {
+
+  if ((schedqueue.head == process)&&(process->next == NULL)) {
     nextptr = &idlestate;
   } else if (curptr == process) {
     do {
       charge_process();
       pick_next_proc();
+      curptr = nextptr;
+      nextptr = NULL;
     } while (nextptr == process);
-  } else {
   }
   if (process->previous != NULL) {
     process->previous->next = process->next;
@@ -179,6 +190,9 @@ void dequeue(tss_t *process)
   }
   schedqueue.schedticks -= process->schedticks;
   schedqueue.ticksleft -= process->ticksleft;
+  
+finish:
+  return;
 }
 
 void show_tss(tss_t *tss)
@@ -244,13 +258,13 @@ unsigned isPrimeNumber(unsigned what)
 
 void writer()
 {
+  int i;
   err_t error = OK;
   for(;;) {
-    kputstring("before");
-    call_syscall_send_by_feature(1,"Hallo Welt der Micokernel-Programmierung",40,TRUE, &error);
-    kputstring("after");
+    for (i = 0; i < 100000; i++);
+    call_syscall_send_by_feature(1,"Hallo Welt der Microkernel-Programmierung",41, TRUE, &error);
     if (error != OK) {
-      //kputstring("hat leider nicht geklappt!");kputchar(LF);
+      kputstring("hat leider nicht geklappt!");kputchar(LF);
       error = OK;
     }
   }
@@ -507,8 +521,9 @@ void do_hard_int(uint32_t number)
     goto finish;
   }
 finish:
-  charge_process();
-  pick_next_proc();
-  kputstring("next: "); kputhex(nextptr); kputchar(LF);
+  if (nextptr == NULL) {
+    charge_process();
+    pick_next_proc();
+  }
   return;
 }
