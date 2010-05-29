@@ -51,8 +51,6 @@ void uptime()
 
 void enqueue(tss_t *process)
 {
-  tss_t *curr;
-  kputstring("enqueue "); kputhex(process); kputchar(LF);
   if (process->misc & ENQUEUED) {
     goto finish;
   }
@@ -66,6 +64,8 @@ void enqueue(tss_t *process)
       process->next->previous = process;
     }
   } else {
+    process->previous = NULL;
+    process->next = NULL;
     cur = &(schedqueue.head);
     
     while ((*cur != NULL)&&((*cur)->schedticks > process->schedticks)) {
@@ -77,22 +77,6 @@ void enqueue(tss_t *process)
       (*cur)->previous = process;
     }
     *cur = process;
-    
-    
-    for (curr = schedqueue.head; curr != NULL; curr = curr->next) {
-    if ((curr->previous != NULL)&&(curr->previous == curr->next)) {
-      kputstring("KKKKK HILFE ");
-      kputstring("previous: "); kputhex(curr->previous) ,kputchar(LF);
-      //kputstring("next: "); kputhex(curr->next) ,kputchar(LF);
-      if (curr == schedqueue.head) { kputstring("encima "); } for(;;);
-    }
-  }
-    
-    
-    
-    
-    
-    
   }
   if (schedqueue.schedticks == 0) {
     schedqueue.schedticks = schedqueue.ticksleft = process->schedticks;
@@ -177,7 +161,6 @@ finish:
 
 void dequeue(tss_t *process)
 {
-  kputstring("dequeue "); kputhex(process); kputchar(LF);
   if (!(process->misc & ENQUEUED)) {
     goto finish;
   }
@@ -200,25 +183,8 @@ void dequeue(tss_t *process)
     } while (nextptr == process);
   }
 
-  tss_t *cur;
-  for (cur = schedqueue.head; cur != NULL; cur = cur->next) {
-    if (cur->previous == cur->next) {
-      kputstring("???HILFE ");
-      kputstring("previous: "); kputhex(cur->previous) ,kputchar(LF);
-      kputstring("next: "); kputhex(cur->next) ,kputchar(LF);
-      if (cur == schedqueue.head) { kputstring("encima "); } for(;;);
-    }
-  }
-
   if (process->previous != NULL) {
     process->previous->next = process->next;
-  }
-
-  for (cur = schedqueue.head; cur != NULL; cur = cur->next) {
-    if (cur->next == cur) {
-      kputstring("!!!!HILFE ");
-      if (cur == schedqueue.head) { kputstring("encima "); } for(;;);
-    }
   }
 
   if (process->next != NULL) {
@@ -231,17 +197,6 @@ void dequeue(tss_t *process)
   schedqueue.ticksleft -= process->ticksleft;
 
 finish:
-  for (cur = schedqueue.head; cur != NULL; cur = cur->next) {
-    if (cur->next == cur) {
-      kputstring("HILFE ");
-      if (cur == schedqueue.head) { kputstring("encima "); } for(;;);
-    }
-    if (cur == process) {
-      kputstring("hilfe "); for(;;);
-    }
-  }
-  kputstring("head: "); kputhex(schedqueue.head); kputchar(LF);
-  kputstring("head->next: "); kputhex(schedqueue.head->next); kputchar(LF);
   return;
 }
 
@@ -312,7 +267,7 @@ void writer()
   err_t error = OK;
   for(;;) {
     for (i = 0; i < 100000; i++);
-    call_syscall_send_by_feature(1,"Hallo Welt der Microkernel-Programmierung",41, TRUE, &error);
+    call_syscall_send_by_feature(1,"Hallo Welt der Microkernel-Programmierung",41, FALSE, &error);
     if (error != OK) {
       kputstring("hat leider nicht geklappt!");kputchar(LF);
       error = OK;
@@ -508,6 +463,7 @@ void request_irq(tss_t *context, tss_t *process, uint32_t irq)
 finish:
   return;
 }
+
 void release_irqs_taken(tss_t *process)
 {
   int i;

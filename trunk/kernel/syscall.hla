@@ -31,65 +31,6 @@ begin sys_call;
   endfor;
 end sys_call;*/
 
-procedure syscall_exit;
-begin syscall_exit;
-  mov(curptr, eax);
-  mov(EMPTY, (type tss_t [eax]).state);
-
-  movzx((type tss_t [eax]).pid, ebx);
-
-  movzx((type tss_t [eax]).cs_reg, ebx);
-  if (ebx != 0) then
-    movzx((type tss_t [eax]).cs_reg, ebx);
-    and($fffc,bx);
-    unfree_gdt_idx(ebx);
-  endif;
-
-  movzx((type tss_t [eax]).ds_reg, ebx);
-  if (ebx != 0) then
-    movzx((type tss_t [eax]).cs_reg, ebx);
-    and($fffc,bx);
-    unfree_gdt_idx(ebx);
-  endif;
-
-  movzx((type tss_t [eax]).es_reg, ebx);
-  if (ebx != 0) then
-    movzx((type tss_t [eax]).cs_reg, ebx);
-    and($fffc,bx);
-    unfree_gdt_idx(ebx);
-  endif;
-
-  movzx((type tss_t [eax]).fs_reg, ebx);
-  if (ebx != 0) then
-    movzx((type tss_t [eax]).cs_reg, ebx);
-    and($fffc,bx);
-    unfree_gdt_idx(ebx);
-  endif;
-
-  movzx((type tss_t [eax]).gs_reg, ebx);
-  if (ebx != 0) then
-    movzx((type tss_t [eax]).cs_reg, ebx);
-    and($fffc,bx);
-    unfree_gdt_idx(ebx);
-  endif;
-
-  movzx((type tss_t [eax]).ss_reg, ebx);
-  if (ebx != 0) then
-    movzx((type tss_t [eax]).cs_reg, ebx);
-    and($fffc,bx);
-    unfree_gdt_idx(ebx);
-  endif;
-
-  movzx((type tss_t [eax]).pid, ebx);
-  free_pid(ebx);
-  release_irqs_taken(curptr);
-  add(4,esp);
-  unblock_waiting_senders(&intrrpt2state, curptr);
-  add(8,esp);
-  dequeue(curptr);
-  add(4,esp);
-end syscall_exit;
-
 procedure syscall_setFeature;
 begin syscall_setFeature;
   push(eax);
@@ -220,5 +161,51 @@ begin syscall_send_by_feature;
     add(8,esp);
   endif;
 end syscall_send_by_feature;
+
+procedure syscall_exit;
+begin syscall_exit;
+  mov(curptr, eax);
+  mov(EMPTY, (type tss_t [eax]).state);
+
+  movzx((type tss_t [eax]).cs_reg, ebx);
+  if (ebx != 0) then
+    and($fffc,bx);
+    free_gdt_idx(ebx);
+  endif;
+  movzx((type tss_t [eax]).ds_reg, ebx);
+  if (ebx != 0) then
+    and($fffc,bx);
+    free_gdt_idx(ebx);
+  endif;
+  movzx((type tss_t [eax]).es_reg, ebx);
+  if (ebx != 0) then
+    and($fffc,bx);
+    free_gdt_idx(ebx);
+  endif;
+  movzx((type tss_t [eax]).fs_reg, ebx);
+  if (ebx != 0) then
+    and($fffc,bx);
+    free_gdt_idx(ebx);
+  endif;
+  movzx((type tss_t [eax]).gs_reg, ebx);
+  if (ebx != 0) then
+    and($fffc,bx);
+    free_gdt_idx(ebx);
+  endif;
+  movzx((type tss_t [eax]).ss_reg, ebx);
+  if (ebx != 0) then
+    and($fffc,bx);
+    free_gdt_idx(ebx);
+  endif;
+
+  movzx((type tss_t [eax]).pid, ebx);
+  free_pid(ebx);
+  release_irqs_taken(curptr);
+  add(4,esp);
+  unblock_waiting_senders(&intrrpt2state, curptr);
+  add(8,esp);
+  dequeue(curptr);
+  add(4,esp);
+end syscall_exit;
 
 end Syscall;
