@@ -6,5 +6,5 @@ typedef unsigned uint32_t;
 typedef enum _boolean {FALSE = 0, TRUE} boolean_t;
 struct _tss;
 typedef struct _tss tss_t;
-typedef uint32_t err_t;
+typedef int32_t err_t;
 #endif
