@@ -12,6 +12,8 @@ void kputstring(char *what);
 void kputchar(char what);
 void pickNextProc();
 uint32_t get_limit(uint32_t gdtIndex);
+void free_gdt_idx(uint32_t gdtIndex);
+void free_pid(uint32_t pid);
 //void call_syscall_setFeatures_C(uint8_t features);
 //TODO: should return error (parameter)
 //tss_t *call_syscall_requestFeatures_C(uint8_t features);
@@ -23,6 +25,7 @@ void enableInterrupts();
 void halt();
 
 void set_error(tss_t *context, tss_t *process);
+uint32_t exchange_data(tss_t *curptr,tss_t *receiver);
 
 #define unsetStateFlag(p,f) \
   p->state &= (~(f)); \

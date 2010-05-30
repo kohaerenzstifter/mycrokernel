@@ -4,8 +4,8 @@ unit Utilities_HLA;
 #includeonce("prototype.hhf")
 #includeonce("external.hhf")
 
-procedure set_error(context: dword; process:dword);
-begin set_error;
+procedure _set_error(context: dword; process:dword);
+begin _set_error;
   push(eax);
   push(ebx);
   push(ecx);
@@ -18,12 +18,24 @@ begin set_error;
   mov((type tss_t [ebx]).esi_reg, ecx);
   mov(ecx,(type tss_t [ebx]).edx_reg);
 
-  exchange_data(eax, ebx);
+  _exchange_data(eax, ebx);
 
   pop(ecx);
   pop(ebx);
   pop(eax);
-end set_error;
+end _set_error;
+
+procedure _enqueue(process: dword);
+begin _enqueue;
+  enqueue(process);
+  add(4,esp);
+end _enqueue;
+
+procedure _dequeue(process: dword);
+begin _dequeue;
+  dequeue(process);
+  add(4,esp);
+end _dequeue;
 
 procedure getFreeBitInBitfield(bitfield: dword; bits: uns32);
 begin getFreeBitInBitfield;
@@ -112,8 +124,8 @@ begin get_free_gdt_idx;
   pop(edx);
 end  get_free_gdt_idx;
 
-procedure unfree_gdt_idx(what: dword);
-begin unfree_gdt_idx;
+procedure _unfree_gdt_idx(what: dword);
+begin _unfree_gdt_idx;
   push(eax);
   push(edx);
   pushfd();
@@ -124,10 +136,10 @@ begin unfree_gdt_idx;
   popfd();
   pop(edx);
   pop(eax);
-end unfree_gdt_idx;
+end _unfree_gdt_idx;
 
-procedure free_gdt_idx(what: dword);
-begin free_gdt_idx;
+procedure _free_gdt_idx(what: dword);
+begin _free_gdt_idx;
   push(eax);
   push(edx);
   pushfd();
@@ -138,32 +150,32 @@ begin free_gdt_idx;
   popfd();
   pop(edx);
   pop(eax);
-end free_gdt_idx;
+end _free_gdt_idx;
 
 procedure get_free_pid;
 begin get_free_pid;
   getFreeBitInBitfield(&pidBitmap, NO_AVL_PIDS);
 end  get_free_pid;
 
-procedure unfree_pid(what: dword);
-begin unfree_pid;
+procedure _unfree_pid(what: dword);
+begin _unfree_pid;
   push(eax);
   pushfd();
   mov(what,eax);
   unfreeBitInBitfield(&pidBitmap, eax);
   popfd();
   pop(eax);
-end unfree_pid;
+end _unfree_pid;
 
-procedure free_pid(what: dword);
-begin free_pid;
+procedure _free_pid(what: dword);
+begin _free_pid;
   push(eax);
   pushfd();
   mov(what,eax);
   freeBitInBitfield(&pidBitmap, eax);
   popfd();
   pop(eax);
-end free_pid;
+end _free_pid;
 
 procedure streq(s1: string; s2: string);
 /*Compares s1 to s2. If they are equal, 1 will be returned in eax.
@@ -197,8 +209,8 @@ begin streq;
   pop(ebx);
 end streq;
 
-procedure exchange_data(sender: dword; receiver: dword);
-begin exchange_data;
+procedure _exchange_data(sender: dword; receiver: dword);
+begin _exchange_data;
   push(ebx);
   push(ecx);
   push(edx);
@@ -272,6 +284,31 @@ begin exchange_data;
   pop(edx);
   pop(ecx);
   pop(ebx);
+end _exchange_data;
+
+procedure set_error(context: dword; process:dword); @cdecl; @external;
+procedure set_error(context: dword; process:dword);
+begin set_error;
+  _set_error(context, process);
+end set_error;
+
+procedure free_gdt_idx(what: dword); @cdecl; @external;
+procedure free_gdt_idx(what: dword);
+begin free_gdt_idx;
+  _free_gdt_idx(what);
+end free_gdt_idx;
+
+procedure free_pid(what: dword); @cdecl; @external;
+procedure free_pid(what: dword);
+begin free_pid;
+  _free_pid(what);
+end free_pid;
+
+procedure exchange_data(sender: dword; receiver: dword); @cdecl; @external;
+procedure exchange_data(sender: dword; receiver: dword);
+begin exchange_data;
+  _exchange_data(sender,receiver);
 end exchange_data;
+
 
 end Utilities_HLA;

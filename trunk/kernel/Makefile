@@ -11,10 +11,10 @@ gdt.bin: gdt.o Makefile
 	ndisasm -b 32 gdt.bin > gdt.ndisasm
 
 kernel.bin: go.o main.o video.o utilities_HLA.o utilities_C.o ../usrlib/syscall.o \
-	lowlevel.o timer.o syscall.o keyboard.o table.o interrupt.o Makefile
+	lowlevel.o keyboard.o table.o interrupt.o Makefile
 	ld -melf_i386 go.o main.o video.o ../usrlib/syscall.o utilities_HLA.o \
 	utilities_C.o keyboard.o \
-	lowlevel.o timer.o interrupt.o syscall.o table.o \
+	lowlevel.o interrupt.o table.o \
   -N -M > kernel.mem -o kernel.bin --oformat \
   binary -T ../script
 	  ndisasm -b 32 kernel.bin > kernel.ndisasm
@@ -38,9 +38,6 @@ video.o: video.hla Makefile always.hhf types.hhf const.hhf prototype.hhf externa
 keyboard.o: keyboard.hla const.hhf prototype.hhf types.hhf external.hhf \
   ../include/character.hhf Makefile ../include/always.hhf
 	hla -c keyboard.hla
-timer.o: timer.hla const.hhf prototype.hhf external.hhf ../include/always.hhf
-	hla -c timer.hla
-	objdump --disassemble-all -S timer.o > timer.objdump
 interrupt.o: interrupt.hla const.hhf prototype.hhf external.hhf ../include/always.hhf
 	hla -c interrupt.hla
 	objdump --disassemble-all -S interrupt.o > interrupt.objdump
@@ -50,9 +47,6 @@ table.o: table.hla types.hhf const.hhf prototype.hhf external.hhf
 gdt.o: gdt.hla types.hhf kernel.bin
 	_KERNEL_SIZE=$(_KERNEL_SIZE) hla -c gdt.hla
 	objdump --disassemble-all -S gdt.o > gdt.objdump
-syscall.o: syscall.hla prototype.hhf
-	hla -c syscall.hla
-	objdump --disassemble-all -S syscall.o > syscall.objdump
 lowlevel.o: lowlevel.hla always.hhf types.hhf const.hhf prototype.hhf \
   external.hhf ../include/always.hhf Makefile
 	hla -c lowlevel.hla

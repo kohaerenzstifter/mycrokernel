@@ -10,8 +10,8 @@ unit Video;
 
 static //global variables go here
 
-procedure kputchar_HLA(what:dword);
-begin kputchar_HLA;
+procedure _kputchar(what:dword);
+begin _kputchar;
   push(eax);
   push(ebx);
   push(ecx);
@@ -26,20 +26,20 @@ putchar_back:
       gseg:mov(cx,[eax]);
       add(2,cursor);			
     else
-      kscrollscreen_HLA();
+      _kscrollscreen();
       movzx(cursor,eax);
       jmp putchar_back;
     endif;
     jmp end_kputchar;
   endif;
   if (ecx=LF) then
-    kputchar_HLA(' ');
+    _kputchar(' ');
     mov(NO_COLUMNS*2,ebx);
     movzx(cursor,eax);
     zerify(edx);
     div(ebx,edx:eax);
     while (edx<>0) do
-      kputchar_HLA(' ');
+      _kputchar(' ');
       movzx(cursor,eax);
       zerify(edx);
       div(ebx,edx:eax);
@@ -47,7 +47,7 @@ putchar_back:
     jmp end_kputchar;
   endif;
   if (ecx=TAB) then
-    kputchar_HLA(' ');
+    _kputchar(' ');
     mov(NO_COLUMNS*2,ebx);
     movzx(cursor,eax);
     add(2,eax);
@@ -58,7 +58,7 @@ putchar_back:
     zerify(edx);
     div(ebx,edx:eax);
     while (edx<>0) do
-      kputchar_HLA(' ');
+      _kputchar(' ');
       mov(NO_COLUMNS*2,ebx);
       movzx(cursor,eax);
       add(2,eax);
@@ -77,16 +77,16 @@ end_kputchar:
   pop(ecx);
   pop(ebx);
   pop(eax);
-end kputchar_HLA;
+end _kputchar;
 
-procedure kputstring_HLA(what: string); 
+procedure _kputstring(what: string); 
 //1) if byte character at "what" nonzero then write to gs:cursor, else return
 //2) write "attrib" byte to gs:cursor+1
 //3) increase "cursor" by 2 and set cursor on screen
 //4) increase "what" by 1
 //5) goto 1)
 //increments "cursor" by 2
-begin kputstring_HLA;
+begin _kputstring;
   push(eax);
   push(ebx);
   push(ecx);
@@ -97,7 +97,7 @@ begin kputstring_HLA;
   movzx(cursor,ecx);
   mov([eax],bl);
   while(bl<>0) do
-    kputchar_HLA(ebx);
+    _kputchar(ebx);
     inc(eax);
     mov([eax],bl);
   endwhile;
@@ -105,37 +105,17 @@ begin kputstring_HLA;
   pop(ecx);
   pop(ebx);
   pop(eax);
-end kputstring_HLA;
+end _kputstring;
 
-procedure kputstring(what: string);
-begin kputstring;
-  kputstring_HLA(what);
-end kputstring;
-
-procedure kputunsint(what: dword);
-begin kputunsint;
-  kputunsint_HLA(what);
-end kputunsint;
-
-procedure kputsint(what: dword);
-begin kputsint;
-  kputsint_HLA(what);
-end kputsint;
-
-procedure kputchar(what: dword);
-begin kputchar;
-  kputchar_HLA(what);
-end kputchar;
-
-procedure kputhex_HLA(what: dword);
+procedure _kputhex(what: dword);
 //print hexadecimal number on screen
-begin kputhex_HLA;
+begin _kputhex;
   push(eax);
   push(edx);
   push(ecx);
   push(ebx);
   pushfd();
-  kputchar_HLA('$');
+  _kputchar('$');
   mov(what,eax);
   mov($FFFFFFF,edx);
   mov(7*4,cl);
@@ -148,7 +128,7 @@ begin kputhex_HLA;
     else
       add($37,ebx);
     endif;
-    kputchar_HLA(ebx);
+    _kputchar(ebx);
     and(edx,eax);
     shr(4,edx);
     if (cl=0) then
@@ -161,22 +141,17 @@ begin kputhex_HLA;
   pop(ecx);
   pop(edx);
   pop(eax);
-end kputhex_HLA;
+end _kputhex;
 
-procedure kputhex(what: dword);
-begin kputhex;
-  kputhex_HLA(what);
-end kputhex;
-
-procedure kputbin_HLA(what: dword);
+procedure _kputbin(what: dword);
 //print binary number on screen
-begin kputbin_HLA;
+begin _kputbin;
   push(eax);
   push(edx);
   push(ecx);
   push(ebx);
   pushfd();
-  kputchar_HLA('%');
+  _kputchar('%');
   mov(what,eax);
   mov($7FFFFFFF,edx);
   mov(31,cl);
@@ -185,7 +160,7 @@ begin kputbin_HLA;
     shr(cl,ebx);
     and(1,ebx);
     add($30,ebx);
-    kputchar_HLA(ebx);
+    _kputchar(ebx);
     and(edx,eax);
     shr(1,edx);
     if (cl=0) then
@@ -198,11 +173,11 @@ begin kputbin_HLA;
   pop(ecx);
   pop(edx);
   pop(eax);
-end kputbin_HLA;
+end _kputbin;
 
-procedure kputunsint_HLA(what: dword);
+procedure _kputunsint(what: dword);
 //put unsigned decimal number on screen
-begin kputunsint_HLA;
+begin _kputunsint;
   push(eax);
   push(ebx);
   push(ecx);
@@ -216,7 +191,7 @@ begin kputunsint_HLA;
     zerify(edx);
     div(ebx,edx:eax);
     add($30,eax);
-    kputchar_HLA(eax);
+    _kputchar(eax);
   if (ebx=1) then
     break;
   endif;
@@ -237,10 +212,10 @@ begin kputunsint_HLA;
   pop(ecx);
   pop(ebx);
   pop(eax);
-end kputunsint_HLA;
+end _kputunsint;
 
-procedure kputsint_HLA(what: dword);
-begin kputsint_HLA;
+procedure _kputsint(what: dword);
+begin _kputsint;
   push(eax);
   push(ebx);
   pushfd();
@@ -248,19 +223,19 @@ begin kputsint_HLA;
   mov(eax,ebx);
   and($80000000,eax);
   if (@nz) then
-    kputchar_HLA('-');
+    _kputchar('-');
     not(ebx);
     add(1,ebx);
   endif;
-  kputunsint_HLA(ebx);
+  _kputunsint(ebx);
   popfd();
   pop(ebx);
   pop(eax);
-end kputsint_HLA;
+end _kputsint;
 
-procedure kcls_HLA;
+procedure _kcls;
 //clear screen, set "cursor" to zero and set cursor on screen
-begin kcls_HLA;
+begin _kcls;
   push(eax);
   push(ebx);
   pushfd();
@@ -280,12 +255,12 @@ begin kcls_HLA;
   popfd();
   pop(ebx);
   pop(eax);
-end kcls_HLA;
+end _kcls;
 
-procedure kscrollscreen_HLA;
+procedure _kscrollscreen;
 //scroll screen by 1 line
 //set "cursor" to (NO_LINES-1)*NO_COLUMNS*2 and set cursor on screen
-begin kscrollscreen_HLA;
+begin _kscrollscreen;
   push(eax);
   push(ebx);
   push(ecx);
@@ -313,11 +288,11 @@ begin kscrollscreen_HLA;
   pop(ecx);
   pop(ebx);
   pop(eax);
-end kscrollscreen_HLA;
+end _kscrollscreen;
 
-procedure kmove_cursor_HLA;
+procedure _kmove_cursor;
 //set cursor on screen at position "cursor"/2
-begin kmove_cursor_HLA;
+begin _kmove_cursor;
   push(eax);
   push(ecx);
   push(edx);
@@ -342,5 +317,36 @@ begin kmove_cursor_HLA;
   pop(edx);
   pop(ecx);
   pop(eax);
-end kmove_cursor_HLA;
+end _kmove_cursor;
+
+procedure kputchar(what: dword); @cdecl; @external;
+procedure kputchar(what: dword);
+begin kputchar;
+  _kputchar(what);
+end kputchar;
+
+procedure kputstring(what: string); @cdecl; @external;
+procedure kputstring(what: string);
+begin kputstring;
+  _kputstring(what);
+end kputstring;
+
+procedure kputhex(what: dword); @cdecl; @external;
+procedure kputhex(what: dword);
+begin kputhex;
+  _kputhex(what);
+end kputhex;
+
+procedure kputunsint(what: dword); @cdecl; @external;
+procedure kputunsint(what: dword);
+begin kputunsint;
+  _kputunsint(what);
+end kputunsint;
+
+procedure kputsint(what: dword); @cdecl; @external;
+procedure kputsint(what: dword);
+begin kputsint;
+  _kputsint(what);
+end kputsint;
+
 end Video;

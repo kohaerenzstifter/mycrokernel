@@ -29,6 +29,10 @@ static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
 static tss_t *irqs[MAX_IRQ + 1] = { NULL };
 
 
+#define NO_SYSCALLS (sizeof(syscalls) / sizeof(syscalls[0]))
+extern tss_t intrrpt2state;
+#define syscallstate intrrpt2state
+
 void paus()
 {
   int i;
@@ -97,7 +101,7 @@ void show_queue()
   tss_t *cur = NULL;
   kputstring("showing q"); kputchar(LF);
   for (cur = schedqueue.head; cur != NULL; cur = cur->next) {
-    kputstring("process "); kputhex(cur); kputstring(" ");
+    kputstring("process "); kputhex((uint32_t) cur); kputstring(" ");
   }
   kputchar(LF);
 }
@@ -412,16 +416,10 @@ int check_feature(uint32_t feature)
   return (found == 1) ? 0 : -1;
 }
 
-void set_feature(tss_t *context, tss_t *process, uint32_t feature)
+void set_feature(tss_t *process, uint32_t feature)
 {
   uint32_t mask = 1;
   uint32_t idx = 0;
-	
-  if (check_feature(feature) != 0) {
-    err = INVALIDFEATURE;
-    set_error(context, process);
-    goto finish;
-  }
 	
   while ((mask & feature) != 1) {
     idx++;
@@ -432,7 +430,6 @@ void set_feature(tss_t *context, tss_t *process, uint32_t feature)
     process->firstSender = featureTable[idx].waiter;
     featureTable[idx].waiter = NULL;
   }
-finish:
   return;
 }
 
@@ -445,23 +442,6 @@ tss_t *get_process_by_feature(uint32_t feature)
     mask <<= 1;
   }
   return featureTable[idx].supplier;
-}
-
-void request_irq(tss_t *context, tss_t *process, uint32_t irq)
-{
-  if (irq > MAX_IRQ) {
-    err = INVALIDIRQ;
-    set_error(context, process);
-    goto finish;
-  }
-  if (irqs[irq] != NULL) {
-    err = IRQINUSE;
-    set_error(context, process);
-    goto finish;
-  }
-  irqs[irq] = process;
-finish:
-  return;
 }
 
 void release_irqs_taken(tss_t *process)
@@ -486,6 +466,142 @@ void unblock_waiting_senders(tss_t *context, tss_t *process)
   }
 }
 
+void syscall_exit(void)
+{
+  curptr->state = EMPTY;
+  if (curptr->cs_reg != 0) {
+    free_gdt_idx(curptr->cs_reg & 0xfffc);
+  }
+  if (curptr->ds_reg != 0) {
+    free_gdt_idx(curptr->ds_reg & 0xfffc);
+  }
+  if (curptr->es_reg != 0) {
+    free_gdt_idx(curptr->es_reg & 0xfffc);
+  }
+  if (curptr->fs_reg != 0) {
+    free_gdt_idx(curptr->fs_reg & 0xfffc);
+  }
+  if (curptr->gs_reg != 0) {
+    free_gdt_idx(curptr->gs_reg & 0xfffc);
+  }
+  if (curptr->ss_reg != 0) {
+    free_gdt_idx(curptr->ss_reg & 0xfffc);
+  }
+  free_pid(curptr->pid);
+  release_irqs_taken(curptr);
+  unblock_waiting_senders(&syscallstate, curptr);
+  dequeue(curptr);
+}
+
+void syscall_send(void)
+{
+  tss_t *receiver = (tss_t *) curptr->ebx_reg;
+  uint32_t bytes = curptr->ecx_reg;
+  void *addr = (void *) curptr->edx_reg;
+  if (validate_data_area(curptr,addr,bytes) != 0) {
+    err = INVALIDBUFFER;
+    set_error(&syscallstate, curptr);
+    goto finish;
+  }
+  if (receiving_from(receiver,curptr)) {
+    bytes = exchange_data(curptr,receiver);
+    curptr->eax_reg = bytes;
+    receiver->eax_reg = bytes;
+    clear_receiving_from(receiver);
+    goto finish;
+  }
+  add_to_senders_list(curptr,receiver);
+finish:
+  return;
+}
+
+void syscall_send_by_feature(void)
+{
+  tss_t *receiver = NULL;
+  uint32_t feature = curptr->ebx_reg;
+  if (check_feature(feature) != 0) {
+    err = INVALIDFEATURE;
+    set_error(&syscallstate, curptr);
+    goto finish;
+  }
+  receiver = get_process_by_feature(feature);
+  if (receiver == curptr) {
+    err = CIRCULARSEND;
+    set_error(&syscallstate, curptr);
+    goto finish;
+  }
+  if (receiver != NULL) {
+    curptr->ebx_reg = (uint32_t) receiver;
+    syscall_send();
+    goto finish;
+  }
+  if (curptr->edi_reg == TRUE) {
+    add_waiting_for_feature(curptr, feature);
+    dequeue(curptr);
+    goto finish;
+  }
+  err = WOULDBLOCK;
+  set_error(&syscallstate, curptr);
+  goto finish;
+  
+finish:
+  return;
+}
+
+void syscall_receive(void)
+{
+  tss_t *sender = (tss_t *) curptr->ebx_reg;
+  tss_t *desired_sender = (tss_t *) curptr->ebx_reg;
+  uint32_t bytes = curptr->ecx_reg;
+  void *addr = (void *) curptr->edx_reg;
+  if (validate_data_area(curptr,addr,bytes) != 0) {
+    err = INVALIDBUFFER;
+    set_error(&syscallstate, curptr);
+    goto finish;
+  }
+  if ((sender = get_sender(desired_sender, curptr)) != NULL) {
+    bytes = exchange_data(sender,curptr);
+    curptr->eax_reg = bytes;
+    sender->eax_reg = bytes;
+    remove_from_senders_list(sender,curptr);
+    goto finish;
+  }
+  mark_as_receiving_from(curptr,desired_sender);
+finish:
+  return;
+}
+
+void syscall_setFeature(void)
+{
+  uint32_t feature = curptr->ebx_reg;
+  if (check_feature(feature) != 0) {
+    err = INVALIDFEATURE;
+    set_error(&syscallstate, curptr);
+    goto finish;
+  }
+  set_feature(curptr, feature);
+finish:
+  return;
+}
+
+void syscall_request_irq(void)
+{
+  uint32_t irq = curptr->eax_reg;
+  if (irq > MAX_IRQ) {
+    err = INVALIDIRQ;
+    set_error(&syscallstate, curptr);
+    goto finish;
+  }
+  if (irqs[irq] != NULL) {
+    err = IRQINUSE;
+    set_error(&syscallstate, curptr);
+    goto finish;
+  }
+  irqs[irq] = curptr;
+finish:
+  return;
+}
+
 void clockIsr()
 {
   seconds++;
@@ -498,10 +614,6 @@ void clockIsr()
     }
   }
 }
-
-#define NO_SYSCALLS (sizeof(syscalls) / sizeof(syscalls[0]))
-extern tss_t intrrpt2state;
-#define syscallstate intrrpt2state
 
 void syscallIsr()
 {
