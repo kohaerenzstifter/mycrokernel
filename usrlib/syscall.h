@@ -12,7 +12,7 @@ void call_syscall_exit();
 
 #define terror(x) \
   x; \
-  if (error != OK) { \
+  if (error < OK) { \
     goto finish; \
   }
 
