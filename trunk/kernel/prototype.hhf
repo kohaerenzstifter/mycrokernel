@@ -61,7 +61,6 @@ procedure add_waiting_for_feature(process: dword; feature:dword); @cdecl; @exter
 //to be dropped
 //procedure disable_interrupts_HLA; @external;
 //procedure enable_interrupts_HLA; @external;
-//procedure paus; @external;
 //procedure streq(s1: string; s2: string); @returns("eax"); @external;
 //procedure key_int; @external;
 //procedure clock_int; @external;

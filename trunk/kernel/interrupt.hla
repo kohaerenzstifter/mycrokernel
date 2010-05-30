@@ -26,5 +26,4 @@ end @text("hw_intrrpt" +_x_);
 
 #include("interrupts.hhf");
 
-
 end Hardint;

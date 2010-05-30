@@ -9,8 +9,8 @@ int main()
   int i;
   char buffer[42];
   uint32_t bytes = 0;
-  putstring("video: hallo"); putchar(LF);
-  call_syscall_setFeature(1, &error);
+  terror(call_syscall_request_irq(1, &error))
+  terror(call_syscall_setFeature(FEATURE_SPEAK, &error))
   putstring("video: set feature"); putchar(LF);
   for(;;) {
     bytes = call_syscall_receive(ANYPROC, buffer, sizeof(buffer), &error);
@@ -20,6 +20,9 @@ int main()
     putstring(buffer);
     putchar(LF);
   }
+finish:
+  //putstring("will exit"); putchar(LF);
+  call_syscall_exit();
 }
 
 /*int main()

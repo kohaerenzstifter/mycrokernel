@@ -90,7 +90,7 @@ loop_getmemmap:
 end_getmemmap:
 
   mov dl, [bootdrive]		;The drive we booted from
-  mov ah, 00h ;reset disk drive	;The function to reset drive in dl
+  mov ah, 00h			;reset disk drive;The function to reset drive in dl
   int 13h				;Call interrupt 13h ah
   jc rsterr			;Display error message if drive reset failed
   
@@ -99,7 +99,7 @@ end_getmemmap:
   mov bx, 0			;Address in segment es where to load gdt
   mov si, _GDT_SIZE/SECTOR_SIZE	;Read so many sectors
   mov cx, OFFSET + 1
-;	mov cx, 02h			;Cylinder 0, sector 2
+  ;mov cx, 02h		;Cylinder 0, sector 2
   mov dh, 0			;Head 0
   call loop_load
 
@@ -109,7 +109,7 @@ end_getmemmap:
   mov bx, 0						;Address in segment es where to load boot
   mov si, (_KERNEL_SIZE + _VIDEO_SIZE)/SECTOR_SIZE	;Read so many sectors
   mov cx, _GDT_SIZE/512 + 1 + OFFSET
-;	mov cx, 03h			;Cylinder 0, sector 3
+  ;mov cx, 03h			;Cylinder 0, sector 3
   mov dh, 0			;Head 0
   call loop_load
 
@@ -173,26 +173,6 @@ do_load_sector:
   jc lderr
   ret
 
-;align 2
-;loadSector:
-;head_increase:
-;  cmp cl, MAXSECTOR + 1
-;  jne cylinder_increase
-;  sub cl, NO_SECTORS
-;  inc dh
-;  jmp head_increase
-;cylinder_increase:
-;  cmp dh, MAXHEAD + 1
-;  jne over_cylinder_increase
-;  sub dh, NO_HEADS
-;  inc ch
-;  jmp cylinder_increase
-;over_cylinder_increase:
-;  mov ah, 02h		;Function to read from drive
-;  mov al, 1
-;  int 13h
-;  jc lderr
-;  ret
 align 2
 ;routine printstring: will print zero-terminated string from ds:si.
 printstring:

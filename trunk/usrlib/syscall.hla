@@ -2,14 +2,14 @@ unit syscall;
 
 #includeonce("../include/const.hhf")
 
-procedure call_syscall_setFeature_HLA(feature: byte; error: dword);
+procedure call_syscall_setFeature_HLA(feature: dword; error: dword);
 begin call_syscall_setFeature_HLA;
   push(eax);
   push(ebx);
   push(esi);
   pushfd();
   mov(SYS_SETFEATURE,eax);
-  movzx(feature,ebx);
+  mov(feature,ebx);
   mov(error,esi);
   int($22);
   popfd();
@@ -18,8 +18,8 @@ begin call_syscall_setFeature_HLA;
   pop(eax);
 end call_syscall_setFeature_HLA;
 
-procedure call_syscall_setFeature(feature: byte; error: dword); @cdecl; @external;
-procedure call_syscall_setFeature(feature: byte; error: dword);
+procedure call_syscall_setFeature(feature: dword; error: dword); @cdecl; @external;
+procedure call_syscall_setFeature(feature: dword; error: dword);
 begin call_syscall_setFeature;
   call_syscall_setFeature_HLA(feature, error);
 end call_syscall_setFeature;
@@ -78,21 +78,6 @@ begin call_syscall_send_by_feature;
   call_syscall_send_by_feature_HLA(feature, where, length, block, error);
 end call_syscall_send_by_feature;
 
-procedure call_syscall_request_irq_HLA(irq: dword; error: dword);
-begin call_syscall_request_irq_HLA;
-  push(esi);
-  mov(SYS_REQUEST_IRQ,eax);
-  mov(error,esi);
-  int($22);
-  pop(esi);
-end call_syscall_request_irq_HLA;
-
-procedure call_syscall_request_irq(irq: dword; error: dword); @cdecl; @external;
-procedure call_syscall_request_irq(irq: dword; error: dword);
-begin call_syscall_request_irq;
-  call_syscall_request_irq_HLA(irq, error);
-end call_syscall_request_irq;
-
 procedure call_syscall_exit; @cdecl; @external;
 procedure call_syscall_exit;
 begin call_syscall_exit;
@@ -100,8 +85,27 @@ begin call_syscall_exit;
   int($22);
 end call_syscall_exit;
 
+procedure call_syscall_request_irq_HLA(irq: dword; error: dword);
+begin call_syscall_request_irq_HLA;
+  push(eax);
+  push(ebx);
+  push(esi);
+  pushfd();
+  mov(SYS_REQUEST_IRQ,eax);
+  mov(irq,ebx);
+  mov(error,esi);
+  int($22);
+  popfd();
+  pop(esi);
+  pop(ebx);
+  pop(eax);
+end call_syscall_request_irq_HLA;
 
-
+procedure call_syscall_request_irq(irq: dword; error: dword); @cdecl; @external;
+procedure call_syscall_request_irq(irq: dword; error: dword);
+begin call_syscall_request_irq;
+  call_syscall_request_irq_HLA(irq, error);
+end call_syscall_request_irq;
 
 
 
