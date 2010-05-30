@@ -3,7 +3,7 @@
 #include "../usrlib/syscall.h"
 #include "prototype.h"
 
-/*int main()
+int main()
 {
   err_t error = OK;
   int i;
@@ -13,7 +13,6 @@
   call_syscall_setFeature(1, &error);
   putstring("video: set feature"); putchar(LF);
   for(;;) {
-    //for (i = 0; i < 1000000; i++);
     bytes = call_syscall_receive(ANYPROC, buffer, sizeof(buffer), &error);
     putunsint(bytes); putstring(" bytes: "); putchar(LF);
     bytes = (bytes < sizeof(buffer)) ? bytes : (sizeof(buffer) - 1);
@@ -21,18 +20,18 @@
     putstring(buffer);
     putchar(LF);
   }
-}*/
+}
 
-int main()
+/*int main()
 {
   err_t error = OK;
   terror(call_syscall_request_irq(1, &error))
   terror(call_syscall_setFeature(FEATURE_SPEAK, &error))
+*/
 
-
-finish:
+//finish:
 /*  if (error) {
     putstring("error: " error_to_string(error)); putchar(LF);
   }*/
-  call_syscall_exit();
-}
+ /* call_syscall_exit();
+}*/

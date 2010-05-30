@@ -70,7 +70,7 @@ static //global variables go here
   seconds: byte;
   align(4);
   schedqueue: schedqueue_t := schedqueue_t: [NULL,0,0];
-  align(4);
+/*  align(4);
   km: keymap_t[NO_SCANCODES, NO_MODIFIERS]:=
   [
     keymap_t:[&kputhex_HLA, 1, 0], keymap_t:[NULL, 0, 0],
@@ -256,7 +256,7 @@ static //global variables go here
     keymap_t:[NULL, 1, 18], keymap_t:[NULL, 0, 0],
     keymap_t:[NULL, 1, 17], keymap_t:[NULL, 0, 0],
     keymap_t:[&shift_released, 0, NULL], keymap_t:[&shift_released, 0, NULL]
-  ];
+  ];*/
 
 /*  align(4);
   syscalls: syscall_t[NO_SYSCALLS]:=
@@ -266,14 +266,14 @@ static //global variables go here
     syscall_t:[&syscall_receive],
     syscall_t:[&syscall_send_by_feature]
   ];*/
-	
-  align(4);
+
+/*  align(4);
   cmds: command_t[NO_COMMANDS]:=
   [
     command_t:["say",VARIANT, &say],
     command_t:["kcls",1, &kcls_HLA],
     command_t:["uptime",1, &uptime]
-  ];
+  ];*/
   align(4);
   params: byte[NO_COLUMNS*2];
   align(4);

@@ -5,7 +5,159 @@ unit Main;
 #includeonce("const.hhf")
 #includeonce("prototype.hhf")
 #includeonce("external.hhf");
+#includeonce("../include/always.hhf")
 
+//to be tested!
+procedure hook_int(i: dword; t: dword; s: dword; offset: dword); @nodisplay; @noalignstack;
+begin hook_int;
+  push(eax);
+  push(ebx);
+  push(ecx);
+  push(edx);
+  pushfd();
+  mov(i,eax);
+  mul(@size(idtdesc_t),eax);
+  mov(IDT_BASE,ebx);
+  fseg: mov(0,(type idtdesc_t [ebx]).zero[eax]);
+  mov(s,ecx);
+  fseg: mov(cx,(type idtdesc_t [ebx]).selector[eax]);
+  mov(t,edx);
+  if ((type inttype_t dl)=INTERRUPT || (type inttype_t dl)=TRAP) then
+    mov(offset,ecx);
+    fseg: mov(cx,(type idtdesc_t [ebx]).offset1[eax]);
+    shr(16,ecx);
+    fseg: mov(cx,(type idtdesc_t [ebx]).offset2[eax]);	
+    if ((type inttype_t dl)=INTERRUPT) then
+      fseg: mov(%10001110,(type idtdesc_t [ebx])._type_[eax]);
+    else
+      fseg: mov(%10001111,(type idtdesc_t [ebx])._type_[eax]);
+    endif;
+  else
+    fseg: mov(0,(type idtdesc_t [ebx]).offset1[eax]);
+    fseg: mov(0,(type idtdesc_t[ ebx]).offset2[eax]);
+    fseg: mov(%11100101,(type idtdesc_t [ebx])._type_[eax]);
+  endif;
+
+  popfd();
+  pop(edx);
+  pop(ecx);
+  pop(ebx);
+  pop(eax);
+end hook_int;
+
+procedure do_mem(pass: dword);
+begin do_mem;
+  pushfd();
+  push(esi);
+  push(eax);
+  push(ecx);
+  push(edi);
+  push(edx);
+  push(ebx);	
+  //here we copy the memory map into kernel space and show the user what we've got
+  mov(pass,esi);			//esi=pointer to memory map (preceded by number of memory regions found)
+  fseg: mov([esi],eax);		//eax=number of memory regions found
+  add(4,esi); //esi is now base of memory segments passed w/o the number of them
+  if (eax>MAX_MEM_AREAS) then
+    mov(MAX_MEM_AREAS,eax);		//We can only take so many
+  endif;					//memory regions into account
+  mov(eax,no_memregs);
+  mov((@size(memdesc_t)) div (@size(dword)),ecx);		//We need to copy so many dwords to get
+  mul(ecx,eax); //we discard edx, it *should* be zero	//the memory map into our segment
+  mov(eax,ecx);						//Now copy
+  mov(&memory,edi);					//the memory map
+  cld();							//into our address
+  fseg: rep.movsd();					//space
+  _kputstring("Following memory regions identified by BIOS:");
+  _kputchar(LF);	
+  mul(@size(dword),eax);					//Now let's
+  zerify(edx);						//show the
+  while(edx<eax) do					//user all
+    _kputstring("Base Address: ");			//the memory
+    _kputhex(memory.b[edx]);				//memory regions
+    _kputchar(TAB);					//found in
+    _kputstring("Length: ");				//the memory
+    _kputhex(memory.l[edx]);				//map
+    _kputchar(TAB);
+    _kputstring("Type: ");
+    _kputhex(memory.t[edx]);
+    _kputchar(LF);
+    add(@size(memdesc_t),edx);
+  endwhile;
+  zerify(eax);
+  /*The following part is a bit complicated. We look for the
+  first memory region in the memory map of type RAM. Then we
+  look at its size and subtract the size of the interrupt
+  descriptor table, the bios data area, the 512 byte bootcode,
+  the gdt size and the idt size. The result is what's left for
+  ourselves. And this calculated limit value is inserted into
+  the data and code descriptors in the global descriptor table.
+  Then we load cs,ds,es with the updated descriptors.*/
+  zerify(ebx);
+  while(memory.t[eax]<>RAM && ebx < MAX_MEM_AREAS) do
+    add(@size(memdesc_t),eax);
+    inc(ebx);
+  endwhile;
+  if (memory.t[eax]<>RAM) then
+    _kputstring("PANIC: NO RAM FOUND!");
+    cli;
+    hlt;
+  endif;
+  mov(memory.l[eax],ebx);
+  sub(SIZE_RMIVT+SIZE_BDA+512+SIZE_GDT+SIZE_IDT,ebx); //ebx now contains size of memory available for kernel
+
+  _kputchar(LF);
+  _kputchar(LF);
+  _kputstring("Memory available for kernel: ");
+  _kputhex(ebx);
+  _kputchar(LF);
+
+  /*Now that we actually know how much space there is left for the kernel
+  below the first MByte of memory, we can rewrite the segment descriptors.*/
+  /*
+  //shr(10,ebx);
+  //_write_segment_desc(IDX_KERNELCODE*@size(segdesc_t),ebx,$14700,TRUE,0,CODE,PAGE_GRANULARITY);
+  //_write_segment_desc(IDX_KERNELDATA*@size(segdesc_t),ebx,$14700,TRUE,0,DATA,PAGE_GRANULARITY);
+  FAR_JMP(IDX_KERNELCODE*@size(segdesc_t), &reload_ds);
+reload_ds:
+  mov($10,ax);
+  mov(ax,dseg);
+  mov(ax,eseg);*/
+
+  pop(ebx);
+  pop(edx);
+  pop(edi);
+  pop(ecx);
+  pop(eax);
+  pop(esi);
+  popfd();
+end do_mem;
+
+procedure remap_pics(offset1: dword; offset2: dword);
+begin remap_pics;
+  push(eax);
+  pushfd();
+  mov(ICW1_INIT+ICW1_ICW4,al);
+  out(al,PIC1_COMMAND);
+  mov(ICW1_INIT+ICW1_ICW4,al);
+  out(al,PIC2_COMMAND);
+  mov(offset1,eax);
+  out(al,PIC1_DATA);
+  mov(offset2,eax);
+  out(al,PIC2_DATA);
+  mov(%100,al);
+  out(al,PIC1_DATA);
+  mov(%10,al);
+  out(al,PIC2_DATA);
+  mov(ICW4_8086,al);
+  out(al,PIC1_DATA);
+  out(al,PIC2_DATA);
+  mov(%11111111,al);
+  out(al,PIC1_DATA); //let's mask all interrupts on master
+  out(al,PIC2_DATA); //and on slave
+  popfd();
+  pop(eax);
+end remap_pics;
 
 procedure start(pass: dword); @nodisplay; @noalignstack; //@noframe;
 var //local variables go here
@@ -19,42 +171,42 @@ begin start;
   mov(ebx,gdt.base);				//it more easily
 
   add(@size(DTdesc_t)+2,eax);		//eax=pointer to memory map (preceded by number of memory regions found)
-  kcls_HLA();
+  _kcls();
   do_mem(eax);				//Make sense of data found in memory map and adjust gdt accordingly
-  kmove_cursor_HLA();
-  kcls_HLA();
+  _kmove_cursor();
+  _kcls();
 
-  clear_echoline();
+//  _clear_echoline();
 
   /*The following entries in the gdt are
   used and need be marked in gdtBitmap via
-  calls to unfree_gdt_idx.*/ 
+  calls to _unfree_gdt_idx.*/ 
 
-  unfree_gdt_idx(0*@size(segdesc_t));
-  unfree_gdt_idx(IDX_KERNELCODE*@size(segdesc_t));
-  unfree_gdt_idx(IDX_KERNELDATA*@size					(segdesc_t));
-  unfree_gdt_idx(IDX_KERNELSTACK*@size(segdesc_t));
-  unfree_gdt_idx(IDX_INTERMEDIARYCODE*@size(segdesc_t)); //this segment shall not be used; was only used in 512.asm
-  unfree_gdt_idx(IDX_VIDEO*@size(segdesc_t));
-  unfree_gdt_idx(IDX_MEMORY*@size(segdesc_t));
-  unfree_gdt_idx(IDX_INTSTACK*@size(segdesc_t));
+  _unfree_gdt_idx(0*@size(segdesc_t));
+  _unfree_gdt_idx(IDX_KERNELCODE*@size(segdesc_t));
+  _unfree_gdt_idx(IDX_KERNELDATA*@size					(segdesc_t));
+  _unfree_gdt_idx(IDX_KERNELSTACK*@size(segdesc_t));
+  _unfree_gdt_idx(IDX_INTERMEDIARYCODE*@size(segdesc_t)); //this segment shall not be used; was only used in 512.asm
+  _unfree_gdt_idx(IDX_VIDEO*@size(segdesc_t));
+  _unfree_gdt_idx(IDX_MEMORY*@size(segdesc_t));
+  _unfree_gdt_idx(IDX_INTSTACK*@size(segdesc_t));
 
   /*Now the tasks most essential to the
   functioning of the system are written
-  into the gdt via calls to write_tss_desc.
+  into the gdt via calls to _write_tss_desc.
   This function also marks the respective
   entries in gdtBitmap as "in use".*/
 
-  write_tss_desc(IDX_KERNELTSS*@size(segdesc_t),104,&kernelstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  _write_tss_desc(IDX_KERNELTSS*@size(segdesc_t),104,&kernelstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
 
-  write_tss_desc(IDX_IDLETASKTSS*@size(segdesc_t),104,&idlestate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  _write_tss_desc(IDX_IDLETASKTSS*@size(segdesc_t),104,&idlestate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
 
-/*  write_tss_desc(IDX_CLOCKINTTSS*@size(segdesc_t),104,&clockintstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
-  write_tss_desc(IDX_KEYINTTSS*@size(segdesc_t),104,&keyintstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
-  write_tss_desc(IDX_SYSCALL*@size(segdesc_t),104,&syscallstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);*/
+/*  _write_tss_desc(IDX_CLOCKINTTSS*@size(segdesc_t),104,&clockintstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  _write_tss_desc(IDX_KEYINTTSS*@size(segdesc_t),104,&keyintstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  _write_tss_desc(IDX_SYSCALL*@size(segdesc_t),104,&syscallstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);*/
 
 #macro intrrpt_write_tss(string _x_);
-  write_tss_desc(@text("IDX_INTERRUPT"+_x_+"*@size(segdesc_t)"),104,&@text("intrrpt" + _x_ + "state")+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  _write_tss_desc(@text("IDX_INTERRUPT"+_x_+"*@size(segdesc_t)"),104,&@text("intrrpt" + _x_ + "state")+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
 #endmacro
 ?@tostring:intrrpt:text := "intrrpt_write_tss";
 
@@ -64,15 +216,15 @@ begin start;
   are marked as "assigned" in the pid
   bitmap*/
 
-  unfree_pid(PID_KERNEL);
-  unfree_pid(PID_IDLE);
+  _unfree_pid(PID_KERNEL);
+  _unfree_pid(PID_IDLE);
 /*  unfree_pid(PID_SYSCALL);
-  unfree_pid(PID_KEYINT);
-  unfree_pid(PID_CLOCK);*/
+  _unfree_pid(PID_KEYINT);
+  _unfree_pid(PID_CLOCK);*/
 
 
 #macro intrrpt_unfree_pid(string _x_);
-  unfree_pid(@text("PID_INTERRUPT"+_x_));
+  _unfree_pid(@text("PID_INTERRUPT"+_x_));
 #endmacro
 ?@tostring:intrrpt:text := "intrrpt_unfree_pid";
 
@@ -96,15 +248,15 @@ begin start;
   ltreg(ax);
   init_clock(CLOCK_DIVIDER);
 
-  kputstring_HLA("This is HL-OS. Known commands are:");
-  kputchar_HLA(LF);
-  kputstring_HLA("1) say {something}+");
-  kputchar_HLA(LF);
-  kputstring_HLA("2) cls");
-  kputchar_HLA(LF);
-  kputstring_HLA("3) uptime");
-  kputchar_HLA(LF);
-  kputchar_HLA(LF);
+  _kputstring("This is HL-OS. Known commands are:");
+  _kputchar(LF);
+  _kputstring("1) say {something}+");
+  _kputchar(LF);
+  _kputstring("2) cls");
+  _kputchar(LF);
+  _kputstring("3) uptime");
+  _kputchar(LF);
+  _kputchar(LF);
 
   mov(GDT_BASE+IDX_KERNELCODE*@size(segdesc_t),eax);
   fseg:movzx((type segdesc_t [eax]).limit,edx);
@@ -114,13 +266,11 @@ begin start;
   or(ecx,edx);
   add(KERNEL_BASE,edx);					//the base address of the video driver is now in edx!
 
-  create_process(3,100,0,edx,edx,NO_BASE,NO_BASE,$b8000,edx, $fffc,$fffc,0,0, 4096,$fffc);
-  enqueue(pproctab[eax]);
-  add(4,esp);
+  _create_process(3,100,0,edx,edx,NO_BASE,NO_BASE,$b8000,edx, $fffc,$fffc,0,0, 4096,$fffc);
+  _enqueue(pproctab[eax]);
 
-  create_process(0,100,&writer,KERNEL_BASE, KERNEL_BASE,NO_BASE,NO_BASE,$b8000, KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$fffc);
-  enqueue(pproctab[eax]);
-  add(4,esp);
+  _create_process(0,100,&writer,KERNEL_BASE, KERNEL_BASE,NO_BASE,NO_BASE,$b8000, KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$fffc);
+  _enqueue(pproctab[eax]);
 
 
   sti;

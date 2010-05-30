@@ -16,46 +16,40 @@ procedure syscall_send; @external;
 procedure syscall_receive; @external;
 procedure syscall_requestFeature; @external;
 procedure syscall_send_by_feature; @external;
+procedure _enqueue(process: dword); @external;
+procedure _dequeue(process: dword); @external;
 
 //routines for use in HLA
-procedure kputchar_HLA(what: dword); @external;
-procedure kputstring_HLA(what: string); @external;
-procedure kputhex_HLA(what: dword); @external;
-procedure kputbin_HLA(what: dword); @external;
-procedure kputunsint_HLA(what: dword); @external;
-procedure kputsint_HLA(what: dword); @external;
-procedure kscrollscreen_HLA; @external;
-procedure kmove_cursor_HLA; @external;
-procedure remap_pics(offset1: dword; offset2: dword); @external;
-procedure do_mem(pass: dword); @external;
-procedure hook_int(i: dword; t: dword; s: dword; offset: dword); @external;
-procedure write_tss_desc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; busy: dword; granularity: dword); @external;
-procedure write_segment_desc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; _type: dword; granularity: dword); @external;
-procedure create_process(privilege: dword; schedticks: dword; start: dword; csegmBase: dword; dsegmBase:dword; esegmBase: dword; fsegmBase: dword; gsegmBase: dword; ssegmBase: dword; csegmLimit: dword; dsegmLimit:dword; esegmLimit: dword; fsegmLimit: dword; gsegmLimit: dword; ssegmLimit: dword); @returns("eax"); @external;
-procedure unfree_gdt_idx(what: dword); @external;
-procedure free_gdt_idx(what: dword); @external;
-procedure unfree_pid(what: dword); @external;
-procedure free_pid(what: dword); @external;
-procedure exchange_data(sender: dword; receiver: dword); @external;
-procedure get_limit_HLA(gdtIndex: dword); @returns("eax"); @external;
+procedure _get_limit(gdtIndex: dword); @returns("eax"); @external;
+procedure _kcls; @external;
+procedure _kputchar(what: dword); @external;
+procedure _kputstring(what: string); @external;
+procedure _kputhex(what: dword); @external;
+procedure _kputbin(what: dword); @external;
+procedure _kputunsint(what: dword); @external;
+procedure _kputsint(what: dword); @external;
+procedure _kscrollscreen; @external;
+procedure _kmove_cursor; @external;
+procedure _write_tss_desc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; busy: dword; granularity: dword); @external;
+procedure _write_segment_desc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; _type: dword; granularity: dword); @external;
+procedure _create_process(privilege: dword; schedticks: dword; start: dword; csegmBase: dword; dsegmBase:dword; esegmBase: dword; fsegmBase: dword; gsegmBase: dword; ssegmBase: dword; csegmLimit: dword; dsegmLimit:dword; esegmLimit: dword; fsegmLimit: dword; gsegmLimit: dword; ssegmLimit: dword); @returns("eax"); @external;
+procedure _unfree_gdt_idx(what: dword); @external;
+procedure _free_gdt_idx(what: dword); @external;
+procedure _unfree_pid(what: dword); @external;
+procedure _free_pid(what: dword); @external;
+procedure _exchange_data(sender: dword; receiver: dword); @external;
+procedure _set_error(context: dword; process:dword); @external;
 
 //routines for use in C
-procedure kputchar(what: dword); @cdecl; @external;
-procedure kputstring(what: string); @cdecl; @external;
-procedure kputhex(what: dword); @cdecl; @external;
-procedure kputunsint(what: dword); @cdecl; @external;
-procedure kputsint(what: dword); @cdecl; @external;
 procedure enqueue(process: dword); @cdecl; @external;
 procedure dequeue(process: dword); @cdecl; @external;
 procedure do_hard_int(number: dword); @cdecl; @external;
 procedure release_irqs_taken(process: dword); @cdecl; @external;
 procedure unblock_waiting_senders(context: dword; process: dword); @cdecl; @external;
-procedure request_irq(context: dword; process: dword; irq: dword); @cdecl; @external;
 procedure get_process_by_feature(feature: dword); @returns("eax"); @cdecl; @external;
 procedure validate_data_area(process: dword; mem: dword;size: dword);@returns("eax"); @cdecl; @external;
 procedure check_feature(feature: dword); @cdecl; @external;
-procedure set_error(context: dword; process:dword); @cdecl; @external;
-procedure get_limit(gdtIndex: dword); @returns("eax"); @cdecl; @external;
+
 procedure get_sender(sender: dword; receiver: dword); @returns("eax"); @cdecl; @external;
 procedure show_tss(process:dword); @cdecl; @external;
 procedure receiving_from(receiver: dword; sender: dword); @returns("eax");@cdecl;@external;
@@ -64,33 +58,30 @@ procedure clear_receiving_from(receiver: dword); @cdecl;@external;
 procedure mark_as_receiving_from(receiver: dword; sender: dword); @cdecl;@external;
 procedure add_to_senders_list(sender: dword; receiver: dword); @cdecl;@external;
 procedure add_waiting_for_feature(process: dword; feature:dword); @cdecl; @external;
-procedure set_feature(context: dword; process:dword; feature: dword); @cdecl; @external;
 //to be dropped
-procedure disable_interrupts_HLA; @external;
-procedure enable_interrupts_HLA; @external;
-procedure start(pass: dword); @external;
-procedure paus; @external;
-procedure streq(s1: string; s2: string); @returns("eax"); @external;
-procedure key_int; @external;
-procedure clock_int; @external;
-procedure sys_call; @external;
+//procedure disable_interrupts_HLA; @external;
+//procedure enable_interrupts_HLA; @external;
+//procedure paus; @external;
+//procedure streq(s1: string; s2: string); @returns("eax"); @external;
+//procedure key_int; @external;
+//procedure clock_int; @external;
+//procedure sys_call; @external;
 //tty
-procedure readchar(what:dword); @external;
-procedure enter_pressed; @external;
-procedure backspace_pressed; @external;
-procedure shift_pressed; @external;
-procedure shift_released; @external;
-procedure echo(what:string); @external;
-procedure clear_echoline; @external;
-//??
-procedure show_sowgment(what: dword); @external;
-
+//procedure readchar(what:dword); @external;
+//procedure enter_pressed; @external;
+//procedure backspace_pressed; @external;
+//procedure shift_pressed; @external;
+//procedure shift_released; @external;
+//procedure echo(what:string); @external;
+//procedure _clear_echoline; @external;
 //other
 procedure writer; @cdecl; @external;
 procedure idle_task; @external;
 procedure uptime; @external;
 procedure say; @external;
-procedure kcls_HLA; @external;
+
+//special "function", never call!
+procedure start(pass: dword); @external;
 
 #macro intrrpt_procedure_decl(string _x_);
   procedure @text("hw_intrrpt"+_x_); @external;
@@ -154,17 +145,17 @@ end variant_args;
 
 #macro addToEchCursor(what);
   add(what,echcursor);
-  kmove_cursor_HLA()
+  _kmove_cursor()
 #endmacro
 
 #macro subFromEchCursor(what);
   sub(what,echcursor);
-  kmove_cursor_HLA()
+  _kmove_cursor()
 #endmacro
 
 #macro moveToEchCursor(what);
   mov(what,echcursor);
-  kmove_cursor_HLA()
+  _kmove_cursor()
 #endmacro
 
 #macro schedule(returnFrom);

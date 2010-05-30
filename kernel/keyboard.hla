@@ -7,7 +7,6 @@ unit Keys;
 #includeonce("../include/character.hhf")
 #includeonce("../include/always.hhf")
 
-procedure key_int; @nodisplay; @noalignstack; @noframe;
 /*This is executed on a keyboard interrupt. It reads the scancode
 from the keyboard, then pushes the the arguments
 km[scancode][kbd.modifier].args onto the stack and calls the routine
@@ -15,6 +14,7 @@ km[scancode][kbd.modifier].fnct.
 Note that if km[scancode][kbd.modifier].no_args > 1, km[scancode][kbd.modifier].args
 will not be interpreted as the actual arguments to the function, but
 as a pointer to where the dword-arguments lie consecutively in memory.*/
+/*procedure key_int; @nodisplay; @noalignstack; @noframe;
 begin key_int;
   forever
     zerify(eax);
@@ -46,10 +46,10 @@ begin key_int;
     out(al,PIC1_COMMAND);
     iret();
   endfor;
-end key_int;
+end key_int;*/
 
-procedure readchar(what:dword);
 /*Writes "what" to position kbd.write, increments kbd.write and echoes "what"*/
+/*procedure readchar(what:dword);
 begin readchar;
   push(eax);
   push(ebx);
@@ -64,7 +64,7 @@ begin readchar;
   popfd();
   pop(ebx);
   pop(eax);
-end readchar;
+end readchar;*/
 
 procedure echo(what:string);
 /*Writes "what" to screen position "echcursor" and advances "echcursor" by 2"*/
@@ -88,9 +88,9 @@ begin echo;
   pop(eax);
 end echo;
 
-procedure clear_echoline;
 /*Clears the echo line*/
-begin clear_echoline;
+/*procedure _clear_echoline;
+begin _clear_echoline;
   push(eax);
   push(ebx);
   pushfd();
@@ -107,9 +107,8 @@ begin clear_echoline;
   popfd();
   pop(ebx);
   pop(eax);
-end clear_echoline;
+end _clear_echoline;*/
 
-procedure enter_pressed;
 /*Zero-terminates the string from "&kbd.buffer[0]" to "kbd.write",
 then writes it to screen, resets "kbd.write" to "&kbd.buffer[0]"
 and clears the echo line. The line will be tokenised (whitespace
@@ -118,6 +117,7 @@ parameters, where the first parameter is the name of a command.
 Then the cmds array will be searched for the command and
 number of parameters. If a match can be found, the corresponding
 function will be called.*/
+/*procedure enter_pressed;
 begin enter_pressed;
   push(eax);
   push(ebx);
@@ -158,7 +158,7 @@ begin enter_pressed;
   if (esi > 0) then
     mov(attrib,al);
     mov(USER_ATTRIB,attrib);
-    kputstring_HLA(&kbd.buffer[0]);
+    _kputstring(&kbd.buffer[0]);
     mov(al,attrib);
     mov(cursor,ax);
     div(NO_COLUMNS,ax);
@@ -212,8 +212,8 @@ begin enter_pressed;
 	kputchar_HLA(LF);
       endif;
     else
-      kputstring_HLA("No such command or invalid parameter count: ");
-      kputstring_HLA(&params);
+      _kputstring("No such command or invalid parameter count: ");
+      _kputstring(&params);
       kputchar_HLA(LF);
     endif;
   endif;
@@ -223,7 +223,7 @@ begin enter_pressed;
   pop(ecx);
   pop(ebx);
   pop(eax);
-end enter_pressed;
+end enter_pressed;*/
 
 procedure backspace_pressed;
 /*Decrements "kbd.write", then clears the character at "kbd.write"
