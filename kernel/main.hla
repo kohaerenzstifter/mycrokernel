@@ -201,10 +201,6 @@ begin start;
 
   _write_tss_desc(IDX_IDLETASKTSS*@size(segdesc_t),104,&idlestate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
 
-/*  _write_tss_desc(IDX_CLOCKINTTSS*@size(segdesc_t),104,&clockintstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
-  _write_tss_desc(IDX_KEYINTTSS*@size(segdesc_t),104,&keyintstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
-  _write_tss_desc(IDX_SYSCALL*@size(segdesc_t),104,&syscallstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);*/
-
 #macro intrrpt_write_tss(string _x_);
   _write_tss_desc(@text("IDX_INTERRUPT"+_x_+"*@size(segdesc_t)"),104,&@text("intrrpt" + _x_ + "state")+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
 #endmacro
@@ -218,10 +214,6 @@ begin start;
 
   _unfree_pid(PID_KERNEL);
   _unfree_pid(PID_IDLE);
-/*  unfree_pid(PID_SYSCALL);
-  _unfree_pid(PID_KEYINT);
-  _unfree_pid(PID_CLOCK);*/
-
 
 #macro intrrpt_unfree_pid(string _x_);
   _unfree_pid(@text("PID_INTERRUPT"+_x_));
@@ -231,7 +223,6 @@ begin start;
   #include("interrupts.hhf");
 
   remap_pics($20,$28);
-
 
 #macro intrrpt_hook(string _x_);
   hook_int(@text("$20 + "+_x_),TSS,@text("IDX_INTERRUPT"+_x_)*@size(segdesc_t),0);

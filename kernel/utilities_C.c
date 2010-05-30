@@ -11,18 +11,20 @@ typedef struct _feature {
   tss_t *waiter;
 } feature_t;
 
-typedef  void (*syscallFunc_t)(void) ;
+typedef void (*syscallFunc_t)(void) ;
 
 void syscall_exit(void);
 void syscall_setFeature(void);
 void syscall_receive(void);
 void syscall_send_by_feature(void);
+void syscall_request_irq(void);
 
 static syscallFunc_t syscalls[] = {
   &syscall_exit,
   &syscall_setFeature,
   &syscall_receive,
-  &syscall_send_by_feature
+  &syscall_send_by_feature,
+  &syscall_request_irq
 };
 
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
@@ -33,11 +35,13 @@ static tss_t *irqs[MAX_IRQ + 1] = { NULL };
 extern tss_t intrrpt2state;
 #define syscallstate intrrpt2state
 
-void paus()
+void notify_irq(uint32_t number)
 {
-  int i;
-  for (i = 0; i < 0x0; i++) {
+  if (irqs[number] == NULL) {
+    goto finish;
   }
+finish:
+  return;
 }
 
 void uptime()
@@ -587,7 +591,7 @@ finish:
 void syscall_request_irq(void)
 {
   uint32_t irq = curptr->eax_reg;
-  if (irq > MAX_IRQ) {
+  if ((irq == 0)||(irq == 2)||(irq > MAX_IRQ)) {
     err = INVALIDIRQ;
     set_error(&syscallstate, curptr);
     goto finish;
@@ -638,6 +642,7 @@ void do_hard_int(uint32_t number)
     syscallIsr();
     goto finish;
   }
+  notify_irq(number);
 finish:
   if (nextptr == NULL) {
     charge_process();
