@@ -30,19 +30,25 @@ static syscallFunc_t syscalls[] = {
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
 static tss_t *irqs[MAX_IRQ + 1] = { NULL };
 
+extern tss_t intrrpt0state;
+extern tss_t intrrpt1state;
+extern tss_t intrrpt2state;
+extern tss_t intrrpt3state;
+extern tss_t intrrpt4state;
+extern tss_t intrrpt5state;
+extern tss_t intrrpt6state;
+extern tss_t intrrpt7state;
+extern tss_t intrrpt8state;
+extern tss_t intrrpt9state;
+extern tss_t intrrpt10state;
+extern tss_t intrrpt11state;
+extern tss_t intrrpt12state;
+extern tss_t intrrpt13state;
+extern tss_t intrrpt14state;
+extern tss_t intrrpt15state;
 
 #define NO_SYSCALLS (sizeof(syscalls) / sizeof(syscalls[0]))
-extern tss_t intrrpt2state;
 #define syscallstate intrrpt2state
-
-void notify_irq(uint32_t number)
-{
-  if (irqs[number] == NULL) {
-    goto finish;
-  }
-finish:
-  return;
-}
 
 void uptime()
 {
@@ -179,7 +185,6 @@ void dequeue(tss_t *process)
     pick_next_proc();
     goto finish;
   }
-
   if ((schedqueue.head == process)&&(process->next == NULL)) {
     nextptr = &idlestate;
   } else if (curptr == process) {
@@ -190,11 +195,9 @@ void dequeue(tss_t *process)
       nextptr = NULL;
     } while (nextptr == process);
   }
-
   if (process->previous != NULL) {
     process->previous->next = process->next;
   }
-
   if (process->next != NULL) {
     process->next->previous = process->previous;
   }
@@ -211,7 +214,7 @@ finish:
 void show_tss(tss_t *tss)
 {
   kputstring("backlink: "); kputhex(tss->backlink); kputchar(LF);
-  kputstring("zeroes1: "); kputhex(tss->zeroes1); kputchar(' ');
+  kputstring("interrupts: "); kputhex(tss->interrupts); kputchar(' ');
   kputstring("esp0: "); kputhex(tss->esp0); kputchar(LF);
   kputstring("ss0: "); kputhex(tss->ss0); kputchar(' ');
   kputstring("zeroes2: "); kputhex(tss->zeroes2); kputchar(LF);
@@ -277,8 +280,14 @@ void writer()
     for (i = 0; i < 100000; i++);
     call_syscall_send_by_feature(1,"Hallo Welt der Microkernel-Programmierung",41, FALSE, &error);
     if (error != OK) {
-      kputstring("hat leider nicht geklappt!");kputchar(LF);
+      disable_interrupts();
+      //kputstring("hat leider nicht geklappt: "); kputhex(error); kputchar(LF);
+      enable_interrupts();
       error = OK;
+    } else {
+      disable_interrupts();
+     // kputstring("juchhu, hat geklappt"); kputchar(LF);
+      enable_interrupts();
     }
   }
 }
@@ -519,6 +528,7 @@ finish:
   return;
 }
 
+
 void syscall_send_by_feature(void)
 {
   tss_t *receiver = NULL;
@@ -558,11 +568,21 @@ void syscall_receive(void)
   tss_t *desired_sender = (tss_t *) curptr->ebx_reg;
   uint32_t bytes = curptr->ecx_reg;
   void *addr = (void *) curptr->edx_reg;
+
   if (validate_data_area(curptr,addr,bytes) != 0) {
     err = INVALIDBUFFER;
     set_error(&syscallstate, curptr);
     goto finish;
   }
+  
+  if ((desired_sender == ANYPROC)&&(curptr->interrupts != 0)) {
+    err = curptr->interrupts;
+    set_error(&syscallstate, curptr);
+    curptr->interrupts = 0;
+    curptr->eax_reg = 0;
+    goto finish;
+  }
+
   if ((sender = get_sender(desired_sender, curptr)) != NULL) {
     bytes = exchange_data(sender,curptr);
     curptr->eax_reg = bytes;
@@ -570,7 +590,9 @@ void syscall_receive(void)
     remove_from_senders_list(sender,curptr);
     goto finish;
   }
+
   mark_as_receiving_from(curptr,desired_sender);
+
 finish:
   return;
 }
@@ -590,7 +612,9 @@ finish:
 
 void syscall_request_irq(void)
 {
-  uint32_t irq = curptr->eax_reg;
+  
+  uint32_t irq = curptr->ebx_reg;
+  kputstring("request for irq "); kputunsint(irq); kputchar(LF);
   if ((irq == 0)||(irq == 2)||(irq > MAX_IRQ)) {
     err = INVALIDIRQ;
     set_error(&syscallstate, curptr);
@@ -631,6 +655,42 @@ finish:
   return;
 }
 
+tss_t *interrupt_states[16] = {
+  &intrrpt0state,
+  &intrrpt1state,
+  &intrrpt2state,
+  &intrrpt3state,
+  &intrrpt4state,
+  &intrrpt5state,
+  &intrrpt6state,
+  &intrrpt7state,
+  &intrrpt8state,
+  &intrrpt9state,
+  &intrrpt0state,
+  &intrrpt11state,
+  &intrrpt12state,
+  &intrrpt13state,
+  &intrrpt14state,
+  &intrrpt15state
+};
+
+void notify_irq(uint32_t number)
+{
+  uint16_t mask = (1 << number);
+
+  if (irqs[number]->state & RECEIVING) {
+    err = mask;
+    set_error(interrupt_states[number], irqs[number]);
+    clear_receiving_from(irqs[number]);
+    irqs[number]->eax_reg = 0;
+    goto finish;
+  }
+  irqs[number]->interrupts |= mask;
+
+finish:
+  return;
+}
+
 //this may unblock the process
 void do_hard_int(uint32_t number)
 {
@@ -640,6 +700,9 @@ void do_hard_int(uint32_t number)
   }
   if (number == 2) {
     syscallIsr();
+    goto finish;
+  }
+  if (irqs[number] == NULL) {
     goto finish;
   }
   notify_irq(number);

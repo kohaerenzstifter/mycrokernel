@@ -4,7 +4,8 @@
 #pragma pack(1)
 struct _tss {
   unsigned short backlink;
-  unsigned short zeroes1;
+//  unsigned short zeroes1;
+  unsigned short interrupts;
   unsigned esp0;
   unsigned short ss0;
   unsigned short zeroes2;

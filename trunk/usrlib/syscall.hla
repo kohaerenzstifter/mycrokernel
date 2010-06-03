@@ -107,7 +107,21 @@ begin call_syscall_request_irq;
   call_syscall_request_irq_HLA(irq, error);
 end call_syscall_request_irq;
 
+procedure call_syscall_inb_HLA(port: dword; error: dword);
+begin call_syscall_inb_HLA;
+  push(ebx);
+  mov(SYS_INB,eax);
+  mov(port,ebx);
+  mov(error,esi);
+  int($22);
+  pop(ebx);
+end call_syscall_inb_HLA;
 
+procedure call_syscall_inb(port: dword; error: dword); @cdecl; @external;
+procedure call_syscall_inb(port: dword; error: dword);
+begin call_syscall_inb;
+  call_syscall_inb_HLA(port, error);
+end call_syscall_inb;
 
 
 

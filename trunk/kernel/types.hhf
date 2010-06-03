@@ -69,7 +69,8 @@ type syscall_t:
 type tss_t:
   record;
     backlink: word;
-    zeroes1: word;
+//    zeroes1: word;
+    interrupts: word;
     esp0: dword; //next: dword;
     ss0: word; //idx_tss: word;
     zeroes2: word;
