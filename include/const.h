@@ -1,15 +1,28 @@
 #ifndef INCLUDE_CONST_H
 #define INCLUDE_CONST_H
 
+char *error_strings[] = {
 #define OK 0
+  "OK",
 #define UNKNOWNSYSCALL -1
+  "unknown system call",
 #define INVALIDBUFFER -2
+  "invalid buffer",
 #define CIRCULARSEND -3
+  "attempt to send to yourself",
 #define WOULDBLOCK -4
+  "would block",
 #define INVALIDFEATURE -5
+  "no such feature",
 #define INVALIDIRQ -6
+  "no such irq",
 #define IRQINUSE -7
+  "irq already in use",
 #define PROCESSDIED -8
+  "peer died"
+};
+
+#define err2String(x) error_strings[(-x)]
 
 #define INT0 1
 #define INT1 (INT0 << 1)

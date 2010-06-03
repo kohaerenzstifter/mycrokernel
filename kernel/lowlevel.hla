@@ -488,25 +488,15 @@ begin showSegment;
   pop(eax);
 end showSegment;
 
-procedure disableInterrupts_HLA;
-begin disableInterrupts_HLA;
+procedure disable_interrupts;
+begin disable_interrupts;
   cli;
-end disableInterrupts_HLA;
+end disable_interrupts;
 
-procedure disableInterrupts;
-begin disableInterrupts;
-  disableInterrupts_HLA();
-end disableInterrupts;
-
-procedure enableInterrupts_HLA;
-begin enableInterrupts_HLA;
+procedure enable_interrupts;
+begin enable_interrupts;
   sti;
-end enableInterrupts_HLA;
-
-procedure enableInterrupts;
-begin enableInterrupts;
-  enableInterrupts_HLA();
-end enableInterrupts;
+end enable_interrupts;
 
 procedure halt_HLA;
 begin halt_HLA;

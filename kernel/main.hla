@@ -116,8 +116,8 @@ begin do_mem;
   below the first MByte of memory, we can rewrite the segment descriptors.*/
   /*
   //shr(10,ebx);
-  //_write_segment_desc(IDX_KERNELCODE*@size(segdesc_t),ebx,$14700,TRUE,0,CODE,PAGE_GRANULARITY);
-  //_write_segment_desc(IDX_KERNELDATA*@size(segdesc_t),ebx,$14700,TRUE,0,DATA,PAGE_GRANULARITY);
+  _write_segment_desc(IDX_KERNELCODE*@size(segdesc_t),ebx,$14800,TRUE,0,CODE,PAGE_GRANULARITY);
+  _write_segment_desc(IDX_KERNELDATA*@size(segdesc_t),ebx,$14800,TRUE,0,DATA,PAGE_GRANULARITY);
   FAR_JMP(IDX_KERNELCODE*@size(segdesc_t), &reload_ds);
 reload_ds:
   mov($10,ax);

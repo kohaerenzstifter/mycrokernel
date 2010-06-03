@@ -16,8 +16,6 @@ procedure syscall_send; @external;
 procedure syscall_receive; @external;
 procedure syscall_requestFeature; @external;
 procedure syscall_send_by_feature; @external;
-procedure _enqueue(process: dword); @external;
-procedure _dequeue(process: dword); @external;
 
 //routines for use in HLA
 procedure _get_limit(gdtIndex: dword); @returns("eax"); @external;
@@ -39,6 +37,8 @@ procedure _unfree_pid(what: dword); @external;
 procedure _free_pid(what: dword); @external;
 procedure _exchange_data(sender: dword; receiver: dword); @external;
 procedure _set_error(context: dword; process:dword); @external;
+procedure _enqueue(process: dword); @external;
+procedure _dequeue(process: dword); @external;
 
 //routines for use in C
 procedure enqueue(process: dword); @cdecl; @external;

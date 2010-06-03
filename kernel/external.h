@@ -18,7 +18,7 @@ extern tss_t *nextptr;
 extern tss_t idlestate;
 
 
-extern tss_t proctab[MAX_NO_PROCS];
+extern tss_t proctab[];
 
 extern DTdesc_t gdt;
 

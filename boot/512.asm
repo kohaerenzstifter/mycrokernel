@@ -14,10 +14,12 @@
 ;(idt: 12700-146ff) not yet written
 ;boot: 14700-(09ffff)
 
+%define SECTORS_PER_CYLINDER 36
+%define SECTORS_PER_HEAD 18
 %define MINSECTOR 1
 %define MAXSECTOR 18
-%define MINCYLINDER 0
-%define MAXCYLINDER 79
+;%define MINCYLINDER 0
+;%define MAXCYLINDER 79
 %define MINHEAD 0
 %define MAXHEAD 1
 %define NO_SECTORS 18
@@ -98,8 +100,7 @@ end_getmemmap:
   mov es, ax			;to load gdt
   mov bx, 0			;Address in segment es where to load gdt
   mov si, _GDT_SIZE/SECTOR_SIZE	;Read so many sectors
-  mov cx, OFFSET + 1
-  ;mov cx, 02h		;Cylinder 0, sector 2
+  mov cx, OFFSET ;+ 1
   mov dh, 0			;Head 0
   call loop_load
 
@@ -107,9 +108,8 @@ end_getmemmap:
   mov ax, KERNEL_BASE/010h				;Segment where
   mov es, ax						;to load boot
   mov bx, 0						;Address in segment es where to load boot
-  mov si, (_KERNEL_SIZE + _VIDEO_SIZE)/SECTOR_SIZE	;Read so many sectors
-  mov cx, _GDT_SIZE/512 + 1 + OFFSET
-  ;mov cx, 03h			;Cylinder 0, sector 3
+  mov si, (_KERNEL_SIZE + _VIDEO_SIZE + 1)/SECTOR_SIZE	;Read so many sectors
+  mov cx, _GDT_SIZE/512 + OFFSET ;+ 1 
   mov dh, 0			;Head 0
   call loop_load
 
@@ -141,37 +141,97 @@ lderr:
   call printstring
   cli
   hlt
-align 2
 
+align 2
 loop_load:
+  push ax
+  push cx
+  push dx
+  push di
+  push si
+  mov di, cx
+loop_load_again:
   cmp si, 0h
   je end_loop_load
-  call loadSector
+  call do_chs;
+  call do_load_sector;
+  inc di
   dec si
-  inc cl
   mov ax, es
   add ax, SECTOR_SIZE/10h
   mov es, ax
-  jmp loop_load
+  jmp loop_load_again
 end_loop_load:
+  pop si
+  pop di
+  pop dx
+  pop cx
+  pop ax
   ret
 
 align 2
-loadSector:
-  cmp cl, MAXSECTOR + 1
-  jne do_load_sector
-  mov cl, MINSECTOR
-  inc dh
-  cmp dh, MAXHEAD + 1
-  jne do_load_sector
-  mov dh, MINHEAD
+do_chs:
+  push ax
+  mov ax, di
+  mov ch, 0
+  mov dh, 0
+do_c:
+  cmp ax, SECTORS_PER_CYLINDER
+  js do_h
   inc ch
+  sub ax, SECTORS_PER_CYLINDER
+  jmp do_c
+do_h:
+  cmp ax, SECTORS_PER_HEAD 
+  js do_done
+  inc dh
+  sub ax, SECTORS_PER_HEAD
+  jmp do_h
+do_done:
+  mov cl, al
+  inc cl
+  pop ax
+  ret
+
+align 2
 do_load_sector:
+  push ax
   mov ah, 02h		;Function to read from drive
   mov al, 1
   int 13h
   jc lderr
+  pop ax
   ret
+
+;loop_load:
+;  cmp si, 0h
+;  je end_loop_load
+;  call loadSector
+;  dec si
+;  inc cl
+;  mov ax, es
+;;  add ax, SECTOR_SIZE/10h
+;  mov es, ax
+;  jmp loop_load
+;end_loop_load:
+;  ret
+
+;align 2
+;loadSector:
+;  cmp cl, MAXSECTOR + 1
+;  jne do_load_sector
+;  mov cl, MINSECTOR
+;  inc dh
+;;  cmp dh, MAXHEAD + 1
+;  jne do_load_sector
+;  mov dh, MINHEAD
+;  inc ch
+;do_load_sector:
+;  mov ah, 02h		;Function to read from drive
+;  mov al, 1
+;  int 13h
+;  jc lderr
+;  ret
 
 align 2
 ;routine printstring: will print zero-terminated string from ds:si.
@@ -202,6 +262,9 @@ lderr_msg:
 align 2
 gdtldd_msg:
   db 0ah, 0dh, 'Successfully loaded GDT!',0
+align 2
+loopload_msg:
+  db 0ah, 0dh, 'loop..',0
 align 2
 bootdrive:
   db 0

@@ -11,5 +11,6 @@ const
   SYS_RECEIVE: text:="2";
   SYS_SEND_BY_FEATURE: text:="3";
   SYS_REQUEST_IRQ: text:="4";
+  SYS_INB: text:="5";
 
   ANYPROC: text:="NULL";

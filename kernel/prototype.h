@@ -20,8 +20,8 @@ void free_pid(uint32_t pid);
 //void call_syscall_send_C(tss_t *receiver, void *where, uint32_t length);
 //void call_syscall_receive_C(tss_t *receiver, void *where, uint32_t length);
 
-void disableInterrupts();
-void enableInterrupts();
+void disable_interrupts();
+void enable_interrupts();
 void halt();
 
 void set_error(tss_t *context, tss_t *process);
