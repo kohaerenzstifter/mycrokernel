@@ -19,7 +19,9 @@ char *error_strings[] = {
 #define IRQINUSE -7
   "irq already in use",
 #define PROCESSDIED -8
-  "peer died"
+  "peer died",
+#define NOPERMS -9
+  "no permissions for this operation"
 };
 
 #define err2String(x) error_strings[(-x)]

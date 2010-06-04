@@ -25,6 +25,21 @@ begin _set_error;
   pop(eax);
 end _set_error;
 
+procedure _inb(port: dword);
+begin _inb;
+  push(edx);
+  zerify(eax);
+  mov(port,edx);
+  in(dx,al);
+  pop(edx);
+end _inb;
+
+procedure inb(port: dword); @cdecl; @external;
+procedure inb(port: dword);
+begin inb;
+  _inb(port);
+end inb;
+
 procedure _enqueue(process: dword);
 begin _enqueue;
   enqueue(process);
