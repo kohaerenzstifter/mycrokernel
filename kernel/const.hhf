@@ -45,7 +45,7 @@ const
   NO_SYSCALLS: text:="4";
   INVALIDPROC: text:="(&proctab - 1)";
   NO_AVL_DSCRPTS: text:="8192";	//the number of descriptors available in the gdt
-  MAX_NO_PROCS: text:="50";
+  MAX_NO_PROCS: text:="150";
   FRONT: text:="1";
   BACK: text:="0";
   TRUE: text:="1";

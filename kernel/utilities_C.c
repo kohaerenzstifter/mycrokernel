@@ -18,13 +18,15 @@ void syscall_setFeature(void);
 void syscall_receive(void);
 void syscall_send_by_feature(void);
 void syscall_request_irq(void);
+void syscall_inb(void);
 
 static syscallFunc_t syscalls[] = {
   &syscall_exit,
   &syscall_setFeature,
   &syscall_receive,
   &syscall_send_by_feature,
-  &syscall_request_irq
+  &syscall_request_irq,
+  &syscall_inb
 };
 
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
@@ -609,6 +611,25 @@ void syscall_setFeature(void)
 finish:
   return;
 }
+
+boolean_t has_port_access(tss_t *process, uint32_t port)
+{
+  //TODO
+  return TRUE;
+}
+
+void syscall_inb(void)
+{
+  uint32_t port = curptr->ebx_reg;
+  if (!has_port_access(curptr, port)) {
+    err = NOPERMS;
+    set_error(&syscallstate, curptr);
+    goto finish;
+  }
+  curptr->eax_reg = inb(port);
+finish:
+  return;
+}  
 
 void syscall_request_irq(void)
 {
