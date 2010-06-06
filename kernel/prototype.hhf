@@ -49,6 +49,11 @@ procedure unblock_waiting_senders(context: dword; process: dword); @cdecl; @exte
 procedure get_process_by_feature(feature: dword); @returns("eax"); @cdecl; @external;
 procedure validate_data_area(process: dword; mem: dword;size: dword);@returns("eax"); @cdecl; @external;
 procedure check_feature(feature: dword); @cdecl; @external;
+procedure create_process(privilege: dword; schedticks: dword; start: dword;
+ csegmBase: dword; dsegmBase:dword; esegmBase: dword;
+ fsegmBase: dword; gsegmBase: dword; ssegmBase: dword;
+ csegmLimit: dword; dsegmLimit:dword; esegmLimit: dword;
+ fsegmLimit: dword; gsegmLimit: dword; ssegmLimit: dword); @returns("eax"); @cdecl; @external;
 
 procedure get_sender(sender: dword; receiver: dword); @returns("eax"); @cdecl; @external;
 procedure show_tss(process:dword); @cdecl; @external;

@@ -19,6 +19,7 @@ extern tss_t idlestate;
 
 
 extern tss_t proctab[];
+extern tss_t *pproctab[];
 
 extern DTdesc_t gdt;
 

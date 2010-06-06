@@ -135,4 +135,3 @@ type schedqueue_t:
   endrecord;
 
 type inttype_t: enum{INTERRUPT, TRAP, TSS};
-type segtype_t: enum{CODE, DATA, STACK};

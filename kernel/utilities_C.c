@@ -734,3 +734,201 @@ finish:
   }
   return;
 }
+
+tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
+  uint32_t csegmBase, uint32_t dsegmBase, uint32_t esegmBase,
+  uint32_t fsegmBase, uint32_t gsegmBase, uint32_t ssegmBase,
+  uint32_t csegmLimit, uint32_t dsegmLimit, uint32_t esegmLimit,
+  uint32_t fsegmLimit, uint32_t gsegmLimit, uint32_t ssegmLimit)
+{
+  uint32_t limit = 0;
+  tss_t *result = NULL;
+  uint32_t idx = 0;
+  uint32_t tssIdx = INVALID_GDT_IDX;
+  uint32_t csegmIdx = INVALID_GDT_IDX;
+  uint32_t dsegmIdx = INVALID_GDT_IDX;
+  uint32_t esegmIdx = INVALID_GDT_IDX;
+  uint32_t fsegmIdx = INVALID_GDT_IDX;
+  uint32_t gsegmIdx = INVALID_GDT_IDX;
+  uint32_t ssegmIdx = INVALID_GDT_IDX;
+  tss_t *process = NULL;
+
+  for (;;) {
+    process = pproctab[idx];
+    if (process == pproctab[MAX_NO_PROCS]) {
+      goto finish;
+    }
+    if (process->state == EMPTY) {
+      break;
+    }
+    idx++;
+  }
+  if (csegmBase != NO_BASE) {
+    csegmIdx = get_free_gdt_idx();
+    if (csegmIdx == INVALID_GDT_IDX) {
+      goto finish;
+    }
+    if (csegmLimit > 0xfffff) {
+      limit = csegmLimit;
+      limit &= 0x3ff;
+      if (limit == 0) {
+	limit = (csegmLimit >> 12);
+      } else {
+	limit = (csegmLimit >> 12) + 1;
+      }
+      write_segment_desc(csegmIdx, limit, csegmBase, TRUE, privilege, CODE, PAGE_GRANULARITY);
+    } else {
+      write_segment_desc(csegmIdx, csegmLimit, csegmBase, TRUE, privilege, CODE, BYTE_GRANULARITY);      
+    }
+  }
+  if (dsegmBase != NO_BASE) {
+    dsegmIdx = get_free_gdt_idx();
+    if (dsegmIdx == INVALID_GDT_IDX) {
+      goto finish;
+    }
+    if (dsegmLimit > 0xfffff) {
+      limit = dsegmLimit;
+      limit &= 0x3ff;
+      if (limit == 0) {
+	limit = (dsegmLimit >> 12);
+      } else {
+	limit = (dsegmLimit >> 12) + 1;
+      }
+      write_segment_desc(dsegmIdx, limit, dsegmBase, TRUE, privilege, DATA, PAGE_GRANULARITY);
+    } else {
+      write_segment_desc(dsegmIdx, dsegmLimit, dsegmBase, TRUE, privilege, DATA, BYTE_GRANULARITY);      
+    }
+  }
+  if (esegmBase != NO_BASE) {
+    esegmIdx = get_free_gdt_idx();
+    if (esegmIdx == INVALID_GDT_IDX) {
+      goto finish;
+    }
+    if (esegmLimit > 0xfffff) {
+      limit = esegmLimit;
+      limit &= 0x3ff;
+      if (limit == 0) {
+	limit = (esegmLimit >> 12);
+      } else {
+	limit = (esegmLimit >> 12) + 1;
+      }
+      write_segment_desc(esegmIdx, limit, esegmBase, TRUE, privilege, DATA, PAGE_GRANULARITY);
+    } else {
+      write_segment_desc(esegmIdx, esegmLimit, esegmBase, TRUE, privilege, DATA, BYTE_GRANULARITY);      
+    }
+  }
+  if (fsegmBase != NO_BASE) {
+    fsegmIdx = get_free_gdt_idx();
+    if (fsegmIdx == INVALID_GDT_IDX) {
+      goto finish;
+    }
+    if (fsegmLimit > 0xfffff) {
+      limit = fsegmLimit;
+      limit &= 0x3ff;
+      if (limit == 0) {
+	limit = (fsegmLimit >> 12);
+      } else {
+	limit = (fsegmLimit >> 12) + 1;
+      }
+      write_segment_desc(fsegmIdx, limit, fsegmBase, TRUE, privilege, DATA, PAGE_GRANULARITY);
+    } else {
+      write_segment_desc(fsegmIdx, fsegmLimit, fsegmBase, TRUE, privilege, DATA, BYTE_GRANULARITY);      
+    }
+  }
+  if (gsegmBase != NO_BASE) {
+    gsegmIdx = get_free_gdt_idx();
+    if (gsegmIdx == INVALID_GDT_IDX) {
+      goto finish;
+    }
+    if (gsegmLimit > 0xfffff) {
+      limit = gsegmLimit;
+      limit &= 0x3ff;
+      if (limit == 0) {
+	limit = (gsegmLimit >> 12);
+      } else {
+	limit = (gsegmLimit >> 12) + 1;
+      }
+      write_segment_desc(gsegmIdx, limit, gsegmBase, TRUE, privilege, DATA, PAGE_GRANULARITY);
+    } else {
+      write_segment_desc(gsegmIdx, gsegmLimit, gsegmBase, TRUE, privilege, DATA, BYTE_GRANULARITY);      
+    }
+  }
+  if (ssegmBase != NO_BASE) {
+    ssegmIdx = get_free_gdt_idx();
+    if (ssegmIdx == INVALID_GDT_IDX) {
+      goto finish;
+    }
+    if (ssegmLimit > 0xfffff) {
+      limit = ssegmLimit;
+      limit &= 0x3ff;
+      if (limit == 0) {
+	limit = (ssegmLimit >> 12);
+      } else {
+	limit = (ssegmLimit >> 12) + 1;
+      }
+      write_segment_desc(ssegmIdx, limit, ssegmBase, TRUE, privilege, DATA, PAGE_GRANULARITY);
+    } else {
+      write_segment_desc(ssegmIdx, ssegmLimit, ssegmBase, TRUE, privilege, DATA, BYTE_GRANULARITY);      
+    }
+  }
+  tssIdx = get_free_gdt_idx();
+  if (tssIdx == INVALID_GDT_IDX) {
+    goto finish;
+  }
+  write_tss_desc(tssIdx, sizeof(tss_t), KERNEL_BASE + (uint32_t ) process, TRUE, privilege, TRUE, BYTE_GRANULARITY);
+
+  process->idx_tss = tssIdx;
+  process->schedticks = schedticks;
+  process->ticksleft = schedticks;
+  process->esp_reg = ssegmLimit;
+  process->ebp_reg = ssegmLimit;
+  process->eip_reg = start;
+  //TODO: what do these flags mean?
+  process->eflag_reg = 0x200;
+  process->state = 0;
+  process->callMask = 0;
+  process->next = NULL;
+  process->previous = NULL;
+  process->firstSender = NULL;
+  process->nextSender = NULL;
+  process->receivingFrom = NULL;
+  process->iomap_base = sizeof(tss_t);
+
+  process->cs_reg = csegmIdx + privilege;
+  process->ds_reg = dsegmIdx + privilege;
+  process->es_reg = esegmIdx + privilege;
+  process->fs_reg = fsegmIdx + privilege;
+  process->gs_reg = gsegmIdx + privilege;
+  process->ss_reg = ssegmIdx + privilege;
+  result = process;
+  csegmIdx = INVALID_GDT_IDX;
+  dsegmIdx = INVALID_GDT_IDX;
+  esegmIdx = INVALID_GDT_IDX;
+  fsegmIdx = INVALID_GDT_IDX;
+  gsegmIdx = INVALID_GDT_IDX;
+  ssegmIdx = INVALID_GDT_IDX;
+  tssIdx = INVALID_GDT_IDX;
+finish:
+  if (csegmIdx != INVALID_GDT_IDX) {
+    free_gdt_idx(csegmIdx);
+  }
+  if (dsegmIdx != INVALID_GDT_IDX) {
+    free_gdt_idx(dsegmIdx);
+  }
+  if (esegmIdx != INVALID_GDT_IDX) {
+    free_gdt_idx(esegmIdx);
+  }
+  if (fsegmIdx != INVALID_GDT_IDX) {
+    free_gdt_idx(fsegmIdx);
+  }
+  if (gsegmIdx != INVALID_GDT_IDX) {
+    free_gdt_idx(gsegmIdx);
+  }
+  if (ssegmIdx != INVALID_GDT_IDX) {
+    free_gdt_idx(ssegmIdx);
+  }
+  if (tssIdx != INVALID_GDT_IDX) {
+    free_gdt_idx(tssIdx);
+  }
+  return result;
+}

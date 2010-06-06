@@ -12,14 +12,14 @@ static
       $ffff & KERNEL_BASE,
       KERNEL_BASE >> 16,
       %10011010,
-      (%11000000 | ((@text(@env("_KERNEL_SIZE"))) >> 16)),
+      (%1000000 | ((@text(@env("_KERNEL_SIZE"))) >> 16)),
       KERNEL_BASE >> 24],
     segdesc_t:[
       ((@text(@env("_KERNEL_SIZE"))) & %1111111111111111),
       $ffff & KERNEL_BASE,
       KERNEL_BASE >> 16,
       %10010010,
-      (%11000000 | ((@text(@env("_KERNEL_SIZE"))) >> 16)),
+      (%1000000 | ((@text(@env("_KERNEL_SIZE"))) >> 16)),
       KERNEL_BASE >> 24
     ],
     segdesc_t:[
