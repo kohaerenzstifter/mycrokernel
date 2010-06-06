@@ -1,6 +1,9 @@
 #includeonce("always.hhf")
 
 const
+  CODE: text:="0";
+  DATA: text:="1";
+  STACK: text:="2";
   //characters
   ERROR: text:="$FF";
   BCKSPCE: text:="$8";
@@ -39,13 +42,14 @@ const
   KEYPADDEL: text:="ERROR";
 
   //miscellaneous constants
-  INVALID_GDT_IDX: text:="NO_AVL_DSCRPTS * @size(segdesc_t)";
+  INVALID_GDT_IDX: text:="0";
+//  INVALID_GDT_IDX: text:="NO_AVL_DSCRPTS * @size(segdesc_t)";
   NO_AVL_PIDS: text:="$ffff + 1";
   INVALID_PID: text:="NO_AVL_PIDS";
   NO_SYSCALLS: text:="4";
   INVALIDPROC: text:="(&proctab - 1)";
   NO_AVL_DSCRPTS: text:="8192";	//the number of descriptors available in the gdt
-  MAX_NO_PROCS: text:="150";
+  MAX_NO_PROCS: text:="100";
   FRONT: text:="1";
   BACK: text:="0";
   TRUE: text:="1";

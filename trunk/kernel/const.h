@@ -31,4 +31,15 @@
 
 #define MAX_IRQ 15
 
+#define E_NONEWPROCESS
+
+#define MAX_NO_PROCS 100
+#define NO_BASE 0xffffffff
+#define CODE 0
+#define DATA 1
+#define STACK 2
+#define PAGE_GRANULARITY 1
+#define BYTE_GRANULARITY 0
+#define KERNEL_BASE 0x14800
+
 #endif

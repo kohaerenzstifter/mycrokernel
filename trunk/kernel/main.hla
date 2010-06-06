@@ -258,10 +258,10 @@ begin start;
   add(KERNEL_BASE,edx);					//the base address of the video driver is now in edx!
 
   _create_process(3,100,0,edx,edx,NO_BASE,NO_BASE,$b8000,edx, $fffc,$fffc,0,0, 4096,$fffc);
-  _enqueue(pproctab[eax]);
+  _enqueue(eax);
 /*
   _create_process(0,100,&writer,KERNEL_BASE, KERNEL_BASE,NO_BASE,NO_BASE,$b8000, KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$fffc);
-  _enqueue(pproctab[eax]);
+  _enqueue(eax);
 */
 
   sti;

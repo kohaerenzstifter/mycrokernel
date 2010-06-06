@@ -39,4 +39,5 @@ finish:
   }
   putstring("will exit"); putchar(LF);
   call_syscall_exit();
+  return 0;
 }
