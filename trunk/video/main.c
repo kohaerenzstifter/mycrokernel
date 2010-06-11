@@ -10,8 +10,13 @@ int main()
   int i;
   char buffer[42];
   uint32_t bytes = 0;
+  putstring("line "); putunsint(__LINE__); putchar(LF);
+  terror(call_syscall_claim_port(0x60, &error))
+    putstring("line "); putunsint(__LINE__); putchar(LF);
   terror(call_syscall_request_irq(1, &error))
+   putstring("line "); putunsint(__LINE__); putchar(LF);
   terror(call_syscall_setFeature(FEATURE_SPEAK, &error))
+   putstring("line "); putunsint(__LINE__); putchar(LF);
   cls();
   putstring("video: set feature"); putchar(LF);
   for(;;) {

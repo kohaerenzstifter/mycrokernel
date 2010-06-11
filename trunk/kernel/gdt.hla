@@ -3,6 +3,11 @@ unit Gdt;
 #includeonce("const.hhf")
 #includeonce("types.hhf")
 
+
+#print("kernel size ", @text(@env("_KERNEL_SIZE")))
+#print("anded size ", ((@text(@env("_KERNEL_SIZE"))) & %1111111111111111))
+#print("shifted size ", ((@text(@env("_KERNEL_SIZE"))) >> 16))
+
 static
   globalDT: segdesc_t[NO_GDTENTRIES_BYDEFAULT] :=
   [
@@ -12,14 +17,14 @@ static
       $ffff & KERNEL_BASE,
       KERNEL_BASE >> 16,
       %10011010,
-      (%1000000 | ((@text(@env("_KERNEL_SIZE"))) >> 16)),
+      (%11000000 | ((@text(@env("_KERNEL_SIZE"))) >> 16)),
       KERNEL_BASE >> 24],
     segdesc_t:[
-      ((@text(@env("_KERNEL_SIZE"))) & %1111111111111111),
+      $ffff, //((@text(@env("_KERNEL_SIZE"))) & %1111111111111111),
       $ffff & KERNEL_BASE,
       KERNEL_BASE >> 16,
       %10010010,
-      (%1000000 | ((@text(@env("_KERNEL_SIZE"))) >> 16)),
+      %11001111, //(%1000000 | ((@text(@env("_KERNEL_SIZE"))) >> 16)),
       KERNEL_BASE >> 24
     ],
     segdesc_t:[
