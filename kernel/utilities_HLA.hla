@@ -147,7 +147,6 @@ begin get_free_gdt_idx;
   pushfd();
   getFreeBitInBitfield(&gdtBitmap, NO_AVL_DSCRPTS);
   mul(@size(segdesc_t),eax);
-_kputstring("returning: "); _kputhex(eax); _kputchar(LF);
   popfd();
   pop(edx);
 end  get_free_gdt_idx;

@@ -19,6 +19,7 @@ void syscall_receive(void);
 void syscall_send_by_feature(void);
 void syscall_request_irq(void);
 void syscall_inb(void);
+void syscall_claim_port(void);
 
 static syscallFunc_t syscalls[] = {
   &syscall_exit,
@@ -26,11 +27,15 @@ static syscallFunc_t syscalls[] = {
   &syscall_receive,
   &syscall_send_by_feature,
   &syscall_request_irq,
-  &syscall_inb
+  &syscall_inb,
+  &syscall_claim_port
 };
 
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
 static tss_t *irqs[MAX_IRQ + 1] = { NULL };
+
+static boolean_t port_accessers_initialised = FALSE;
+static tss_t *port_accessers[NUM_PORTS];
 
 extern tss_t intrrpt0state;
 extern tss_t intrrpt1state;
@@ -106,6 +111,14 @@ void enqueue(tss_t *process)
 
 finish:
   return;
+}
+
+void zerify(char *address, uint32_t size)
+{
+  uint32_t i;
+  for (i = 0; i < size; i++) {
+    address[i] = 0;
+  }
 }
 
 void show_queue()
@@ -612,15 +625,12 @@ finish:
   return;
 }
 
-boolean_t has_port_access(tss_t *process, uint32_t port)
-{
-  //TODO
-  return TRUE;
-}
+#define has_port_access(process, port) (port_accessers[port] == process)
 
 void syscall_inb(void)
 {
-  uint32_t port = curptr->ebx_reg;
+  uint32_t port = curptr->ebx_reg & 0xffff;
+
   if (!has_port_access(curptr, port)) {
     err = NOPERMS;
     set_error(&syscallstate, curptr);
@@ -629,13 +639,26 @@ void syscall_inb(void)
   curptr->eax_reg = inb(port);
 finish:
   return;
-}  
+}
+
+void syscall_claim_port(void)
+{
+  uint32_t port = curptr->ebx_reg & 0xffff;
+
+  if (port_accessers[port] != NULL) {
+    err = UNAVAILABLE;
+    set_error(&syscallstate, curptr);
+    goto finish;
+  }
+  port_accessers[port] = curptr;
+finish:
+  return;
+}
 
 void syscall_request_irq(void)
 {
   
   uint32_t irq = curptr->ebx_reg;
-  kputstring("request for irq "); kputunsint(irq); kputchar(LF);
   if ((irq == 0)||(irq == 2)||(irq > MAX_IRQ)) {
     err = INVALIDIRQ;
     set_error(&syscallstate, curptr);

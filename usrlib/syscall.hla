@@ -123,9 +123,21 @@ begin call_syscall_inb;
   call_syscall_inb_HLA(port, error);
 end call_syscall_inb;
 
+procedure call_syscall_claim_port_HLA(port: dword; error: dword);
+begin call_syscall_claim_port_HLA;
+  push(ebx);
+  mov(SYS_CLAIM_PORT,eax);
+  mov(port,ebx);
+  mov(error,esi);
+  int($22);
+  pop(ebx);
+end call_syscall_claim_port_HLA;
 
-
-
+procedure call_syscall_claim_port(port: dword; error: dword); @cdecl; @external;
+procedure call_syscall_claim_port(port: dword; error: dword);
+begin call_syscall_claim_port;
+  call_syscall_claim_port_HLA(port, error);
+end call_syscall_claim_port;
 
 
 

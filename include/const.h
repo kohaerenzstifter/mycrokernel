@@ -21,7 +21,9 @@ char *error_strings[] = {
 #define PROCESSDIED -8
   "peer died",
 #define NOPERMS -9
-  "no permissions for this operation"
+  "no permissions for this operation",
+#define UNAVAILABLE -10
+  "requested resource unavailable"
 };
 
 #define err2String(x) error_strings[(-x)]

@@ -1,8 +1,6 @@
 #ifndef KERNEL_CONST_H
 #define KERNEL_CONST_H
 
-#define FALSE 0
-#define TRUE 1
 
 #define LF 10
 #define NO_SCHEDQUEUES 10
@@ -41,5 +39,6 @@
 #define PAGE_GRANULARITY 1
 #define BYTE_GRANULARITY 0
 #define KERNEL_BASE 0x14800
+#define NUM_PORTS 65536
 
 #endif
