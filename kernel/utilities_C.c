@@ -34,7 +34,6 @@ static syscallFunc_t syscalls[] = {
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
 static tss_t *irqs[MAX_IRQ + 1] = { NULL };
 
-static boolean_t port_accessers_initialised = FALSE;
 static tss_t *port_accessers[NUM_PORTS];
 
 extern tss_t intrrpt0state;
@@ -56,6 +55,14 @@ extern tss_t intrrpt15state;
 
 #define NO_SYSCALLS (sizeof(syscalls) / sizeof(syscalls[0]))
 #define syscallstate intrrpt2state
+
+void init_port_accessers()
+{
+  int i = 0;
+  for (i = 0; i < NUM_PORTS; i++) {
+    port_accessers[i] = NULL;
+  }
+}
 
 void uptime()
 {

@@ -175,6 +175,7 @@ begin start;
   do_mem(eax);				//Make sense of data found in memory map and adjust gdt accordingly
   _kmove_cursor();
   _kcls();
+  init_port_accessers();
 
 //  _clear_echoline();
 
@@ -249,15 +250,7 @@ begin start;
   _kputchar(LF);
   _kputchar(LF);
 
-  mov(GDT_BASE+IDX_KERNELCODE*@size(segdesc_t),eax);
-  fseg:movzx((type segdesc_t [eax]).limit,edx);
-  fseg:movzx((type segdesc_t [eax]).props2,ecx);
-  and(%1111,ecx);
-  shl(16,ecx);
-  or(ecx,edx);
-  add(KERNEL_BASE,edx);					//the base address of the video driver is now in edx!
-
-  _create_process(3,100,0,edx,edx,NO_BASE,NO_BASE,$b8000,edx, $fffc,$fffc,0,0, 4096,$fffc);
+  _create_process(3,100,0,(&kernel_size + KERNEL_BASE),(&kernel_size + KERNEL_BASE),NO_BASE,NO_BASE,$b8000,(&kernel_size + KERNEL_BASE), $fffc,$fffc,0,0, 4096,$fffc);
   _enqueue(eax);
 /*
   _create_process(0,100,&writer,KERNEL_BASE, KERNEL_BASE,NO_BASE,NO_BASE,$b8000, KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$fffc);

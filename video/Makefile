@@ -1,7 +1,7 @@
 VIDEO_SIZE = $$(stat -c %s video.bin)
 
 video.bin: go.o main.o table.o utilities.o Makefile ../usrlib/syscall.o ../usrlib/syscall.h
-	ld -melf_i386 go.o main.o table.o utilities.o ../usrlib/syscall.o -N -M > video.mem -o video.bin --oformat binary -T ../script
+	ld -melf_i386 go.o main.o table.o utilities.o ../usrlib/syscall.o -N -M > video.mem -o video.bin --oformat binary -T script
 	ndisasm -b 32 video.bin > video.ndisasm
 	dd if=/dev/null of=video.bin seek=$$(( ($(VIDEO_SIZE) / 512) + 1 )) count=1
 main.o: main.c Makefile

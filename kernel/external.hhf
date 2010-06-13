@@ -16,6 +16,7 @@ static //global variables go here
   params: byte[NO_COLUMNS*2]; @external;
   derstring: string; @external;
   shiftSemaphore: uns32; @external;
+  kernel_size: uns32; @external;
   dummystate: tss_t; @external;
   kernelstate: tss_t; @external;
   idlestate: tss_t; @external;
