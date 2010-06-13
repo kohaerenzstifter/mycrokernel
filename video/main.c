@@ -3,7 +3,6 @@
 #include "../usrlib/syscall.h"
 #include "prototype.h"
 
-char meinString[40] = "hallo du ";
 
 int main()
 {
@@ -12,7 +11,7 @@ int main()
   int i;
   char buffer[42];
   uint32_t bytes = 0;
-  putstring(meinString);
+  putchar('A'); for(;;);
   terror(call_syscall_claim_port(0x60, &error))
   terror(call_syscall_request_irq(1, &error))
   terror(call_syscall_setFeature(FEATURE_SPEAK, &error))

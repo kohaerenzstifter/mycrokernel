@@ -1,6 +1,7 @@
 unit Utilities;
 
 #includeonce("external.hhf")
+#includeonce("const.hhf");
 #includeonce("prototype.hhf");
 #includeonce("../include/const.hhf")
 #includeonce("../include/character.hhf")
@@ -18,8 +19,8 @@ begin putchar;
   pushfd();
 
   mov(what,ecx);
-  if (character.isPrintable(cl)) then		
-    mov(attrib,ch);
+  if (character.isPrintable(cl)) then
+    mov(ATTRIB,ch);
     movzx(cursor,eax);
 putchar_back:
     if(eax<NO_LINES*NO_COLUMNS*2) then
@@ -97,7 +98,6 @@ begin putstring;
   pushfd();	
   mov(what,eax);
   zerify(ebx);
-  //mov(attrib,bh);
   movzx(cursor,ecx);
   mov([eax],bl);
   while(bl<>0) do
@@ -256,10 +256,10 @@ begin cls;
   pushfd();
   zerify(eax);
 
-  mov(attrib,bh);
+  mov(ATTRIB,bh);
   mov($00,bl);
   shl(16,ebx);
-  mov(attrib,bh);
+  mov(ATTRIB,bh);
   mov($00,bl);
 
   while (eax<NO_LINES*NO_COLUMNS*2) do
