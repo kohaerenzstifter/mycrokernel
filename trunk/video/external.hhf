@@ -1,5 +1,4 @@
 static //global variables go here
   cursor: uns16; @external;//the position of the cursor (absolute memory offset from gs, i.e. ALWAYS even)
-  attrib: byte; @external; //the current attribute byte of text written to screen
 storage //uninitialised global variables go here 
 readonly //global, initialised, read-only variables go here; (better not use readonly section)
