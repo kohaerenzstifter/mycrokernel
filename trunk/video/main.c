@@ -3,6 +3,8 @@
 #include "../usrlib/syscall.h"
 #include "prototype.h"
 
+char meinString[40] = "hallo du ";
+
 int main()
 {
   err_t error = OK;
@@ -10,24 +12,17 @@ int main()
   int i;
   char buffer[42];
   uint32_t bytes = 0;
-  putstring("line "); putunsint(__LINE__); putchar(LF);
+  putstring(meinString);
   terror(call_syscall_claim_port(0x60, &error))
-    putstring("line "); putunsint(__LINE__); putchar(LF);
   terror(call_syscall_request_irq(1, &error))
-   putstring("line "); putunsint(__LINE__); putchar(LF);
   terror(call_syscall_setFeature(FEATURE_SPEAK, &error))
-   putstring("line "); putunsint(__LINE__); putchar(LF);
-  cls();
-  putstring("video: set feature"); putchar(LF);
   for(;;) {
-    putstring("vor receive "); putchar(LF);
     terror(bytes = call_syscall_receive(ANYPROC, buffer, sizeof(buffer), &error))
-    putstring("nach receive "); putchar(LF);
     if (error > 0) {
-      putstring("interrupt: "); puthex(error);putchar(LF);
       if (error & 2) {
 	terror(portval = call_syscall_inb(0x60, &error))
-	putstring("scancode: "); puthex(portval); putchar(LF);
+	//putchar('A');
+	//putstring("scancode: "); puthex(portval);
       }
       error = OK;
     } else {
