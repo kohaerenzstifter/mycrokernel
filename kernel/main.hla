@@ -250,7 +250,14 @@ begin start;
   _kputchar(LF);
   _kputchar(LF);
 
-  _create_process(3,100,0,(&kernel_size + KERNEL_BASE),(&kernel_size + KERNEL_BASE),NO_BASE,NO_BASE,$b8000,(&kernel_size + KERNEL_BASE), $fffc,$fffc,0,0, 4096,$fffc);
+  zerify(edx);
+  mov(&kernel_size,eax);
+  div(SECTOR_SIZE,edx:eax);
+  inc(eax);
+  mul(SECTOR_SIZE,eax);
+  add(KERNEL_BASE,eax);
+
+  _create_process(3,100,0,eax,eax,NO_BASE,NO_BASE,$b8000,eax, $fffc,$fffc,0,0, 4096,$fffc);
   _enqueue(eax);
 /*
   _create_process(0,100,&writer,KERNEL_BASE, KERNEL_BASE,NO_BASE,NO_BASE,$b8000, KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$fffc);
