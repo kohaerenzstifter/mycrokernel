@@ -6,12 +6,25 @@
 
 int main()
 {
+  char *string = "scancode: ";
   err_t error = OK;
   uint32_t portval = 0;
   int i;
   char buffer[42];
   uint32_t bytes = 0;
-  putchar('A'); for(;;);
+  
+/*  
+  	putchar('A');puthex(string);putchar(LF);
+	putchar('b');putchar(string[0]); putchar(LF);
+	putchar('b');putchar(string[1]); putchar(LF);
+	putchar('b');putchar(string[2]); putchar(LF);
+	putchar('b');putchar(string[3]); putchar(LF);
+	putchar('b');putchar(string[4]); putchar(LF);
+	putchar('b');putchar(string[5]); putchar(LF);
+	putstring(string);
+  
+  for(;;);*/
+  
   terror(call_syscall_claim_port(0x60, &error))
   terror(call_syscall_request_irq(1, &error))
   terror(call_syscall_setFeature(FEATURE_SPEAK, &error))
@@ -20,8 +33,7 @@ int main()
     if (error > 0) {
       if (error & 2) {
 	terror(portval = call_syscall_inb(0x60, &error))
-	//putchar('A');
-	//putstring("scancode: "); puthex(portval);
+	putstring("scancode "); puthex(portval);
       }
       error = OK;
     } else {

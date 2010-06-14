@@ -42,6 +42,7 @@ const
   KEYPADDEL: text:="ERROR";
 
   //miscellaneous constants
+  SECTOR_SIZE: text:="512";
   INVALID_GDT_IDX: text:="0";
 //  INVALID_GDT_IDX: text:="NO_AVL_DSCRPTS * @size(segdesc_t)";
   NO_AVL_PIDS: text:="$ffff + 1";
