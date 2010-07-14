@@ -27,7 +27,7 @@ main.o:	main.hla Makefile always.hhf types.hhf const.hhf prototype.hhf external.
 	VIDEO_SIZE=$(VIDEO_SIZE) SECTOR_SIZE=$(SECTOR_SIZE) KERNEL_BASE=$(KERNEL_BASE) hla -c main.hla
 	objdump --disassemble-all -S main.o > main.objdump
 utilities_C.o:	utilities_C.c Makefile
-	cc -Wall -fno-leading-underscore -c utilities_C.c
+	cc -m32 -Wall -fno-leading-underscore -c utilities_C.c
 	objdump --disassemble-all -S utilities_C.o > utilities_C.objdump
 utilities_HLA.o: utilities_HLA.hla Makefile
 	hla -c utilities_HLA.hla
