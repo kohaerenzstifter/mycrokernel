@@ -15,6 +15,7 @@ uint32_t call_syscall_claim_port(uint32_t port, err_t *error);
 #define terror(x) \
   x; \
   if hasFailed(error) { \
+    putstring(__FILE__":"); putunsint(__LINE__); putstring(": " #x "failed!"); putchar(LF); \
     goto finish; \
   }
 

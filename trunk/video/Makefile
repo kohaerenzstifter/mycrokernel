@@ -5,7 +5,7 @@ video.bin: go.o main.o table.o utilities.o Makefile ../usrlib/syscall.o ../usrli
 	ndisasm -b 32 video.bin > video.ndisasm
 	dd if=/dev/null of=video.bin seek=$$(( ($(VIDEO_SIZE) / 512) + 1 )) count=1
 main.o: main.c Makefile
-	cc -Wall -fno-stack-protector -fno-leading-underscore -c main.c
+	cc -m32 -Wall -fno-stack-protector -fno-leading-underscore -c main.c
 	objdump --disassemble-all -S main.o > main.objdump
 ../usrlib/syscall.o:
 	cd ../usrlib && make syscall.o
