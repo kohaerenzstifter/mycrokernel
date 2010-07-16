@@ -1,8 +1,7 @@
-#KERNEL_BASE = 83712
 KERNEL_BASE = 83968
 SECTOR_SIZE = 512
-OFFSET = 1
 #OFFSET is 1 because the first 512 bytes to boot from are ONE sector big
+OFFSET = 1
 KERNEL_SIZE = $$(stat -c %s ../kernel/kernel.bin)
 _KERNEL_SIZE = $$(if [ `echo $(KERNEL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(KERNEL_SIZE); else echo "(($(KERNEL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
 GDT_SIZE = $$(stat -c %s ../kernel/gdt.bin)
@@ -11,8 +10,10 @@ VIDEO_SIZE = $$(stat -c %s ../video/video.bin)
 _VIDEO_SIZE = $$(if [ `echo $(VIDEO_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(VIDEO_SIZE); else echo "(($(VIDEO_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
 NO_SEGMENTS = $$(( $(GDT_SIZE) / 8 ))
 
+ENVIRONMENT = KERNEL_BASE=$(KERNEL_BASE) SECTOR_SIZE=$(SECTOR_SIZE) OFFSET=$(OFFSET) _KERNEL_SIZE=$(_KERNEL_SIZE) _GDT_SIZE=$(_GDT_SIZE) _VIDEO_SIZE=$(_VIDEO_SIZE) NO_SEGMENTS=$(NO_SEGMENTS)
+
 512.bin: 512.asm ../kernel/kernel.bin ../kernel/gdt.bin ../video/video.bin Makefile
-	KERNEL_BASE=$(KERNEL_BASE) SECTOR_SIZE=$(SECTOR_SIZE) OFFSET=$(OFFSET) _KERNEL_SIZE=$(_KERNEL_SIZE) _GDT_SIZE=$(_GDT_SIZE) _VIDEO_SIZE=$(_VIDEO_SIZE) NO_SEGMENTS=$(NO_SEGMENTS) nasm -f bin 512.asm -o $(SECTOR_SIZE).bin
+	$(ENVIRONMENT) nasm -f bin 512.asm -o $(SECTOR_SIZE).bin
 ../kernel/kernel.bin:
 	cd ../kernel && make kernel.bin
 ../kernel/gdt.bin:
