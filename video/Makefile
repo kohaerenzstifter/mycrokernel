@@ -1,6 +1,6 @@
 VIDEO_SIZE = $$(stat -c %s video.bin)
 
-VIDEO_HLA_SRC = $(shell ls *.hla)
+VIDEO_HLA_SRC = go.hla $(shell ls *.hla | grep -v "go.hla")
 VIDEO_HLA_OBJ = $(VIDEO_HLA_SRC:.hla=.o)
 
 VIDEO_C_SRC = $(shell ls *.c)
@@ -15,7 +15,7 @@ C_HEADERS = $(shell ls *.h ../include/*.h)
 all: video.bin
 
 video.bin: $(VIDEO_OBJ) Makefile
-	ld -melf_i386 $(VIDEO_OBJ) -N -M > video.mem -o video.bin --oformat binary -T script
+	ld -melf_i386 $(VIDEO_OBJ) -N -M > video.mem -o video.bin --oformat binary -T ../script
 	ndisasm -b 32 video.bin > video.ndisasm
 	dd if=/dev/null of=video.bin seek=$$(( ($(VIDEO_SIZE) / 512) + 1 )) count=1
 

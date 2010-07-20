@@ -9,9 +9,9 @@ unit Utilities;
 
 static //global variables go here
 
-//procedure putchar(what:dword); @cdecl; @external;
-procedure putchar(what:dword); 
-begin putchar;
+//procedure putcharacter(what:dword); @cdecl; @external;
+procedure putcharacter(what:dword); 
+begin putcharacter;
   push(eax);
   push(ebx);
   push(ecx);
@@ -22,35 +22,35 @@ begin putchar;
   if (character.isPrintable(cl)) then
     mov(ATTRIB,ch);
     movzx(cursor,eax);
-putchar_back:
+putcharacter_back:
     if(eax<NO_LINES*NO_COLUMNS*2) then
       gseg:mov(cx,[eax]);
       add(2,cursor);			
     else
       scrollscreen();
       movzx(cursor,eax);
-      jmp putchar_back;
+      jmp putcharacter_back;
     endif;
-    jmp end_putchar;
+    jmp end_putcharacter;
   endif;
   if (ecx=LF) then
-    putchar(' ');
+    putcharacter(' ');
     add(4,esp);
     mov(NO_COLUMNS*2,ebx);
     movzx(cursor,eax);
     zerify(edx);
     div(ebx,edx:eax);
     while (edx<>0) do
-      putchar(' ');
+      putcharacter(' ');
       add(4,esp);
       movzx(cursor,eax);
       zerify(edx);
       div(ebx,edx:eax);
     endwhile;
-    jmp end_putchar;
+    jmp end_putcharacter;
   endif;
   if (ecx=TAB) then
-    putchar(' ');
+    putcharacter(' ');
     add(4,esp);
     mov(NO_COLUMNS*2,ebx);
     movzx(cursor,eax);
@@ -62,7 +62,7 @@ putchar_back:
     zerify(edx);
     div(ebx,edx:eax);
     while (edx<>0) do
-      putchar(' ');
+      putcharacter(' ');
       add(4,esp);
       mov(NO_COLUMNS*2,ebx);
       movzx(cursor,eax);
@@ -74,15 +74,15 @@ putchar_back:
       zerify(edx);
       div(ebx,edx:eax);
     endwhile;
-    jmp end_putchar;
+    jmp end_putcharacter;
   endif;
-end_putchar:
+end_putcharacter:
   popfd();
   pop(edx);
   pop(ecx);
   pop(ebx);
   pop(eax);
-end putchar;
+end putcharacter;
 
 procedure putstring(what: string);
 //1) if byte character at "what" nonzero then write to gs:cursor, else return
@@ -101,7 +101,7 @@ begin putstring;
   movzx(cursor,ecx);
   mov([eax],bl);
   while(bl<>0) do
-    putchar(ebx);
+    putcharacter(ebx);
     add(4,esp);
     inc(eax);
     mov([eax],bl);
@@ -121,7 +121,7 @@ begin puthex;
   push(ecx);
   push(ebx);
   pushfd();
-  putchar('$');
+  putcharacter('$');
   add(4,esp);
   mov(what,eax);
   mov($FFFFFFF,edx);
@@ -135,7 +135,7 @@ begin puthex;
     else
 	    add($37,ebx);
     endif;
-    putchar(ebx);
+    putcharacter(ebx);
     add(4,esp);
     and(edx,eax);
     shr(4,edx);
@@ -160,7 +160,7 @@ begin putbin;
   push(ecx);
   push(ebx);
   pushfd();
-  putchar('%');
+  putcharacter('%');
   add(4,esp);
   mov(what,eax);
   mov($7FFFFFFF,edx);
@@ -170,7 +170,7 @@ begin putbin;
     shr(cl,ebx);
     and(1,ebx);
     add($30,ebx);
-    putchar(ebx);
+    putcharacter(ebx);
     add(4,esp);
     and(edx,eax);
     shr(1,edx);
@@ -202,7 +202,7 @@ begin putunsint;
     zerify(edx);
     div(ebx,edx:eax);
     add($30,eax);
-    putchar(eax);
+    putcharacter(eax);
     add(4,esp);
     if (ebx=1) then
 	    break;
@@ -235,7 +235,7 @@ begin putsint;
   mov(eax,ebx);
   and($80000000,eax);
   if (@nz) then
-    putchar('-');
+    putcharacter('-');
     add(4,esp);
     not(ebx);
     add(1,ebx);

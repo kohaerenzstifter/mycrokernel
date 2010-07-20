@@ -185,7 +185,7 @@ begin start;
 
   _unfree_gdt_idx(0*@size(segdesc_t));
   _unfree_gdt_idx(IDX_KERNELCODE*@size(segdesc_t));
-  _unfree_gdt_idx(IDX_KERNELDATA*@size					(segdesc_t));
+  _unfree_gdt_idx(IDX_KERNELDATA*@size(segdesc_t));
   _unfree_gdt_idx(IDX_KERNELSTACK*@size(segdesc_t));
   _unfree_gdt_idx(IDX_INTERMEDIARYCODE*@size(segdesc_t)); //this segment shall not be used; was only used in 512.asm
   _unfree_gdt_idx(IDX_VIDEO*@size(segdesc_t));
@@ -257,8 +257,15 @@ begin start;
   mul(SECTOR_SIZE,eax);
   add(KERNEL_BASE,eax);
 
+  //backup address of video.bin in ebx
+  mov(eax,ebx);
+
   _create_process(3,100,0,eax,eax,NO_BASE,NO_BASE,$b8000,eax, $fffc,$fffc,0,0, 4096,$fffc);
   _enqueue(eax);
+/*
+  _create_process(3,100,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, $ffffc,$fffc,0,0, 0,$fffc);
+  _enqueue(eax);
+*/
 /*
   _create_process(0,100,&writer,KERNEL_BASE, KERNEL_BASE,NO_BASE,NO_BASE,$b8000, KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$fffc);
   _enqueue(eax);
@@ -267,6 +274,6 @@ begin start;
   sti;
 here:	hlt;
   jmp here;
-end start;	
+end start;
 
 end Main;

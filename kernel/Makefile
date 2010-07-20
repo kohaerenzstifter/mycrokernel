@@ -3,8 +3,9 @@ KERNEL_BASE = 83968
 KERNEL_SIZE = $$(stat -c %s kernel.bin)
 _KERNEL_SIZE = $$(if [ `echo $(KERNEL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(KERNEL_SIZE); else echo "(($(KERNEL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
 VIDEO_SIZE = $$(stat -c %s ../video/video.bin)
+_VIDEO_SIZE = $$(if [ `echo $(VIDEO_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(VIDEO_SIZE); else echo "(($(VIDEO_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
 
-ENVIRONMENT = VIDEO_SIZE=$(VIDEO_SIZE) SECTOR_SIZE=$(SECTOR_SIZE) KERNEL_BASE=$(KERNEL_BASE)
+ENVIRONMENT = _VIDEO_SIZE=$(_VIDEO_SIZE) SECTOR_SIZE=$(SECTOR_SIZE) KERNEL_BASE=$(KERNEL_BASE)
 GDT_ENVIRONMENT = $(ENVIRONMENT) _KERNEL_SIZE=$(_KERNEL_SIZE)
 
 KERNEL_HLA_SRC = go.hla main.hla $(shell ls *.hla | grep -v "gdt.hla" | grep -v "go.hla" | grep -v "main.hla")
@@ -22,7 +23,7 @@ all: kernel.bin
 
 
 kernel.bin: $(KERNEL_OBJ) Makefile
-	ld -melf_i386 $(KERNEL_OBJ) -N -M > kernel.mem -o kernel.bin --oformat binary -T ../script
+	ld -melf_i386 $(KERNEL_OBJ) -N -M > kernel.mem -o kernel.bin --oformat binary -T script
 	ndisasm -b 32 kernel.bin > kernel.ndisasm
 
 gdt.bin: gdt.o Makefile

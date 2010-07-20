@@ -7,6 +7,7 @@ void puthex(uint32_t what);
 void putunsint(uint32_t what);
 void putstring(char *what);
 void doputstring(char *what);
-void putchar(char what);
+void putcharacter(char what);
+void cls();
 
 #endif

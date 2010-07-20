@@ -2,8 +2,8 @@ unit syscall;
 
 #includeonce("../include/const.hhf")
 
-procedure call_syscall_setFeature_HLA(feature: dword; error: dword);
-begin call_syscall_setFeature_HLA;
+procedure call_syscall_set_feature_HLA(feature: dword; error: dword);
+begin call_syscall_set_feature_HLA;
   push(eax);
   push(ebx);
   push(esi);
@@ -16,13 +16,13 @@ begin call_syscall_setFeature_HLA;
   pop(esi);
   pop(ebx);
   pop(eax);
-end call_syscall_setFeature_HLA;
+end call_syscall_set_feature_HLA;
 
-procedure call_syscall_setFeature(feature: dword; error: dword); @cdecl; @external;
-procedure call_syscall_setFeature(feature: dword; error: dword);
-begin call_syscall_setFeature;
-  call_syscall_setFeature_HLA(feature, error);
-end call_syscall_setFeature;
+procedure call_syscall_set_feature(feature: dword; error: dword); @cdecl; @external;
+procedure call_syscall_set_feature(feature: dword; error: dword);
+begin call_syscall_set_feature;
+  call_syscall_set_feature_HLA(feature, error);
+end call_syscall_set_feature;
 
 procedure call_syscall_receive_HLA(sender: dword; where: dword; length: dword; error: dword);
 begin call_syscall_receive_HLA;

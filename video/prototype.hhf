@@ -1,4 +1,4 @@
-procedure putchar(what: dword); @cdecl; @external;
+procedure putcharacter(what: dword); @cdecl; @external;
 procedure putstring(what: string); @cdecl; @external;
 procedure puthex(what: dword); @cdecl; @external;
 procedure putbin(what: dword); @cdecl; @external;
