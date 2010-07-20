@@ -14,7 +14,7 @@ typedef struct _feature {
 typedef void (*syscallFunc_t)(void) ;
 
 void syscall_exit(void);
-void syscall_setFeature(void);
+void syscall_set_feature(void);
 void syscall_receive(void);
 void syscall_send_by_feature(void);
 void syscall_request_irq(void);
@@ -23,7 +23,7 @@ void syscall_claim_port(void);
 
 static syscallFunc_t syscalls[] = {
   &syscall_exit,
-  &syscall_setFeature,
+  &syscall_set_feature,
   &syscall_receive,
   &syscall_send_by_feature,
   &syscall_request_irq,
@@ -423,7 +423,7 @@ void add_waiting_for_feature(tss_t *process, uint32_t feature)
   tss_t **cur = NULL;
   uint32_t mask = 1;
   uint32_t idx = 0;
-  while ((mask & feature) != 1) {
+  while ((mask & feature) != mask) {
     idx++;
     mask <<= 1;
   }
@@ -451,28 +451,33 @@ int check_feature(uint32_t feature)
   return (found == 1) ? 0 : -1;
 }
 
-void set_feature(tss_t *process, uint32_t feature)
+int set_feature(tss_t *process, uint32_t feature)
 {
   uint32_t mask = 1;
   uint32_t idx = 0;
-	
-  while ((mask & feature) != 1) {
+  int result = 1;
+  while ((mask & feature) != mask) {
     idx++;
     mask <<= 1;
+  }
+  if (featureTable[idx].supplier != NULL) {
+    goto finish;
   }
   if (featureTable[idx].supplier == NULL) {
     featureTable[idx].supplier = process;
     process->firstSender = featureTable[idx].waiter;
     featureTable[idx].waiter = NULL;
+    result = 0;
   }
-  return;
+finish:
+  return result;
 }
 
 tss_t *get_process_by_feature(uint32_t feature)
 {
   uint32_t mask = 1;
   uint32_t idx = 0;
-  while ((mask & feature) != 1) {
+  while ((mask & feature) != mask) {
     idx++;
     mask <<= 1;
   }
@@ -619,7 +624,7 @@ finish:
   return;
 }
 
-void syscall_setFeature(void)
+void syscall_set_feature(void)
 {
   uint32_t feature = curptr->ebx_reg;
   if (check_feature(feature) != 0) {
@@ -627,7 +632,11 @@ void syscall_setFeature(void)
     set_error(&syscallstate, curptr);
     goto finish;
   }
-  set_feature(curptr, feature);
+  if (set_feature(curptr, feature) != 0) {
+    err = FEATUREBUSY;
+    set_error(&syscallstate, curptr);
+    goto finish;
+  }
 finish:
   return;
 }

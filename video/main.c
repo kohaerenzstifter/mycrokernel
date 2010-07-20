@@ -4,6 +4,8 @@
 #include "prototype.h"
 
 static uint32_t shiftCount = 0;
+static char cmdBuffer[300];
+static char *bufferPtr = &cmdBuffer[0];
 
 typedef void (*keyfunc_t)(uint32_t no_args, void *address);
 
@@ -23,14 +25,47 @@ void read_unsint(uint32_t no_args, void *address)
   putunsint((uint32_t) address);
 }
 
+uint32_t strlen(char *me)
+{
+  char *cur = me;
+  uint32_t result = 0;
+  while (*cur != '\0') {
+    cur++;
+    result++;
+  }
+  return result;
+}
+
 void enter_pressed(uint32_t no_args, void *address)
 {
+  err_t error;
   putcharacter(LF);
+/*putstring(__FILE__":"); putunsint(__LINE__); putcharacter(LF);
+  call_syscall_send_by_feature(FEATURE_CMD, cmdBuffer, strlen(cmdBuffer), FALSE, &error);
+putstring(__FILE__":"); putunsint(__LINE__); putcharacter(LF);*/
+  bufferPtr = &cmdBuffer[0];
+}
+
+void buffer_character(char me)
+{
+  if (bufferPtr == NULL) {
+    goto finish;
+  }
+  *bufferPtr = me;
+  if (bufferPtr == &cmdBuffer[sizeof(cmdBuffer) - 2]) {
+    *(bufferPtr + 1) = '\0';
+    bufferPtr = NULL;
+    goto finish;
+  }
+  bufferPtr++;
+finish:
+  return;
 }
 
 void read_char(uint32_t no_args, void *address)
 {
   putcharacter((uint32_t) address);
+  buffer_character((char) address);
 }
 
 void shift_released(uint32_t no_args, void *address)
@@ -283,13 +318,12 @@ finish:
 
 int main()
 {
-  err_t error = OK;
-  
+  err_t error = OK; 
   cls();
 
   terror(call_syscall_claim_port(0x60, &error))
   terror(call_syscall_request_irq(1, &error))
-  terror(call_syscall_set_feature(FEATURE_SPEAK, &error))
+  terror(call_syscall_set_feature(FEATURE_TTY, &error))
   terror(main_loop(&error))
 finish:
   if (hasFailed(error)) {
