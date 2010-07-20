@@ -109,7 +109,7 @@ end_getmemmap:
   mov ax, KERNEL_BASE/010h				;Segment where
   mov es, ax						;to load boot
   mov bx, 0						;Address in segment es where to load boot
-  mov si, (_KERNEL_SIZE + _VIDEO_SIZE + _SHELL_SIZE + 1)/SECTOR_SIZE	;Read so many sectors
+  mov si, (_KERNEL_SIZE + _VIDEO_SIZE + _SHELL_SIZE + 512)/SECTOR_SIZE	;Read so many sectors
   mov cx, _GDT_SIZE/512 + OFFSET ;+ 1 
   mov dh, 0			;Head 0
   call loop_load
@@ -204,35 +204,6 @@ do_load_sector:
   pop ax
   ret
 
-;loop_load:
-;  cmp si, 0h
-;  je end_loop_load
-;  call loadSector
-;  dec si
-;  inc cl
-;  mov ax, es
-;;  add ax, SECTOR_SIZE/10h
-;  mov es, ax
-;  jmp loop_load
-;end_loop_load:
-;  ret
-
-;align 2
-;loadSector:
-;  cmp cl, MAXSECTOR + 1
-;  jne do_load_sector
-;  mov cl, MINSECTOR
-;  inc dh
-;;  cmp dh, MAXHEAD + 1
-;  jne do_load_sector
-;  mov dh, MINHEAD
-;  inc ch
-;do_load_sector:
-;  mov ah, 02h		;Function to read from drive
-;  mov al, 1
-;  int 13h
-;  jc lderr
-;  ret
 
 align 2
 ;routine printstring: will print zero-terminated string from ds:si.
