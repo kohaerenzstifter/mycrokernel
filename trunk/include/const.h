@@ -24,6 +24,8 @@ char *error_strings[] = {
   "no permissions for this operation",
 #define UNAVAILABLE -10
   "requested resource unavailable"
+#define FEATUREBUSY -11
+  "feature busy"
 };
 
 #define err2String(x) error_strings[(-x)]
@@ -52,6 +54,7 @@ char *error_strings[] = {
 
 #define ANYPROC NULL
 
-#define FEATURE_SPEAK 1
+#define FEATURE_TTY 1
+#define FEATURE_CMD (FEATURE_TTY << 1)
 
 #endif
