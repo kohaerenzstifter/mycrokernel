@@ -16,14 +16,16 @@ NO_SEGMENTS = $$(( $(GDT_SIZE) / 8 ))
 
 ENVIRONMENT = KERNEL_BASE=$(KERNEL_BASE) SECTOR_SIZE=$(SECTOR_SIZE) OFFSET=$(OFFSET) _KERNEL_SIZE=$(_KERNEL_SIZE) _GDT_SIZE=$(_GDT_SIZE) _VIDEO_SIZE=$(_VIDEO_SIZE) _SHELL_SIZE=$(_SHELL_SIZE) NO_SEGMENTS=$(NO_SEGMENTS)
 
-512.bin: 512.asm ../kernel/kernel.bin ../kernel/gdt.bin ../video/video.bin Makefile
-	$(ENVIRONMENT) nasm -f bin 512.asm -o $(SECTOR_SIZE).bin
+512.bin: 512.asm ../kernel/kernel.bin ../kernel/gdt.bin ../video/video.bin ../shell/shell.bin Makefile
+	$(ENVIRONMENT) nasm -f bin 512.asm -o 512.bin
 ../kernel/kernel.bin:
 	cd ../kernel && make kernel.bin
 ../kernel/gdt.bin:
 	cd ../kernel && make gdt.bin
 ../video/video.bin:
 	cd ../video && make video.bin
+../shell/shell.bin:
+	cd ../shell && make shell.bin
 
 clean:
 	-rm *.bin
