@@ -50,18 +50,13 @@ begin putcharacter;
     mov(ATTRIB,ch);
     movzx(cursor,eax);
 putcharacter_back:
-    if(eax < NO_LINES*NO_COLUMNS * 2) then
-      gseg:mov(cx,[eax]);
-      add(2,eax);
-      if (eax >= NO_LINES*NO_COLUMNS * 2) then
-	scrollscreen();
-      endif;
-      mov(ax, cursor);
-    else
+    gseg:mov(cx,[eax]);
+    add(2,eax);
+    if (eax >= NO_LINES * NO_COLUMNS * 2) then
       scrollscreen();
-      movzx(cursor,eax);
-      jmp putcharacter_back;
+      sub(NO_COLUMNS * 2, eax);
     endif;
+    mov(ax, cursor);
     jmp end_putcharacter;
   endif;
   if (ecx=LF) then
@@ -329,7 +324,7 @@ begin scrollscreen;
     gseg: mov($F000F00,(type dword [eax]));
     add(4,eax);
   endwhile;
-  mov((NO_LINES*NO_COLUMNS*2)-(NO_COLUMNS*2),cursor);
+  //mov((NO_LINES*NO_COLUMNS*2)-(NO_COLUMNS*2),cursor);
   popfd();
   pop(edi);
   pop(esi);
