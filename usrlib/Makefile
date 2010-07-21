@@ -1,8 +1,23 @@
+HLA_HEADERS = $(shell ls *.hhf ../include/*.hhf)
+C_HEADERS = $(shell ls *.h ../include/*.h)
 
+URSLIB_HLA_SRC = $(shell ls *.hla)
+URSLIB_HLA_OBJ = $(URSLIB_HLA_SRC:.hla=.o)
 
+URSLIB_C_SRC = $(shell ls *.c)
+URSLIB_C_OBJ = $(URSLIB_C_SRC:.c=.o)
 
-syscall.o: syscall.hla
-	hla -c syscall.hla
-	objdump --disassemble-all -S syscall.o > syscall.objdump
+all: all-stamp
+
+all-stamp: $(URSLIB_HLA_OBJ) $(URSLIB_C_OBJ)
+	touch all-stamp
+
+%.o: %.hla Makefile $(HLA_HEADERS)
+	hla -c $<
+	objdump --disassemble-all -S $@ > $*.objdump
+
+%.o: %.c Makefile $(C_HEADERS)
+	cc -m32 -Wall -fno-leading-underscore -c $<
+	objdump --disassemble-all -S $@ > $*.objdump
 clean:
-	-rm *.o *~
+	-rm *.o *~ all-stamp

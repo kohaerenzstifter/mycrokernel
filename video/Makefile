@@ -6,7 +6,7 @@ VIDEO_HLA_OBJ = $(VIDEO_HLA_SRC:.hla=.o)
 VIDEO_C_SRC = $(shell ls *.c)
 VIDEO_C_OBJ = $(VIDEO_C_SRC:.c=.o)
 
-VIDEO_OBJ = $(VIDEO_HLA_OBJ) $(VIDEO_C_OBJ) ../usrlib/syscall.o
+VIDEO_OBJ = $(VIDEO_HLA_OBJ) $(VIDEO_C_OBJ) $(shell ls ../usrlib/*.o)
 
 
 HLA_HEADERS = $(shell ls *.hhf ../include/*.hhf)
@@ -14,13 +14,13 @@ C_HEADERS = $(shell ls *.h ../include/*.h)
 
 all: video.bin
 
-video.bin: $(VIDEO_OBJ) Makefile
+video.bin: $(VIDEO_OBJ) ../usrlib/all-stamp Makefile
 	ld -melf_i386 $(VIDEO_OBJ) -N -M > video.mem -o video.bin --oformat binary -T ../script
 	ndisasm -b 32 video.bin > video.ndisasm
 	dd if=/dev/null of=video.bin seek=$$(( ($(VIDEO_SIZE) / 512) + 1 )) count=1
 
-../usrlib/syscall.o:
-	cd ../usrlib && make syscall.o
+../usrlib/all-stamp:
+	cd ../usrlib && make all
 
 %.o: %.hla Makefile $(HLA_HEADERS)
 	hla -c $<

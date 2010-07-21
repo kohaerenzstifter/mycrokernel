@@ -25,17 +25,6 @@ void read_unsint(uint32_t no_args, void *address)
   putunsint((uint32_t) address);
 }
 
-uint32_t strlen(char *me)
-{
-  char *cur = me;
-  uint32_t result = 0;
-  while (*cur != '\0') {
-    cur++;
-    result++;
-  }
-  return result;
-}
-
 void enter_pressed(uint32_t no_args, void *address)
 {
   putcharacter(LF);
@@ -44,7 +33,7 @@ void enter_pressed(uint32_t no_args, void *address)
     *bufferPtr = '\0';
   }
   
-  call_syscall_send_by_feature(FEATURE_CMD, cmdBuffer, strlen(cmdBuffer), FALSE, NULL);
+  call_syscall_send_by_feature(FEATURE_CMD, cmdBuffer, strlen(cmdBuffer) + 1, FALSE, NULL);
   bufferPtr = &cmdBuffer[0];
   *bufferPtr = '\0';
 }

@@ -14,7 +14,7 @@ KERNEL_HLA_OBJ = $(KERNEL_HLA_SRC:.hla=.o)
 KERNEL_C_SRC = $(shell ls *.c)
 KERNEL_C_OBJ = $(KERNEL_C_SRC:.c=.o)
 
-KERNEL_OBJ = $(KERNEL_HLA_OBJ) $(KERNEL_C_OBJ) ../usrlib/syscall.o
+KERNEL_OBJ = $(KERNEL_HLA_OBJ) $(KERNEL_C_OBJ) $(shell ls ../usrlib/*.o)
 
 HLA_HEADERS = $(shell ls *.hhf ../include/*.hhf)
 C_HEADERS = $(shell ls *.h ../include/*.h)
@@ -22,7 +22,7 @@ C_HEADERS = $(shell ls *.h ../include/*.h)
 all: kernel.bin
 
 
-kernel.bin: $(KERNEL_OBJ) Makefile
+kernel.bin: $(KERNEL_OBJ) ../usrlib/all-stamp Makefile
 	ld -melf_i386 $(KERNEL_OBJ) -N -M > kernel.mem -o kernel.bin --oformat binary -T script
 	ndisasm -b 32 kernel.bin > kernel.ndisasm
 

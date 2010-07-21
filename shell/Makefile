@@ -6,7 +6,7 @@ SHELL_HLA_OBJ = $(SHELL_HLA_SRC:.hla=.o)
 SHELL_C_SRC = $(shell ls *.c)
 SHELL_C_OBJ = $(SHELL_C_SRC:.c=.o)
 
-SHELL_OBJ = $(SHELL_HLA_OBJ) $(SHELL_C_OBJ) ../usrlib/syscall.o
+SHELL_OBJ = $(SHELL_HLA_OBJ) $(SHELL_C_OBJ) $(shell ls ../usrlib/*.o)
 
 
 HLA_HEADERS = $(shell ls *.hhf ../include/*.hhf)
@@ -14,13 +14,13 @@ C_HEADERS = $(shell ls *.h ../include/*.h)
 
 all: shell.bin
 
-shell.bin: $(SHELL_OBJ) Makefile
+shell.bin: $(SHELL_OBJ) ../usrlib/all-stamp Makefile
 	ld -melf_i386 $(SHELL_OBJ) -N -M > shell.mem -o shell.bin --oformat binary -T ../script
 	ndisasm -b 32 shell.bin > shell.ndisasm
 	dd if=/dev/null of=shell.bin seek=$$(( ($(SHELL_SIZE) / 512) + 1 )) count=1
 
-../usrlib/syscall.o:
-	cd ../usrlib && make syscall.o
+../usrlib/all-stamp:
+	cd ../usrlib && make all
 
 %.o: %.hla Makefile $(HLA_HEADERS)
 	hla -c $<
