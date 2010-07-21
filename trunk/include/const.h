@@ -57,4 +57,6 @@ char *error_strings[] = {
 #define FEATURE_TTY 1
 #define FEATURE_CMD (FEATURE_TTY << 1)
 
+#define MAX_MSG_SIZE 300
+
 #endif
