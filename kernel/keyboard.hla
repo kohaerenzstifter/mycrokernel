@@ -66,9 +66,9 @@ begin readchar;
   pop(eax);
 end readchar;*/
 
-procedure echo(what:string);
+//procedure echo(what:string);
 /*Writes "what" to screen position "echcursor" and advances "echcursor" by 2"*/
-begin echo;
+/*begin echo;
   push(eax);
   push(ecx);
   pushfd();
@@ -86,11 +86,11 @@ begin echo;
   popfd();
   pop(ecx);
   pop(eax);
-end echo;
+end echo;*/
 
 /*Clears the echo line*/
-/*procedure _clear_echoline;
-begin _clear_echoline;
+//procedure _clear_echoline;
+/*begin _clear_echoline;
   push(eax);
   push(ebx);
   pushfd();
@@ -225,10 +225,10 @@ begin enter_pressed;
   pop(eax);
 end enter_pressed;*/
 
-procedure backspace_pressed;
+//procedure backspace_pressed;
 /*Decrements "kbd.write", then clears the character at "kbd.write"
 and does the equivalent on the echo line on the screen.*/
-begin backspace_pressed;
+/*begin backspace_pressed;
   push(eax);
   push(ebx);
   pushfd();
@@ -243,7 +243,7 @@ begin backspace_pressed;
   popfd();
   pop(ebx);
   pop(eax);
-end backspace_pressed;
+end backspace_pressed;*/
 
 procedure shift_pressed;
 begin shift_pressed;

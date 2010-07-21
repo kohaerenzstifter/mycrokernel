@@ -282,7 +282,7 @@ finish:
 static void process_message(char *buffer, uint32_t bytes)
 {
   buffer[bytes] = '\0';
-  putstring(buffer); putcharacter(LF);
+//  putstring(buffer); putcharacter(LF);
 }
 
 static void main_loop(err_t *error)
