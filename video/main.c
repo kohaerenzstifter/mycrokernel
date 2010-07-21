@@ -4,7 +4,7 @@
 #include "prototype.h"
 
 static uint32_t shiftCount = 0;
-static char cmdBuffer[300];
+static char cmdBuffer[MAX_MSG_SIZE] = "";
 static char *bufferPtr = &cmdBuffer[0];
 
 typedef void (*keyfunc_t)(uint32_t no_args, void *address);
@@ -38,12 +38,15 @@ uint32_t strlen(char *me)
 
 void enter_pressed(uint32_t no_args, void *address)
 {
-  err_t error;
   putcharacter(LF);
-/*putstring(__FILE__":"); putunsint(__LINE__); putcharacter(LF);
-  call_syscall_send_by_feature(FEATURE_CMD, cmdBuffer, strlen(cmdBuffer), FALSE, &error);
-putstring(__FILE__":"); putunsint(__LINE__); putcharacter(LF);*/
+  
+  if (bufferPtr != NULL) {
+    *bufferPtr = '\0';
+  }
+  
+  call_syscall_send_by_feature(FEATURE_CMD, cmdBuffer, strlen(cmdBuffer), FALSE, NULL);
   bufferPtr = &cmdBuffer[0];
+  *bufferPtr = '\0';
 }
 
 void buffer_character(char me)
@@ -289,15 +292,14 @@ finish:
 
 static void process_message(char *buffer, uint32_t bytes)
 {
-  bytes = (bytes < sizeof(buffer)) ? bytes : (sizeof(buffer) - 1);
   buffer[bytes] = '\0';
-  putstring(buffer);
+  putstring(buffer); putcharacter(LF);
 }
 
 static void main_loop(err_t *error)
 {
   uint32_t scancode = 0;
-  char buffer[100];
+  char buffer[MAX_MSG_SIZE];
   uint32_t bytes = 0;
 
   for(;;) {
@@ -309,6 +311,7 @@ static void main_loop(err_t *error)
       }
       *error = OK;
     } else {
+      bytes = (bytes < sizeof(buffer)) ? bytes : (sizeof(buffer) - 1);
       process_message(buffer, bytes);
     }
   }
