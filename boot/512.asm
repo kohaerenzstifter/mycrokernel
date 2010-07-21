@@ -119,6 +119,7 @@ end_getmemmap:
   mov es, ax			;base of this code
   mov si, gdtldd_msg		;tell the user that
   call printstring		;we have loaded the gdt from disk
+
   cli				;disable interrupts before entering pm!
   lgdt [gdt_desc]			;load gdt register
   mov eax, cr0			;Enable
@@ -224,7 +225,7 @@ endprintstring:
   ret
 align 2
 rlctn_msg:
-  db 0ah, 0dh, 'Successfully relocated myself...',0
+  db 0ah, 0dh, 'Relocated myself...',0
 align 2
 rsterr_msg:
   db 0ah, 0dh, 'Reset boot drive error!',0

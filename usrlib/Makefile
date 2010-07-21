@@ -1,5 +1,5 @@
-HLA_HEADERS = $(shell ls *.hhf ../include/*.hhf)
-C_HEADERS = $(shell ls *.h ../include/*.h)
+HLA_HEADERS = $(shell ls *.hhf ../include/*.hhf ../usrlib/*.hhf)
+C_HEADERS = $(shell ls *.h ../include/*.h ../usrlib/*.h)
 
 URSLIB_HLA_SRC = $(shell ls *.hla)
 URSLIB_HLA_OBJ = $(URSLIB_HLA_SRC:.hla=.o)

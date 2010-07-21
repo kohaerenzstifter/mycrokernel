@@ -1,10 +1,5 @@
 procedure putcharacter(what: dword); @cdecl; @external;
-procedure putstring(what: string); @cdecl; @external;
-procedure puthex(what: dword); @cdecl; @external;
-procedure putbin(what: dword); @cdecl; @external;
-procedure putunsint(what: dword); @cdecl; @external;
-procedure putsint(what: dword); @cdecl; @external;
 procedure scrollscreen; @cdecl; @external;
-procedure cls; @cdecl; @external;
+procedure move_cursor; @cdecl; @external;
 procedure g; @external;
 procedure main; @cdecl; @external;

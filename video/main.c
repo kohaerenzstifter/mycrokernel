@@ -2,6 +2,7 @@
 #include "../include/const.h"
 #include "../usrlib/syscall.h"
 #include "prototype.h"
+#include "external.h"
 
 static uint32_t shiftCount = 0;
 static char cmdBuffer[MAX_MSG_SIZE] = "";
@@ -15,17 +16,69 @@ typedef struct _keymap {
   void *args;
 } keymap_t;
 
-void read_hex(uint32_t no_args, void *address)
+static void puthex(uint32_t what)
+{
+  uint32_t val = 0;
+  uint8_t shift = 7;
+  uint32_t mask = 0xf0000000;
+
+  while (mask > 0) {
+    if ((val = (mask & what)) != 0) {
+      val >>= (shift * 4);
+      if ((val >= 0)&&(val <= 9)) {
+	putcharacter('0' + val);
+      } else {
+	putcharacter('A' + val - 10);
+      }
+    }
+    mask >>= 4;
+    shift--;
+  }
+}
+    
+static void putstring(char *what)
+{
+  while (*what != '\0') {
+    putcharacter(*what);
+    what++;
+  }
+}
+
+static void putunsint(uint32_t what)
+{
+  uint32_t val = 0;
+  uint32_t divider = 1000000000;
+
+  while (divider > 0) {
+    if ((val = (what / divider)) != 0) {
+      puthex(val);
+    }
+    divider /= 10;
+  }
+}
+
+static void cls()
+{
+  uint32_t i = 0;
+
+  cursor = 0;
+  for (i = 0; i < NO_LINES; i++) {
+    putcharacter(LF);
+  }
+  cursor = 0;
+}
+
+static void read_hex(uint32_t no_args, void *address)
 {
   puthex((uint32_t) address);
 }
 
-void read_unsint(uint32_t no_args, void *address)
+static void read_unsint(uint32_t no_args, void *address)
 {
   putunsint((uint32_t) address);
 }
 
-void enter_pressed(uint32_t no_args, void *address)
+static void enter_pressed(uint32_t no_args, void *address)
 {
   putcharacter(LF);
   
@@ -38,7 +91,7 @@ void enter_pressed(uint32_t no_args, void *address)
   *bufferPtr = '\0';
 }
 
-void buffer_character(char me)
+static void buffer_character(char me)
 {
   if (bufferPtr == NULL) {
     goto finish;
@@ -54,23 +107,23 @@ finish:
   return;
 }
 
-void read_char(uint32_t no_args, void *address)
+static void read_char(uint32_t no_args, void *address)
 {
   putcharacter((uint32_t) address);
   buffer_character((char) address);
 }
 
-void shift_released(uint32_t no_args, void *address)
+static void shift_released(uint32_t no_args, void *address)
 {
   shiftCount--;
 }
 
-void shift_pressed(uint32_t no_args, void *address)
+static void shift_pressed(uint32_t no_args, void *address)
 {
   shiftCount++;
 }
 
-void backspace_pressed(uint32_t no_args, void *address)
+static void backspace_pressed(uint32_t no_args, void *address)
 {
   //TODO
 }
@@ -314,6 +367,11 @@ int main()
   cls();
 
   terror(call_syscall_claim_port(0x60, &error))
+  terror(call_syscall_claim_port(0x3D4, &error))
+  terror(call_syscall_claim_port(0x3D5, &error))
+
+  move_cursor();
+
   terror(call_syscall_request_irq(1, &error))
   terror(call_syscall_set_feature(FEATURE_TTY, &error))
   terror(main_loop(&error))

@@ -59,4 +59,7 @@ char *error_strings[] = {
 
 #define MAX_MSG_SIZE 300
 
+#define NO_COLUMNS 80
+#define NO_LINES 25
+
 #endif

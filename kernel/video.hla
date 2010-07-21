@@ -290,7 +290,7 @@ begin _kscrollscreen;
   pop(eax);
 end _kscrollscreen;
 
-/*procedure _kmove_cursor;
+procedure _kmove_cursor;
 //set cursor on screen at position "cursor"/2
 begin _kmove_cursor;
   push(eax);
@@ -317,7 +317,7 @@ begin _kmove_cursor;
   pop(edx);
   pop(ecx);
   pop(eax);
-end _kmove_cursor;*/
+end _kmove_cursor;
 
 procedure kputchar(what: dword); @cdecl; @external;
 procedure kputchar(what: dword);
