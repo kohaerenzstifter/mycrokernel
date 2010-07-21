@@ -1,0 +1,8 @@
+procedure call_syscall_set_feature_HLA(feature: dword; error: dword); @external;
+procedure call_syscall_receive_HLA(sender: dword; where: dword; length: dword; error: dword); @external;
+procedure call_syscall_send_by_feature_HLA(feature: dword; where: dword; length: dword; block: dword; error: dword); @external;
+procedure call_syscall_exit; @cdecl; @external;
+procedure call_syscall_request_irq_HLA(irq: dword; error: dword); @external;
+procedure call_syscall_inb_HLA(port: dword; error: dword); @external;
+procedure call_syscall_outb_HLA(port: dword; value: dword; error: dword); @external;
+procedure call_syscall_claim_port_HLA(port: dword; error: dword); @external;

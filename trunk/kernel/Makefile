@@ -16,8 +16,8 @@ KERNEL_C_OBJ = $(KERNEL_C_SRC:.c=.o)
 
 KERNEL_OBJ = $(KERNEL_HLA_OBJ) $(KERNEL_C_OBJ) $(shell ls ../usrlib/*.o)
 
-HLA_HEADERS = $(shell ls *.hhf ../include/*.hhf)
-C_HEADERS = $(shell ls *.h ../include/*.h)
+HLA_HEADERS = $(shell ls *.hhf ../include/*.hhf ../usrlib/*.hhf)
+C_HEADERS = $(shell ls *.h ../include/*.h ../usrlib/*.h)
 
 all: kernel.bin
 

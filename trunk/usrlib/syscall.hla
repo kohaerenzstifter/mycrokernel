@@ -1,6 +1,7 @@
 unit syscall;
 
 #includeonce("../include/const.hhf")
+#includeonce("syscall.hhf")
 
 procedure call_syscall_set_feature_HLA(feature: dword; error: dword);
 begin call_syscall_set_feature_HLA;
@@ -78,7 +79,6 @@ begin call_syscall_send_by_feature;
   call_syscall_send_by_feature_HLA(feature, where, length, block, error);
 end call_syscall_send_by_feature;
 
-procedure call_syscall_exit; @cdecl; @external;
 procedure call_syscall_exit;
 begin call_syscall_exit;
   mov(SYS_EXIT,eax);
@@ -139,7 +139,18 @@ begin call_syscall_claim_port;
   call_syscall_claim_port_HLA(port, error);
 end call_syscall_claim_port;
 
-
+procedure call_syscall_outb_HLA(port: dword; value: dword; error: dword);
+begin call_syscall_outb_HLA;
+  push(ebx);
+  push(ecx);
+  mov(SYS_OUTB,eax);
+  mov(port,ebx);
+  mov(value,ecx);
+  mov(error,esi);
+  int($22);
+  pop(ecx);
+  pop(ebx);
+end call_syscall_outb_HLA;
 
 
 

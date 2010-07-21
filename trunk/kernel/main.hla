@@ -173,7 +173,7 @@ begin start;
   add(@size(DTdesc_t)+2,eax);		//eax=pointer to memory map (preceded by number of memory regions found)
   _kcls();
   do_mem(eax);				//Make sense of data found in memory map and adjust gdt accordingly
-  //_kmove_cursor();
+  _kmove_cursor();
   _kcls();
   init_port_accessers();
 

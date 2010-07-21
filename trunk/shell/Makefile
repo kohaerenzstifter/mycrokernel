@@ -9,8 +9,8 @@ SHELL_C_OBJ = $(SHELL_C_SRC:.c=.o)
 SHELL_OBJ = $(SHELL_HLA_OBJ) $(SHELL_C_OBJ) $(shell ls ../usrlib/*.o)
 
 
-HLA_HEADERS = $(shell ls *.hhf ../include/*.hhf)
-C_HEADERS = $(shell ls *.h ../include/*.h)
+HLA_HEADERS = $(shell ls *.hhf ../include/*.hhf ../usrlib/*.hhf)
+C_HEADERS = $(shell ls *.h ../include/*.h ../usrlib/*.h)
 
 all: shell.bin
 

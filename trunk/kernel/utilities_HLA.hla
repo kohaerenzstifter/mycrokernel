@@ -52,6 +52,19 @@ begin inb;
   _inb(port);
 end inb;
 
+procedure _outb(port: dword; value: dword);
+begin _outb;
+  mov(port, edx);
+  mov(value, eax);
+  out(al, dx);
+end _outb;
+
+procedure outb(port: dword; value: dword); @cdecl; @external;
+procedure outb(port: dword; value: dword);
+begin outb;
+  _outb(port, value);
+end outb;
+
 procedure _enqueue(process: dword);
 begin _enqueue;
   enqueue(process);

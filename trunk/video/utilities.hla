@@ -6,8 +6,35 @@ unit Utilities;
 #includeonce("../include/const.hhf")
 #includeonce("../include/character.hhf")
 #includeonce("../include/always.hhf")
+#includeonce("../usrlib/syscall.hhf")
 
 static //global variables go here
+
+procedure move_cursor;
+//set cursor on screen at position "cursor"/2
+begin move_cursor;
+  push(eax);
+  push(ecx);
+  push(edx);
+  pushfd();
+  movzx(cursor,ecx);
+  mov(ATTRIB,al);
+  gseg: mov(al,(type byte [ecx + 1]));
+  shr(1,ecx);
+  call_syscall_outb_HLA($3D4, $F, NULL);
+  mov(ecx, edx);
+  and($ff, edx);
+  call_syscall_outb_HLA($3D5, edx, NULL);
+  call_syscall_outb_HLA($3D4, $E, NULL);
+  mov(ecx, edx);
+  and($ff00, edx);
+  shr(8, edx);
+  call_syscall_outb_HLA($3D5, edx, NULL);
+  popfd();
+  pop(edx);
+  pop(ecx);
+  pop(eax);
+end move_cursor;
 
 //procedure putcharacter(what:dword); @cdecl; @external;
 procedure putcharacter(what:dword); 
@@ -23,9 +50,14 @@ begin putcharacter;
     mov(ATTRIB,ch);
     movzx(cursor,eax);
 putcharacter_back:
-    if(eax<NO_LINES*NO_COLUMNS*2) then
+    if(eax < NO_LINES*NO_COLUMNS * 2) then
       gseg:mov(cx,[eax]);
-      add(2,cursor);			
+      add(2,eax);
+      if (eax >= NO_LINES*NO_COLUMNS * 2) then
+	scrollscreen();
+      endif;
+      mov(ax, cursor);
+      move_cursor();
     else
       scrollscreen();
       movzx(cursor,eax);
@@ -77,6 +109,7 @@ putcharacter_back:
     jmp end_putcharacter;
   endif;
 end_putcharacter:
+  move_cursor();
   popfd();
   pop(edx);
   pop(ecx);
@@ -84,14 +117,14 @@ end_putcharacter:
   pop(eax);
 end putcharacter;
 
-procedure putstring(what: string);
+//procedure putstring(what: string);
 //1) if byte character at "what" nonzero then write to gs:cursor, else return
 //2) write "attrib" byte to gs:cursor+1
 //3) increase "cursor" by 2 and set cursor on screen
 //4) increase "what" by 1
 //5) goto 1)
 //increments "cursor" by 2
-begin putstring;
+/*begin putstring;
   push(eax);
   push(ebx);
   push(ecx);
@@ -110,12 +143,12 @@ begin putstring;
   pop(ecx);
   pop(ebx);
   pop(eax);
-end putstring;
+end putstring;*/
 
 //procedure puthex(what: dword); @cdecl; @external;
-procedure puthex(what: dword);
+//procedure puthex(what: dword);
 //print hexadecimal number on screen
-begin puthex;
+/*begin puthex;
   push(eax);
   push(edx);
   push(ecx);
@@ -149,12 +182,12 @@ begin puthex;
   pop(ecx);
   pop(edx);
   pop(eax);
-end puthex;
+end puthex;*/
 
 //procedure putbin(what: dword); @cdecl; @external;
-procedure putbin(what: dword);
+//procedure putbin(what: dword);
 //print binary number on screen
-begin putbin;
+/*begin putbin;
   push(eax);
   push(edx);
   push(ecx);
@@ -184,12 +217,12 @@ begin putbin;
   pop(ecx);
   pop(edx);
   pop(eax);
-end putbin;
+end putbin;*/
 
 //procedure putunsint(what: dword); @cdecl; @external;
-procedure putunsint(what: dword);
+//procedure putunsint(what: dword);
 //put unsigned decimal number on screen
-begin putunsint;
+/*begin putunsint;
   push(eax);
   push(ebx);
   push(ecx);
@@ -223,11 +256,11 @@ begin putunsint;
   pop(ecx);
   pop(ebx);
   pop(eax);
-end putunsint;
+end putunsint;*/
 
 //procedure putsint(what: dword); @cdecl; @external;
-procedure putsint(what: dword);
-begin putsint;
+//procedure putsint(what: dword);
+/*begin putsint;
   push(eax);
   push(ebx);
   pushfd();
@@ -245,12 +278,12 @@ begin putsint;
   popfd();
   pop(ebx);
   pop(eax);
-end putsint;
+end putsint;*/
 
 //procedure cls; @cdecl; @external;
-procedure cls;
+//procedure cls;
 //clear screen, set "cursor" to zero and set cursor on screen
-begin cls;
+/*begin cls;
   push(eax);
   push(ebx);
   pushfd();
@@ -270,7 +303,7 @@ begin cls;
   popfd();
   pop(ebx);
   pop(eax);
-end cls;
+end cls;*/
 
 //procedure scrollscreen; @cdecl; @external;
 procedure scrollscreen;
