@@ -335,7 +335,7 @@ finish:
 static void process_message(char *buffer, uint32_t bytes)
 {
   buffer[bytes] = '\0';
-//  putstring(buffer); putcharacter(LF);
+  putstring(buffer); putcharacter(LF);
 }
 
 static void main_loop(err_t *error)
@@ -354,6 +354,7 @@ static void main_loop(err_t *error)
       *error = OK;
     } else {
       bytes = (bytes < sizeof(buffer)) ? bytes : (sizeof(buffer) - 1);
+      buffer[sizeof(buffer) - 1] = '\0';
       process_message(buffer, bytes);
     }
   }
