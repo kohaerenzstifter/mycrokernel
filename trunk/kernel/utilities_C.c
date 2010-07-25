@@ -791,10 +791,11 @@ finish:
   return;
 }
 
-//this may unblock the process
-void do_exception(uint32_t number)
+void do_exception(uint32_t number, uint32_t error)
 {
   kputstring("exception: "); kputhex(number); kputchar(LF);
+  kputstring("error: "); kputhex(error); kputchar(LF);
+  nextptr = curptr;
 }
 
 tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,

@@ -4,6 +4,7 @@ unit Go;
 
 procedure g; @nodisplay; @noalignstack; @noframe;
 begin g;
+  //out(al, dx);
   main();
 end g;
 

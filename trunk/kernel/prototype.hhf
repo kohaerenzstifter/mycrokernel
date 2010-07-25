@@ -45,7 +45,7 @@ procedure _dequeue(process: dword); @external;
 procedure enqueue(process: dword); @cdecl; @external;
 procedure dequeue(process: dword); @cdecl; @external;
 procedure do_hard_int(number: dword); @cdecl; @external;
-procedure do_exception(number: dword); @cdecl; @external;
+procedure do_exception(number: dword; error: dword); @cdecl; @external;
 procedure release_irqs_taken(process: dword); @cdecl; @external;
 procedure unblock_waiting_senders(context: dword; process: dword); @cdecl; @external;
 procedure get_process_by_feature(feature: dword); @returns("eax"); @cdecl; @external;
