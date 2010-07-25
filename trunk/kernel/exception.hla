@@ -1,0 +1,24 @@
+unit Except;
+
+#includeonce("../include/always.hhf")
+#includeonce("prototype.hhf")
+#includeonce("external.hhf")
+
+#macro exceptn_procedure_def(string _x_);
+
+procedure @text("hw_exceptn" +_x_); @nodisplay; @noalignstack; @noframe;
+begin @text("hw_exceptn" +_x_);
+  forever
+    do_exception(@text(_x_));
+    add(4,esp);
+    schedule(&@text("exceptn" + _x_ + "state"));
+    iret();
+  endfor;
+end @text("hw_exceptn" +_x_);
+
+#endmacro
+?@tostring:exceptn:text := "exceptn_procedure_def";
+
+#include("exceptions.hhf");
+
+end Except;

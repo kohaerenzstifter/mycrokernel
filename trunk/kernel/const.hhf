@@ -78,11 +78,6 @@ const
   PID_IDLE: text:="0";
   PID_KERNEL: text:="1";
 
-
-/*  PID_CLOCK: text:="2";
-  PID_KEYINT: text:="3";*/
-  PID_SYSCALL: text:="0"; //deprecated
-
   PID_INTERRUPT: text:="2";
 #macro intrrpt_pid(string _x_);
   @text("PID_INTERRUPT"+_x_):text:=@text("""PID_INTERRUPT + " + _x_ + """");
@@ -91,6 +86,14 @@ const
 ?@tostring:intrrpt:text := "intrrpt_pid";
   #include("interrupts.hhf");
 
+
+    PID_EXCEPTION: text:=@text("""PID_INTERRUPT15 + 1""");;
+#macro exceptn_pid(string _x_);
+  @text("PID_EXCEPTION"+_x_):text:=@text("""PID_EXCEPTION + " + _x_ + """");
+#endmacro
+
+?@tostring:exceptn:text := "exceptn_pid";
+  #include("exceptions.hhf");
 
 
   //PIC constants
@@ -163,6 +166,54 @@ const
   IDX_TASK1STACK:text:="15";
   IDX_SYSCALL:text:="16";
 
+
+  IDX_EXCEPTION0:text:="17";
+  IDX_EXCEPTION1:text:="18";
+  IDX_EXCEPTION2:text:="19";
+  IDX_EXCEPTION3:text:="20";
+  IDX_EXCEPTION4:text:="21";
+  IDX_EXCEPTION5:text:="22";
+  IDX_EXCEPTION6:text:="23";
+  IDX_EXCEPTION7:text:="24";
+  IDX_EXCEPTION8:text:="25";
+  IDX_EXCEPTION9:text:="26";
+  IDX_EXCEPTION10:text:="27";
+  IDX_EXCEPTION11:text:="28";
+  IDX_EXCEPTION12:text:="29";
+  IDX_EXCEPTION13:text:="30";
+  IDX_EXCEPTION14:text:="31";
+  IDX_EXCEPTION15:text:="32";
+  IDX_EXCEPTION16:text:="33";
+  IDX_EXCEPTION17:text:="34";
+  IDX_EXCEPTION18:text:="35";
+  IDX_EXCEPTION19:text:="36";
+  IDX_EXCEPTION20:text:="37";
+  IDX_EXCEPTION21:text:="38";
+  IDX_EXCEPTION22:text:="39";
+  IDX_EXCEPTION23:text:="40";
+  IDX_EXCEPTION24:text:="41";
+  IDX_EXCEPTION25:text:="42";
+  IDX_EXCEPTION26:text:="43";
+  IDX_EXCEPTION27:text:="44";
+  IDX_EXCEPTION28:text:="45";
+  IDX_EXCEPTION29:text:="46";
+  IDX_EXCEPTION30:text:="47";
+  IDX_EXCEPTION31:text:="48";
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   //memory descriptor types (as returned by bios)
   RAM: text:="1";
   RESERVED: text:="2";

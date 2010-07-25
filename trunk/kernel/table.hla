@@ -437,6 +437,112 @@ static //global variables go here
 
 #include("interrupts.hhf");
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#macro exceptn_state(string _x_);
+  @text("exceptn" + _x_ + "state"): tss_t := tss_t:[
+    0,
+    0,
+    $fffffffc,
+    IDX_INTSTACK*@size(segdesc_t),
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    @text("PID_EXCEPTION"+_x_),
+    0,
+    0,
+    &@text("hw_exceptn" +_x_),
+    0,
+    0,
+    0,
+    31,
+    0,
+    $fffffffc,
+    0,
+    0,
+    0,
+    IDX_KERNELDATA*@size(segdesc_t),
+    0,
+    IDX_KERNELCODE*@size(segdesc_t),
+    0,
+    IDX_INTSTACK*@size(segdesc_t),
+    0,
+    IDX_KERNELDATA*@size(segdesc_t),
+    0,
+    IDX_MEMORY*@size(segdesc_t),
+    0,
+    IDX_VIDEO*@size(segdesc_t),
+    0,
+    0,
+    0,
+    0,
+    0,
+    @size(tss_t),
+    0,
+    @text("IDX_EXCEPTION"+_x_)*@size(segdesc_t),
+    0,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+  ];
+#endmacro
+?@tostring:exceptn:text := "exceptn_state";
+
+#include("exceptions.hhf");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 storage //uninitialised global variables go here
   align(4);
 

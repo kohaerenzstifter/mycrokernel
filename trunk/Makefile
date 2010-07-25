@@ -11,10 +11,8 @@ SHELL_SIZE = $$(stat -c %s shell/shell.bin)
 _SHELL_SIZE = $$(if [ `echo $(SHELL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(SHELL_SIZE); else echo "(($(SHELL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
 
 
-bochs: all
+bochs: image
 	bochs -f bochs.conf
-
-all: image
 
 image: boot/512.bin kernel/gdt.bin kernel/kernel.bin video/video.bin shell/shell.bin Makefile
 	-rm image

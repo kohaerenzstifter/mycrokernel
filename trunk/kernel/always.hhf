@@ -16,4 +16,8 @@
 #endmacro
 ?intrrpt:text := "intrrpt_dummy";
 
+#macro exceptn_dummy(string _x_);
+#endmacro
+?exceptn:text := "exceptn_dummy";
+
 ?@align:=2;

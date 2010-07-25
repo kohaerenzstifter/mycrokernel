@@ -45,6 +45,7 @@ procedure _dequeue(process: dword); @external;
 procedure enqueue(process: dword); @cdecl; @external;
 procedure dequeue(process: dword); @cdecl; @external;
 procedure do_hard_int(number: dword); @cdecl; @external;
+procedure do_exception(number: dword); @cdecl; @external;
 procedure release_irqs_taken(process: dword); @cdecl; @external;
 procedure unblock_waiting_senders(context: dword; process: dword); @cdecl; @external;
 procedure get_process_by_feature(feature: dword); @returns("eax"); @cdecl; @external;
@@ -94,6 +95,14 @@ procedure start(pass: dword); @external;
 ?@tostring:intrrpt:text := "intrrpt_procedure_decl";
 
 #include("interrupts.hhf");
+
+#macro exceptn_procedure_decl(string _x_);
+  procedure @text("hw_exceptn"+_x_); @external;
+#endmacro
+?@tostring:exceptn:text := "exceptn_procedure_decl";
+
+#include("exceptions.hhf");
+
 
 #macro end_of_buffer(what);
   &what.buffer[KBD_BUFFER_SIZE-1]
