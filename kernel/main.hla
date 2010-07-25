@@ -209,6 +209,13 @@ begin start;
 
  #include("interrupts.hhf");
 
+#macro exceptn_write_tss(string _x_);
+  _write_tss_desc(@text("IDX_EXCEPTION"+_x_+"*@size(segdesc_t)"),104,&@text("exceptn" + _x_ + "state")+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+#endmacro
+?@tostring:exceptn:text := "exceptn_write_tss";
+
+ #include("exceptions.hhf");
+
   /*Now the pids of these processes
   are marked as "assigned" in the pid
   bitmap*/
@@ -223,6 +230,13 @@ begin start;
 
   #include("interrupts.hhf");
 
+#macro exceptn_unfree_pid(string _x_);
+  _unfree_pid(@text("PID_EXCEPTION"+_x_));
+#endmacro
+?@tostring:exceptn:text := "exceptn_unfree_pid";
+
+  #include("exceptions.hhf");
+
   remap_pics($20,$28);
 
 #macro intrrpt_hook(string _x_);
@@ -231,6 +245,13 @@ begin start;
 ?@tostring:intrrpt:text := "intrrpt_hook";
 
   #include("interrupts.hhf");
+
+#macro exceptn_hook(string _x_);
+  hook_int(@text(_x_),TSS,@text("IDX_EXCEPTION"+_x_)*@size(segdesc_t),0);
+#endmacro
+?@tostring:exceptn:text := "exceptn_hook";
+
+  #include("exceptions.hhf");
 
   mov(%11111100,al);
   out(al,$21);

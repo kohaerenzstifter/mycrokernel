@@ -791,6 +791,12 @@ finish:
   return;
 }
 
+//this may unblock the process
+void do_exception(uint32_t number)
+{
+  kputstring("exception: "); kputhex(number); kputchar(LF);
+}
+
 tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
   uint32_t csegmBase, uint32_t dsegmBase, uint32_t esegmBase,
   uint32_t fsegmBase, uint32_t gsegmBase, uint32_t ssegmBase,

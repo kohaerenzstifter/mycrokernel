@@ -29,6 +29,13 @@ static //global variables go here
 ?@tostring:intrrpt:text := "intrrpt_decl_tss";
 
   #include("interrupts.hhf");
+  
+#macro exceptn_decl_tss(string _x_);
+  @text("exceptn" + _x_ + "state"): tss_t; @external;
+#endmacro
+?@tostring:exceptn:text := "exceptn_decl_tss";
+
+  #include("exceptions.hhf");
 
   hours: dword; @external;
   minutes: byte; @external;
