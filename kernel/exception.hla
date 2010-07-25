@@ -4,13 +4,30 @@ unit Except;
 #includeonce("prototype.hhf")
 #includeonce("external.hhf")
 
+#macro has_error_code(nr);
+  (
+    (nr == 8)|
+    (nr == 10)|
+    (nr == 11)|
+    (nr == 12)|
+    (nr == 13)|
+    (nr == 14)|
+    (nr == 17)
+  )
+#endmacro
+
 #macro exceptn_procedure_def(string _x_);
 
 procedure @text("hw_exceptn" +_x_); @nodisplay; @noalignstack; @noframe;
 begin @text("hw_exceptn" +_x_);
   forever
-    do_exception(@text(_x_));
-    add(4,esp);
+#if (has_error_code(@text(_x_)))
+    pop(eax);
+#else
+    zerify(eax);
+#endif
+    do_exception(@text(_x_), eax);
+    add(8,esp);
     schedule(&@text("exceptn" + _x_ + "state"));
     iret();
   endfor;
