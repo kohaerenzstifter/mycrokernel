@@ -4,42 +4,7 @@ const
   CODE: text:="0";
   DATA: text:="1";
   STACK: text:="2";
-  //characters
-  ERROR: text:="$FF";
-  BCKSPCE: text:="$8";
-  LCTRL: text:="ERROR";
-  LSHIFT: text:="ERROR";
-  RSHIFT: text:="ERROR";
-  LALT: text:="ERROR";
-  SPACE: text:="' '";
-  CPSLCK: text:="ERROR";
-  F1: text:="ERROR";
-  F2: text:="ERROR";
-  F3: text:="ERROR";
-  F4: text:="ERROR";
-  F5: text:="ERROR";
-  F6: text:="ERROR";
-  F7: text:="ERROR";
-  F8: text:="ERROR";
-  F9: text:="ERROR";
-  F10: text:="ERROR";
-  F11: text:="ERROR";
-  F12: text:="ERROR";
-  NUMLCK: text:="ERROR";
-  SCRLCK: text:="ERROR";
-  HOME: text:="ERROR";
-  KEYPAD8: text:="ERROR";
-  KEYPAD9: text:="ERROR";
-  KEYPADMINUS: text:="ERROR";
-  KEYPAD4: text:="ERROR";
-  KEYPAD5: text:="ERROR";
-  KEYPAD6: text:="ERROR";
-  KEYPADPLUS: text:="ERROR";
-  KEYPAD1: text:="ERROR";
-  KEYPAD2: text:="ERROR";
-  KEYPAD3: text:="ERROR";
-  KEYPAD0: text:="ERROR";
-  KEYPADDEL: text:="ERROR";
+
 
   //miscellaneous constants
   SECTOR_SIZE: text:="512";
@@ -80,7 +45,7 @@ const
 
   PID_INTERRUPT: text:="2";
 #macro intrrpt_pid(string _x_);
-  @text("PID_INTERRUPT"+_x_):text:=@text("""PID_INTERRUPT + " + _x_ + """");
+  @text("PID_INTERRUPT"+_x_):text:=@text("""(PID_INTERRUPT + " + _x_ + ")""");
 #endmacro
 
 ?@tostring:intrrpt:text := "intrrpt_pid";
@@ -89,12 +54,11 @@ const
 
     PID_EXCEPTION: text:=@text("""PID_INTERRUPT15 + 1""");;
 #macro exceptn_pid(string _x_);
-  @text("PID_EXCEPTION"+_x_):text:=@text("""PID_EXCEPTION + " + _x_ + """");
+  @text("PID_EXCEPTION"+_x_):text:=@text("""(PID_EXCEPTION + " + _x_ + ")""");
 #endmacro
 
 ?@tostring:exceptn:text := "exceptn_pid";
   #include("exceptions.hhf");
-
 
   //PIC constants
   PIC1_COMMAND: text:="$20";
@@ -130,90 +94,24 @@ const
 
   IDX_KERNELTSS:text:="8";
   IDX_IDLETASKTSS:text:="9";
-/*  IDX_CLOCKINTTSS:text:="10";
-  IDX_KEYINTTSS:text:="11";*/
-/*  IDX_INTERRUPT:text:="10";
 
+
+  IDX_INTERRUPT: text := "10";
 #macro intrrpt_idx(string _x_);
-  @text("IDX_INTERRUPT"+_x_):text:=@text("""IDX_INTERRUPT + " + _x_ + """");
+  @text("IDX_INTERRUPT" + _x_):text:=@text("""(IDX_INTERRUPT + " + _x_ + ")""");
 #endmacro
 
 ?@tostring:intrrpt:text := "intrrpt_idx";
   #include("interrupts.hhf");
 
-*/
+  IDX_EXCEPTION: text := "26";
+#macro exceptn_idx(string _x_);
+  @text("IDX_EXCEPTION" + _x_):text:=@text("""(IDX_EXCEPTION + " + _x_ + ")""");
+#endmacro
 
-  IDX_INTERRUPT0:text:="10";
-  IDX_INTERRUPT1:text:="11";
-  IDX_INTERRUPT2:text:="12";
-  IDX_INTERRUPT3:text:="13";
-  IDX_INTERRUPT4:text:="14";
-  IDX_INTERRUPT5:text:="15";
-  IDX_INTERRUPT6:text:="16";
-  IDX_INTERRUPT7:text:="17";
-  IDX_INTERRUPT8:text:="18";
-  IDX_INTERRUPT9:text:="19";
-  IDX_INTERRUPT10:text:="20";
-  IDX_INTERRUPT11:text:="21";
-  IDX_INTERRUPT12:text:="22";
-  IDX_INTERRUPT13:text:="23";
-  IDX_INTERRUPT14:text:="24";
-  IDX_INTERRUPT15:text:="25";
+?@tostring:exceptn:text := "exceptn_idx";
+  #include("exceptions.hhf");
 
-  IDX_TASK1TSS:text:="12";
-  IDX_PRIV3CODE:text:="13";
-  IDX_PRIV3DATA:text:="14";
-  IDX_TASK1STACK:text:="15";
-  IDX_SYSCALL:text:="16";
-
-
-  IDX_EXCEPTION0:text:="17";
-  IDX_EXCEPTION1:text:="18";
-  IDX_EXCEPTION2:text:="19";
-  IDX_EXCEPTION3:text:="20";
-  IDX_EXCEPTION4:text:="21";
-  IDX_EXCEPTION5:text:="22";
-  IDX_EXCEPTION6:text:="23";
-  IDX_EXCEPTION7:text:="24";
-  IDX_EXCEPTION8:text:="25";
-  IDX_EXCEPTION9:text:="26";
-  IDX_EXCEPTION10:text:="27";
-  IDX_EXCEPTION11:text:="28";
-  IDX_EXCEPTION12:text:="29";
-  IDX_EXCEPTION13:text:="30";
-  IDX_EXCEPTION14:text:="31";
-  IDX_EXCEPTION15:text:="32";
-  IDX_EXCEPTION16:text:="33";
-  IDX_EXCEPTION17:text:="34";
-  IDX_EXCEPTION18:text:="35";
-  IDX_EXCEPTION19:text:="36";
-  IDX_EXCEPTION20:text:="37";
-  IDX_EXCEPTION21:text:="38";
-  IDX_EXCEPTION22:text:="39";
-  IDX_EXCEPTION23:text:="40";
-  IDX_EXCEPTION24:text:="41";
-  IDX_EXCEPTION25:text:="42";
-  IDX_EXCEPTION26:text:="43";
-  IDX_EXCEPTION27:text:="44";
-  IDX_EXCEPTION28:text:="45";
-  IDX_EXCEPTION29:text:="46";
-  IDX_EXCEPTION30:text:="47";
-  IDX_EXCEPTION31:text:="48";
-    
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   //memory descriptor types (as returned by bios)
   RAM: text:="1";
   RESERVED: text:="2";

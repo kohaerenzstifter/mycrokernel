@@ -203,6 +203,7 @@ begin start;
   _write_tss_desc(IDX_IDLETASKTSS*@size(segdesc_t),104,&idlestate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
 
 #macro intrrpt_write_tss(string _x_);
+//_kputstring(@text("""IDX_INTERRUPT + " + _x_ + """") + ":"); _kputunsint(@text("IDX_INTERRUPT" + _x_)); _kputchar(LF);
   _write_tss_desc(@text("IDX_INTERRUPT"+_x_+"*@size(segdesc_t)"),104,&@text("intrrpt" + _x_ + "state")+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
 #endmacro
 ?@tostring:intrrpt:text := "intrrpt_write_tss";
