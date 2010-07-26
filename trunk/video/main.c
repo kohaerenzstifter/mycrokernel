@@ -132,6 +132,11 @@ static void backspace_pressed(uint32_t no_args, void *address)
   //TODO
 }
 
+static void alt_pressed(uint32_t no_args, void *address)
+{
+  //TODO
+}
+
 static keymap_t km[183][2] =
 {
   {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
@@ -190,7 +195,7 @@ static keymap_t km[183][2] =
   {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{&shift_pressed, 0, NULL}, {&shift_pressed, 0, NULL}},
   {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&alt_pressed, 1, (void *) NULL}, {NULL, 0, NULL}},
   {{&read_char, 1, (void *) ' '}, {&read_char, 1, (void *) ' '}},
   {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
@@ -325,10 +330,18 @@ static void process_scancode(uint32_t scancode)
   uint8_t shifted = (shiftCount == 0) ? 0 : 1;
 
   if (scancode >= sizeof(km)/sizeof(km[0])) {
+    putstring("scancode ");
+    putunsint(scancode);
+    putstring(" unhandled!");
+    putcharacter(LF);
     goto finish;
   }
   func = km[scancode][shifted].func;
   if (func == NULL) {
+    putstring("scancode ");
+    putunsint(scancode);
+    putstring(" unhandled!");
+    putcharacter(LF);
     goto finish;
   }
   func(km[scancode][shifted].no_args, km[scancode][shifted].args);
