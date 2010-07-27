@@ -2,7 +2,7 @@ SECTOR_SIZE = 512
 KERNEL_BASE = 83968
 KERNEL_SIZE = $$(stat -c %s kernel.bin)
 _KERNEL_SIZE = $$(if [ `echo $(KERNEL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(KERNEL_SIZE); else echo "(($(KERNEL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
-VIDEO_SIZE = $$(stat -c %s ../video/video.bin)
+VIDEO_SIZE = $$(stat -c %s ../tty/tty.bin)
 _VIDEO_SIZE = $$(if [ `echo $(VIDEO_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(VIDEO_SIZE); else echo "(($(VIDEO_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
 
 ENVIRONMENT = _VIDEO_SIZE=$(_VIDEO_SIZE) SECTOR_SIZE=$(SECTOR_SIZE) KERNEL_BASE=$(KERNEL_BASE)
@@ -30,14 +30,14 @@ gdt.bin: gdt.o Makefile
 	ld -melf_i386 gdt.o -N -M > gdt.mem -o gdt.bin --oformat binary -T ../script
 	ndisasm -b 32 gdt.bin > gdt.ndisasm
 
-../video/video.bin:
-	cd ../video && make video.bin
+../tty/tty.bin:
+	cd ../tty && make tty.bin
 
 gdt.o: gdt.hla kernel.bin Makefile $(HLA_HEADERS)
 	$(GDT_ENVIRONMENT) hla -c gdt.hla
 	objdump --disassemble-all -S gdt.o > gdt.objdump
 
-%.o: %.hla ../video/video.bin Makefile $(HLA_HEADERS)
+%.o: %.hla ../tty/tty.bin Makefile $(HLA_HEADERS)
 	$(ENVIRONMENT) hla -c $<
 	objdump --disassemble-all -S $@ > $*.objdump
 
@@ -52,4 +52,4 @@ clean:
 	-rm *.ndisasm
 	-rm *.mem
 	-rm *~
-	-cd ../video && make clean
+	-cd ../tty && make clean
