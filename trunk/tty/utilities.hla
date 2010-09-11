@@ -10,6 +10,15 @@ unit Utilities;
 
 static //global variables go here
 
+procedure backspace;
+//set cursor on screen at position "cursor"/2
+begin backspace;
+  sub(2,cursor);
+  putcharacter(' ');
+  sub(2,cursor);
+  move_cursor();
+end backspace;
+
 procedure move_cursor;
 //set cursor on screen at position "cursor"/2
 begin move_cursor;

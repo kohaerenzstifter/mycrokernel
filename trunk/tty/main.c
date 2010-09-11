@@ -5,8 +5,15 @@
 #include "external.h"
 
 static uint32_t shiftCount = 0;
-static char cmdBuffer[MAX_MSG_SIZE] = "";
-static char *bufferPtr = &cmdBuffer[0];
+static boolean_t debug = FALSE;
+
+#define BUFFER_SIZE (((NO_LINES * NO_COLUMNS) < MAX_MSG_SIZE) ? ((NO_LINES * NO_COLUMNS) - 1) : -1)
+
+static boolean_t echo = TRUE;
+static boolean_t screen_echoed[BUFFER_SIZE] = {FALSE};
+static char buffer[BUFFER_SIZE + 1] = {'\0'};
+
+static uint32_t screen_idx = 0;
 
 typedef void (*keyfunc_t)(uint32_t no_args, void *address);
 
@@ -82,39 +89,64 @@ static void read_unsint(uint32_t no_args, void *address)
   putunsint((uint32_t) address);
 }
 
+static void flush()
+{
+  screen_idx = 0;
+  buffer[screen_idx] = '\0';
+}
+
 static void enter_pressed(uint32_t no_args, void *address)
 {
   putcharacter(LF);
-  
-  if (bufferPtr != NULL) {
-    *bufferPtr = '\0';
-  }
-  
-  call_syscall_send_by_feature(FEATURE_CMD, cmdBuffer, strlen(cmdBuffer) + 1, FALSE, NULL);
-  bufferPtr = &cmdBuffer[0];
-  *bufferPtr = '\0';
+  call_syscall_send_by_feature(FEATURE_CMD, buffer,
+    strlen(buffer) + 1, FALSE, NULL);
+  flush();
 }
 
-static void buffer_character(char me)
+static void escaped_pressed(uint32_t no_args, void *address)
 {
-  if (bufferPtr == NULL) {
+  debug = !debug;
+  if (debug) {
+    putstring("debugging now enabled");
+  } else {
+    putstring("debugging now disabled");
+  }
+  putcharacter(LF);
+  flush();
+}
+
+static void noop(uint32_t no_args, void *address)
+{ 
+}
+
+static void printline(uint32_t no_args, void *address)
+{
+  if (!debug) {
     goto finish;
   }
-  *bufferPtr = me;
-  if (bufferPtr == &cmdBuffer[sizeof(cmdBuffer) - 2]) {
-    *(bufferPtr + 1) = '\0';
-    bufferPtr = NULL;
-    goto finish;
-  }
-  bufferPtr++;
+  putstring("scancode in line ");
+  putunsint((uint32_t) address);
+  putstring(" unhandled");
+  putcharacter(LF);
+  flush();
 finish:
   return;
 }
 
 static void read_char(uint32_t no_args, void *address)
 {
-  putcharacter((uint32_t) address);
-  buffer_character((char) address);
+  if (screen_idx < BUFFER_SIZE) {
+    if (echo) {
+      putcharacter((uint32_t) address);
+      screen_echoed[screen_idx] = TRUE;
+    } else {
+      screen_echoed[screen_idx] = FALSE;
+    }
+
+    buffer[screen_idx] = (char) address;
+    screen_idx++;
+    buffer[screen_idx] = '\0';
+  }
 }
 
 static void shift_released(uint32_t no_args, void *address)
@@ -129,7 +161,25 @@ static void shift_pressed(uint32_t no_args, void *address)
 
 static void backspace_pressed(uint32_t no_args, void *address)
 {
-  //TODO
+  if (screen_idx <= 0) {
+    goto finish;
+  }
+  
+  screen_idx--;
+  buffer[screen_idx] = '\0';
+
+  if (screen_echoed[screen_idx]) {
+    backspace();
+    goto finish;
+  }
+  
+  while ((screen_idx > 0)&&(!screen_echoed[screen_idx - 1])) {
+    screen_idx--;
+    buffer[screen_idx] = '\0';
+  }
+
+finish:
+  return;
 }
 
 static void alt_pressed(uint32_t no_args, void *address)
@@ -139,8 +189,8 @@ static void alt_pressed(uint32_t no_args, void *address)
 
 static keymap_t km[183][2] =
 {
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&escaped_pressed, 0, NULL}, {NULL, 0, NULL}},
   {{&read_unsint, 1, (void *) 1}, {NULL, 0, NULL}},
   {{&read_unsint, 1, (void *) 2}, {NULL, 0, NULL}},
   {{&read_unsint, 1, (void *) 3}, {NULL, 0, NULL}},
@@ -151,10 +201,10 @@ static keymap_t km[183][2] =
   {{&read_unsint, 1, (void *) 8}, {NULL, 0, NULL}},
   {{&read_unsint, 1, (void *) 9}, {NULL, 0, NULL}},
   {{&read_unsint, 1, (void *) 0}, {NULL, 0, NULL}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{&backspace_pressed, 0, NULL}, {&backspace_pressed, 0, NULL}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{&read_char, 1, (void *) 'q'}, {&read_char, 1, (void *) 'Q'}},
   {{&read_char, 1, (void *) 'w'}, {&read_char, 1, (void *) 'W'}},
   {{&read_char, 1, (void *) 'e'}, {&read_char, 1, (void *) 'E'}},
@@ -165,10 +215,10 @@ static keymap_t km[183][2] =
   {{&read_char, 1, (void *) 'i'}, {&read_char, 1, (void *) 'I'}},
   {{&read_char, 1, (void *) 'o'}, {&read_char, 1, (void *) 'O'}},
   {{&read_char, 1, (void *) 'p'}, {&read_char, 1, (void *) 'P'}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{&enter_pressed, 0, (void *) NULL}, {&enter_pressed, 0, NULL}},
-  {{NULL, 1, (void *) NULL}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{&read_char, 1, (void *) 'a'}, {&read_char, 1, (void *) 'A'}},
   {{&read_char, 1, (void *) 's'}, {&read_char, 1, (void *) 'S'}},
   {{&read_char, 1, (void *) 'd'}, {&read_char, 1, (void *) 'D'}},
@@ -178,11 +228,11 @@ static keymap_t km[183][2] =
   {{&read_char, 1, (void *) 'j'}, {&read_char, 1, (void *) 'J'}},
   {{&read_char, 1, (void *) 'k'}, {&read_char, 1, (void *) 'K'}},
   {{&read_char, 1, (void *) 'l'}, {&read_char, 1, (void *) 'L'}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{&shift_pressed, 0, NULL}, {&shift_pressed, 0, NULL}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{&read_char, 1, (void *) 'z'}, {&read_char, 1, (void *) 'Z'}},
   {{&read_char, 1, (void *) 'x'}, {&read_char, 1, (void *) 'X'}},
   {{&read_char, 1, (void *) 'c'}, {&read_char, 1, (void *) 'C'}},
@@ -190,137 +240,137 @@ static keymap_t km[183][2] =
   {{&read_char, 1, (void *) 'b'}, {&read_char, 1, (void *) 'B'}},
   {{&read_char, 1, (void *) 'n'}, {&read_char, 1, (void *) 'N'}},
   {{&read_char, 1, (void *) 'm'}, {&read_char, 1, (void *) 'M'}},
-  {{&read_unsint, 1, (void *) __LINE__}, {&read_unsint, 1, (void *) 44}},
-  {{&read_unsint, 1, (void *) __LINE__}, {&read_unsint, 1, (void *) 44}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {&printline, 1, (void *) 44}},
+  {{&printline, 1, (void *) __LINE__}, {&printline, 1, (void *) 44}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{&shift_pressed, 0, NULL}, {&shift_pressed, 0, NULL}},
-  {{&read_unsint, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{&alt_pressed, 1, (void *) NULL}, {NULL, 0, NULL}},
   {{&read_char, 1, (void *) ' '}, {&read_char, 1, (void *) ' '}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&noop, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{&shift_released, 0, NULL}, {&shift_released, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{NULL, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
+  {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
   {{&shift_released, 0, NULL}, {&shift_released, 0, NULL}}
 };
 
@@ -330,18 +380,24 @@ static void process_scancode(uint32_t scancode)
   uint8_t shifted = (shiftCount == 0) ? 0 : 1;
 
   if (scancode >= sizeof(km)/sizeof(km[0])) {
-    putstring("scancode ");
-    putunsint(scancode);
-    putstring(" unhandled!");
-    putcharacter(LF);
+    if (debug) {
+      putstring("scancode ");
+      putunsint(scancode);
+      putstring(" out of range!");
+      putcharacter(LF);
+      flush();
+    }
     goto finish;
   }
   func = km[scancode][shifted].func;
   if (func == NULL) {
-    putstring("scancode ");
-    putunsint(scancode);
-    putstring(" unhandled!");
-    putcharacter(LF);
+    if (debug) {
+      putstring("function pointer for scancode ");
+      putunsint(scancode);
+      putstring(" is NULL!");
+      putcharacter(LF);
+      flush();
+    }
     goto finish;
   }
   func(km[scancode][shifted].no_args, km[scancode][shifted].args);
@@ -351,18 +407,18 @@ finish:
 
 static void process_message(char *buffer, uint32_t bytes)
 {
-  buffer[bytes] = '\0';
+  buffer[bytes - 1] = '\0';
   putstring(buffer); putcharacter(LF);
 }
 
 static void main_loop(err_t *error)
 {
   uint32_t scancode = 0;
-  char buffer[MAX_MSG_SIZE];
   uint32_t bytes = 0;
 
   for(;;) {
-    terror(bytes = call_syscall_receive(ANYPROC, buffer, sizeof(buffer), error))
+    terror(bytes = call_syscall_receive(ANYPROC, buffer,
+      (screen_idx == 0) ? sizeof(buffer) : 0, error))
     if (*error > 0) {
       if (*error & 2) {
 	terror(scancode = call_syscall_inb(0x60, error))
