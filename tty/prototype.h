@@ -4,5 +4,6 @@
 
 void putcharacter(char what);
 void move_cursor();
+void backspace();
 
 #endif
