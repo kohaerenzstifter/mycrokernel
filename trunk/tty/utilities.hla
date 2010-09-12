@@ -45,6 +45,42 @@ begin move_cursor;
   pop(eax);
 end move_cursor;
 
+//procedure tty_putcharacter(what:dword); @cdecl; @external;
+procedure tty_putcharacter(what:dword); 
+begin tty_putcharacter;
+  push(eax);
+  push(ecx);
+  pushfd();
+
+  mov(what,ecx);
+  if (character.isPrintable(cl)) then
+    mov(TTY_ATTRIB,ch);
+    movzx(tty_cursor,eax);
+    if (eax < ((NO_LINES + 1) * NO_COLUMNS * 2)) then
+      gseg:mov(cx,[eax]);
+      add(2,eax);
+      mov(ax, tty_cursor);
+    endif;
+  elseif (ecx=LF) then
+    mov((NO_LINES * NO_COLUMNS * 2), eax);
+    mov(' ', ecx);
+    mov(TTY_ATTRIB,ch);
+    forever
+      if (eax >= ((NO_LINES + 1) * NO_COLUMNS * 2)) then
+	break;
+      endif;
+      gseg:mov(cx,[eax]);
+      add(2,eax);
+    endfor;
+    mov((NO_LINES * NO_COLUMNS * 2), tty_cursor);
+  endif;
+
+end_tty_putcharacter:
+  popfd();
+  pop(ecx);
+  pop(eax);
+end tty_putcharacter;
+
 //procedure putcharacter(what:dword); @cdecl; @external;
 procedure putcharacter(what:dword); 
 begin putcharacter;

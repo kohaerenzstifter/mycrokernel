@@ -1,6 +1,6 @@
 const
-  NO_COLUMNS: text:="80";		//number of characters per line in text mode
-  NO_LINES: text:="25";		//number of lines per screen in text mode
+  NO_COLUMNS: text:="80";	//number of characters per line in text mode
+  NO_LINES: text:="24";		//number of lines per screen in text mode
   NO_TABSPACES: text:="3";	//number of spaces the TAB character requires
   LF: text:="10";
   TAB: text:="9";

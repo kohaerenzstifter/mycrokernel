@@ -1,4 +1,5 @@
 procedure putcharacter(what: dword); @cdecl; @external;
+procedure tty_putcharacter(what: dword); @cdecl; @external;
 procedure scrollscreen; @cdecl; @external;
 procedure move_cursor; @cdecl; @external;
 procedure backspace; @cdecl; @external;
