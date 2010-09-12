@@ -5,13 +5,20 @@
 #include "external.h"
 
 static uint32_t shiftCount = 0;
-static boolean_t debug = FALSE;
 
 #define BUFFER_SIZE (((NO_LINES * NO_COLUMNS) < MAX_MSG_SIZE) ? ((NO_LINES * NO_COLUMNS) - 1) : -1)
+#define do_putcharacter(c) \
+  if (!tty) { \
+    putcharacter(c); \
+  } else { \
+    tty_putcharacter(c); \
+  }
 
 static boolean_t echo = TRUE;
 static boolean_t screen_echoed[BUFFER_SIZE] = {FALSE};
-static char buffer[BUFFER_SIZE + 1] = {'\0'};
+static char snd_buffer[BUFFER_SIZE + 1] = {'\0'};
+static char rcv_buffer[MAX_MSG_SIZE] = {'\0'};
+static boolean_t input_dirty = FALSE;
 
 static uint32_t screen_idx = 0;
 
@@ -23,7 +30,7 @@ typedef struct _keymap {
   void *args;
 } keymap_t;
 
-static void puthex(uint32_t what)
+static void puthex(uint32_t what, boolean_t tty)
 {
   uint32_t val = 0;
   uint8_t shift = 7;
@@ -35,9 +42,9 @@ static void puthex(uint32_t what)
     }
     val >>= (shift * 4);
     if ((val >= 0)&&(val <= 9)) {
-      putcharacter('0' + val);
+      do_putcharacter('0' + val);
     } else {
-      putcharacter('A' + val - 10);
+      do_putcharacter('A' + val - 10);
     }
 carryOn:
     mask >>= 4;
@@ -45,15 +52,15 @@ carryOn:
   }
 }
     
-static void putstring(char *what)
+static void putstring(char *what, boolean_t tty)
 {
   while (*what != '\0') {
-    putcharacter(*what);
+    do_putcharacter(*what);
     what++;
   }
 }
 
-static void putunsint(uint32_t what)
+static void putunsint(uint32_t what, boolean_t tty)
 {
   uint32_t val = 0;
   uint32_t divider = 1000000000;
@@ -61,7 +68,7 @@ static void putunsint(uint32_t what)
     if (((val = (what / divider)) == 0)&&(divider != 1)) {
       goto carryOn;
     }
-    puthex(val);
+    puthex(val, tty);
 carryOn:
     what -= (val * divider);
     divider /= 10;
@@ -81,38 +88,37 @@ static void cls()
 
 static void read_hex(uint32_t no_args, void *address)
 {
-  puthex((uint32_t) address);
+  puthex((uint32_t) address, FALSE);
 }
 
 static void read_unsint(uint32_t no_args, void *address)
 {
-  putunsint((uint32_t) address);
+  putunsint((uint32_t) address, FALSE);
 }
 
 static void flush()
 {
   screen_idx = 0;
-  buffer[screen_idx] = '\0';
+  snd_buffer[0] = '\0';
 }
 
 static void enter_pressed(uint32_t no_args, void *address)
 {
   putcharacter(LF);
-  call_syscall_send_by_feature(FEATURE_CMD, buffer,
-    strlen(buffer) + 1, FALSE, NULL);
+  call_syscall_send_by_feature(FEATURE_CMD, snd_buffer,
+    strlen(snd_buffer) + 1, FALSE, NULL);
   flush();
 }
 
-static void escaped_pressed(uint32_t no_args, void *address)
+static void escape_pressed(uint32_t no_args, void *address)
 {
-  debug = !debug;
-  if (debug) {
-    putstring("debugging now enabled");
+  echo = !echo;
+  tty_putcharacter(LF);
+  if (echo) {
+    putstring("echo now on", TRUE);
   } else {
-    putstring("debugging now disabled");
+    putstring("echo now off", TRUE);
   }
-  putcharacter(LF);
-  flush();
 }
 
 static void noop(uint32_t no_args, void *address)
@@ -121,15 +127,10 @@ static void noop(uint32_t no_args, void *address)
 
 static void printline(uint32_t no_args, void *address)
 {
-  if (!debug) {
-    goto finish;
-  }
-  putstring("scancode in line ");
-  putunsint((uint32_t) address);
-  putstring(" unhandled");
-  putcharacter(LF);
-  flush();
-finish:
+  tty_putcharacter(LF);
+  putstring("scancode in line ", TRUE);
+  putunsint((uint32_t) address, TRUE);
+  putstring(" unhandled", TRUE);
   return;
 }
 
@@ -143,9 +144,9 @@ static void read_char(uint32_t no_args, void *address)
       screen_echoed[screen_idx] = FALSE;
     }
 
-    buffer[screen_idx] = (char) address;
+    snd_buffer[screen_idx] = (char) address;
     screen_idx++;
-    buffer[screen_idx] = '\0';
+    snd_buffer[screen_idx] = '\0';
   }
 }
 
@@ -166,7 +167,7 @@ static void backspace_pressed(uint32_t no_args, void *address)
   }
   
   screen_idx--;
-  buffer[screen_idx] = '\0';
+  snd_buffer[screen_idx] = '\0';
 
   if (screen_echoed[screen_idx]) {
     backspace();
@@ -175,22 +176,36 @@ static void backspace_pressed(uint32_t no_args, void *address)
   
   while ((screen_idx > 0)&&(!screen_echoed[screen_idx - 1])) {
     screen_idx--;
-    buffer[screen_idx] = '\0';
+    snd_buffer[screen_idx] = '\0';
   }
 
 finish:
   return;
 }
 
+static void process_message(char *buffer, uint32_t bytes)
+{
+  if (snd_buffer[0] != '\0') {
+    input_dirty = TRUE;
+    putcharacter(LF);
+  }
+  buffer[bytes - 1] = '\0';
+  putstring(buffer, FALSE);
+  putcharacter(LF);
+}
+
 static void alt_pressed(uint32_t no_args, void *address)
 {
-  //TODO
+  char *message = "I am a sudden message";
+  tty_putcharacter(LF);
+  putstring("faking sudden message", TRUE);
+  process_message(message, strlen(message) + 1);
 }
 
 static keymap_t km[183][2] =
 {
   {{&printline, 1, (void *) __LINE__}, {NULL, 0, NULL}},
-  {{&escaped_pressed, 0, NULL}, {NULL, 0, NULL}},
+  {{&escape_pressed, 0, NULL}, {NULL, 0, NULL}},
   {{&read_unsint, 1, (void *) 1}, {NULL, 0, NULL}},
   {{&read_unsint, 1, (void *) 2}, {NULL, 0, NULL}},
   {{&read_unsint, 1, (void *) 3}, {NULL, 0, NULL}},
@@ -374,41 +389,45 @@ static keymap_t km[183][2] =
   {{&shift_released, 0, NULL}, {&shift_released, 0, NULL}}
 };
 
+static void restore_input()
+{
+  int i;
+  for (i = 0; snd_buffer[i] != '\0'; i++) {
+    if (screen_echoed[i]) {
+      putcharacter(snd_buffer[i]);
+    }
+  }
+  input_dirty = FALSE;
+}
+
 static void process_scancode(uint32_t scancode)
 {
   keyfunc_t func = NULL;
   uint8_t shifted = (shiftCount == 0) ? 0 : 1;
+  
+  if (input_dirty) {
+    restore_input();
+    goto finish;
+  }
 
   if (scancode >= sizeof(km)/sizeof(km[0])) {
-    if (debug) {
-      putstring("scancode ");
-      putunsint(scancode);
-      putstring(" out of range!");
-      putcharacter(LF);
-      flush();
-    }
+    tty_putcharacter(LF);
+    putstring("scancode ", TRUE);
+    putunsint(scancode, TRUE);
+    putstring(" out of range!", TRUE);
     goto finish;
   }
   func = km[scancode][shifted].func;
   if (func == NULL) {
-    if (debug) {
-      putstring("function pointer for scancode ");
-      putunsint(scancode);
-      putstring(" is NULL!");
-      putcharacter(LF);
-      flush();
-    }
+    tty_putcharacter(LF);
+    putstring("function pointer for scancode ", TRUE);
+    putunsint(scancode, TRUE);
+    putstring(" is NULL!", TRUE);
     goto finish;
   }
   func(km[scancode][shifted].no_args, km[scancode][shifted].args);
 finish:
   return;
-}
-
-static void process_message(char *buffer, uint32_t bytes)
-{
-  buffer[bytes - 1] = '\0';
-  putstring(buffer); putcharacter(LF);
 }
 
 static void main_loop(err_t *error)
@@ -417,8 +436,8 @@ static void main_loop(err_t *error)
   uint32_t bytes = 0;
 
   for(;;) {
-    terror(bytes = call_syscall_receive(ANYPROC, buffer,
-      (screen_idx == 0) ? sizeof(buffer) : 0, error))
+    terror(bytes = call_syscall_receive(ANYPROC, rcv_buffer,
+      (screen_idx == 0) ? sizeof(rcv_buffer) : 0, error))
     if (*error > 0) {
       if (*error & 2) {
 	terror(scancode = call_syscall_inb(0x60, error))
@@ -426,9 +445,8 @@ static void main_loop(err_t *error)
       }
       *error = OK;
     } else {
-      bytes = (bytes < sizeof(buffer)) ? bytes : (sizeof(buffer) - 1);
-      buffer[sizeof(buffer) - 1] = '\0';
-      process_message(buffer, bytes);
+      bytes = (bytes < sizeof(rcv_buffer)) ? bytes : (sizeof(rcv_buffer) - 1);
+      process_message(rcv_buffer, bytes);
     }
   }
 finish:
@@ -437,8 +455,9 @@ finish:
 
 int main()
 {
-  err_t error = OK; 
+  err_t error = OK;
   cls();
+  tty_putcharacter(LF);
 
   terror(call_syscall_claim_port(0x60, &error))
   terror(call_syscall_claim_port(0x3D4, &error))
@@ -451,9 +470,9 @@ int main()
   terror(main_loop(&error))
 finish:
   if (hasFailed(error)) {
-    putstring("error: "); putstring(err2String(error)); putcharacter(LF);
+    putstring("error: ", FALSE); putstring(err2String(error), FALSE); putcharacter(LF);
   }
-  putstring("will exit"); putcharacter(LF);
+  putstring("will exit", FALSE); putcharacter(LF);
   call_syscall_exit();
   return 0;
 }

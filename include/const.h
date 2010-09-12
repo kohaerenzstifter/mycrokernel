@@ -58,7 +58,7 @@ char *error_strings[] = {
 #define FEATURE_CMD (FEATURE_TTY << 1)
 
 #define NO_COLUMNS 80
-#define NO_LINES 25
+#define NO_LINES 24
 
 #define MAX_MSG_SIZE ((NO_LINES * NO_COLUMNS) + 1)
 

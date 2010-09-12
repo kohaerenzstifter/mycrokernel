@@ -1,2 +1,3 @@
 const
   ATTRIB: text:="15";
+  TTY_ATTRIB: text:="20";

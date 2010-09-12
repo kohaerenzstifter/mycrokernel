@@ -1,10 +1,13 @@
 unit Table;
 
 #includeonce("external.hhf");
+#includeonce("../include/const.hhf")
 
 static //global variables go here
   align(4);
   cursor: uns16:=0; //the position of the cursor (absolute memory offset from gs, i.e. ALWAYS even)
+  align(4);
+  tty_cursor: uns16:=(NO_LINES * NO_COLUMNS * 2);
   align(4);
   attrib: byte:=15; //the current attribute byte of text written to screen
 
