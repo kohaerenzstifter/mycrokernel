@@ -13,4 +13,6 @@ typedef void *va_list;
 /* defined in C99, pretty useless, but make them happy ;) */ 
 #define va_copy(d, s) (d = s)
 
+#define EXTERN extern
+
 #endif
