@@ -299,10 +299,12 @@ unsigned isPrimeNumber(unsigned what)
 void writer()
 {
   int i;
-  err_t error = OK;
+  err_t err = OK;
+  err_t *error = &err;
+
   for(;;) {
     for (i = 0; i < 100000; i++);
-    call_syscall_send_by_feature(1,"Hallo Welt der Microkernel-Programmierung",41, FALSE, &error);
+    call_syscall_send_by_feature(1,"Hallo Welt der Microkernel-Programmierung",41, FALSE, error);
     if (error != OK) {
       disable_interrupts();
       //kputstring("hat leider nicht geklappt: "); kputhex(error); kputchar(LF);

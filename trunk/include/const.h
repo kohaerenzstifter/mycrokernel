@@ -1,34 +1,30 @@
 #ifndef INCLUDE_CONST_H
 #define INCLUDE_CONST_H
 
-char *error_strings[] = {
 #define OK 0
-  "OK",
+#define ERR_MSG0 "OK"
 #define UNKNOWNSYSCALL -1
-  "unknown system call",
+#define ERR_MSG1 "unknown system call"
 #define INVALIDBUFFER -2
-  "invalid buffer",
+#define ERR_MSG2 "invalid buffer"
 #define CIRCULARSEND -3
-  "attempt to send to yourself",
+#define ERR_MSG3 "attempt to send to yourself"
 #define WOULDBLOCK -4
-  "would block",
+#define ERR_MSG4 "would block"
 #define INVALIDFEATURE -5
-  "no such feature",
+#define ERR_MSG5 "no such feature"
 #define INVALIDIRQ -6
-  "no such irq",
+#define ERR_MSG6 "no such irq"
 #define IRQINUSE -7
-  "irq already in use",
+#define ERR_MSG7 "irq already in use"
 #define PROCESSDIED -8
-  "peer died",
+#define ERR_MSG8 "peer died"
 #define NOPERMS -9
-  "no permissions for this operation",
+#define ERR_MSG9 "no permissions for this operation"
 #define UNAVAILABLE -10
-  "requested resource unavailable"
+#define ERR_MSG10 "requested resource unavailable"
 #define FEATUREBUSY -11
-  "feature busy"
-};
-
-#define err2String(x) error_strings[(-x)]
+#define ERR_MSG11 "feature busy"
 
 
 #define INT0 1

@@ -35,11 +35,13 @@ static void puthex(uint32_t what, boolean_t tty)
   uint32_t val = 0;
   uint8_t shift = 7;
   uint32_t mask = 0xf0000000;
+  boolean_t first = FALSE;
 
   while (mask > 0) {
-    if (((val = (mask & what)) == 0)&&(mask != 0xf)) {
+    if (((val = (mask & what)) == 0)&&(mask != 0xf)&&!first) {
       goto carryOn;
     }
+    first = TRUE;
     val >>= (shift * 4);
     if ((val >= 0)&&(val <= 9)) {
       do_putcharacter('0' + val);
@@ -64,10 +66,13 @@ static void putunsint(uint32_t what, boolean_t tty)
 {
   uint32_t val = 0;
   uint32_t divider = 1000000000;
+  boolean_t first = FALSE;
+
   while (divider > 0) {
-    if (((val = (what / divider)) == 0)&&(divider != 1)) {
+    if (((val = (what / divider)) == 0)&&(divider != 1)&&!first) {
       goto carryOn;
     }
+    first = TRUE;
     puthex(val, tty);
 carryOn:
     what -= (val * divider);
@@ -84,11 +89,6 @@ static void cls()
     putcharacter(LF);
   }
   cursor = 0;
-}
-
-static void read_hex(uint32_t no_args, void *address)
-{
-  puthex((uint32_t) address, FALSE);
 }
 
 static void read_unsint(uint32_t no_args, void *address)
@@ -455,22 +455,24 @@ finish:
 
 int main()
 {
-  err_t error = OK;
+  err_t err = OK;
+  err_t *error = &err;
+
   cls();
   tty_putcharacter(LF);
 
-  terror(call_syscall_claim_port(0x60, &error))
-  terror(call_syscall_claim_port(0x3D4, &error))
-  terror(call_syscall_claim_port(0x3D5, &error))
+  terror(call_syscall_claim_port(0x60, error))
+  terror(call_syscall_claim_port(0x3D4, error))
+  terror(call_syscall_claim_port(0x3D5, error))
 
   move_cursor();
 
-  terror(call_syscall_request_irq(1, &error))
-  terror(call_syscall_set_feature(FEATURE_TTY, &error))
-  terror(main_loop(&error))
+  terror(call_syscall_request_irq(1, error))
+  terror(call_syscall_set_feature(FEATURE_TTY, error))
+  terror(main_loop(error))
 finish:
   if (hasFailed(error)) {
-    putstring("error: ", FALSE); putstring(err2String(error), FALSE); putcharacter(LF);
+    putstring("error: ", FALSE); putstring(err2String(*error), FALSE); putcharacter(LF);
   }
   putstring("will exit", FALSE); putcharacter(LF);
   call_syscall_exit();
