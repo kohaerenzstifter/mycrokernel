@@ -13,7 +13,7 @@ static void main_loop(err_t *error)
     //terror(call_syscall_send_by_feature(FEATURE_TTY, "unknown command!", strlen("unknown command!") + 1, FALSE, error))
     
     //terror(call_syscall_send_by_feature(FEATURE_TTY, buffer, strlen(buffer) + 1, FALSE, error))
-    printf("got message containing %u characters", strlen(buffer));
+    outf(error, TRUE, "got message containing %u characters", strlen(buffer));
   }
 finish:
   return;

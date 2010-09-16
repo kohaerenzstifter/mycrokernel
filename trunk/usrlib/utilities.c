@@ -93,11 +93,9 @@ static void int2String(int32_t what, char *buf, uint32_t buflen)
   uint2String(what, &(buf[idx]), (buflen - 1));
 }
 
-void printf(char *fmt, ...)
+void outf(err_t *error, boolean_t block, char *fmt, ...)
 {
   char buf[15];
-  err_t err = OK;
-  err_t *error = &err;
   int idx = 0;
   char *cur = fmt;
   char msg[MAX_MSG_SIZE];
@@ -115,7 +113,7 @@ void printf(char *fmt, ...)
       msg[idx] = *cur;
       if (*cur == '\0') {
 	terror(call_syscall_send_by_feature(FEATURE_TTY,
-	  msg, idx + 1, TRUE, error))
+	  msg, idx + 1, block, error))
 	goto finish;
       }
       idx++;
