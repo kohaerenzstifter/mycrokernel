@@ -606,7 +606,7 @@ void syscall_receive(void)
     goto finish;
   }
   
-  if ((desired_sender == ANYPROC)&&(curptr->interrupts != 0)) {
+  if (curptr->interrupts != 0) {
     err = curptr->interrupts;
     set_error(&syscallstate, curptr);
     curptr->interrupts = 0;
@@ -622,7 +622,7 @@ void syscall_receive(void)
     goto finish;
   }
 
-  mark_as_receiving_from(curptr,desired_sender);
+  mark_as_receiving_from(curptr, desired_sender);
 
 finish:
   return;
