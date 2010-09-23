@@ -472,7 +472,7 @@ int main()
   terror(main_loop(error))
 finish:
   if (hasFailed(error)) {
-    putstring("error: ", FALSE); putstring(err2String(*error), FALSE); putcharacter(LF);
+    putstring("ferror: ", FALSE); putstring(err2String(*error), FALSE); putcharacter(LF);
   }
   putstring("will exit", FALSE); putcharacter(LF);
   call_syscall_exit();

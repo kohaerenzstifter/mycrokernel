@@ -17,6 +17,7 @@ begin @text("hw_intrrpt" +_x_);
     schedule(&@text("intrrpt" + _x_ + "state"));
     mov(PIC_EOI,al);
     out(al,PIC1_COMMAND);
+    out(al,PIC2_COMMAND);
     iret();
   endfor;
 end @text("hw_intrrpt" +_x_);
