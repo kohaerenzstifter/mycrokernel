@@ -282,7 +282,7 @@ begin start;
   //backup address of video.bin in ebx
   mov(eax,ebx);
 
-  _create_process(3,100,0,eax,eax,NO_BASE,NO_BASE,$b8000,eax, $fffc,$fffc,0,0, 4096,$fffc);
+  _create_process(3,100,0,ebx,ebx,NO_BASE,NO_BASE,$b8000,ebx, $fffc,$fffc,0,0, 4096,$fffc);
   _enqueue(eax);
 
   add(@text(@env("_VIDEO_SIZE")), ebx);
@@ -290,10 +290,10 @@ begin start;
   _create_process(3,100,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, $fffc,$fffc,0,0, 0,$fffc);
   _enqueue(eax);
 
-/*
-  _create_process(0,100,&writer,KERNEL_BASE, KERNEL_BASE,NO_BASE,NO_BASE,$b8000, KERNEL_BASE,$fffff000,$fffff000,0,0,4096,$fffc);
+  add(@text(@env("_SHELL_SIZE")), ebx);
+
+  _create_process(3,100,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, $fffc,$fffc,0,0, 0,$fffc);
   _enqueue(eax);
-*/
 
   sti;
 here:	hlt;
