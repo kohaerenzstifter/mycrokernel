@@ -792,6 +792,12 @@ finish:
   }
   return;
 }
+void myFunc()
+{
+  for(;;) {
+    //kputstring("myFunc: "); kputchar(LF);
+  }
+}
 
 void do_exception(uint32_t number, uint32_t error)
 {
