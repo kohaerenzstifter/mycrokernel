@@ -33,6 +33,7 @@
 %define _KERNEL_SIZE %!_KERNEL_SIZE
 %define _VIDEO_SIZE %!_VIDEO_SIZE
 %define _SHELL_SIZE %!_SHELL_SIZE
+%define _HD_SIZE %!_HD_SIZE
 %define KERNEL_BASE %!KERNEL_BASE ;014700h
 %define SECTOR_SIZE %!SECTOR_SIZE
 %define NO_SEGMENTS %!NO_SEGMENTS ;number of segments in gdt by default
@@ -109,7 +110,7 @@ end_getmemmap:
   mov ax, KERNEL_BASE/010h				;Segment where
   mov es, ax						;to load boot
   mov bx, 0						;Address in segment es where to load boot
-  mov si, (_KERNEL_SIZE + _VIDEO_SIZE + _SHELL_SIZE)/SECTOR_SIZE	;Read so many sectors
+  mov si, (_KERNEL_SIZE + _VIDEO_SIZE + _SHELL_SIZE + _HD_SIZE)/SECTOR_SIZE	;Read so many sectors
   mov cx, _GDT_SIZE/512 + OFFSET ;+ 1 
   mov dh, 0			;Head 0
   call loop_load

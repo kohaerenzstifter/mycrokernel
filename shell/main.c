@@ -10,9 +10,6 @@ static void main_loop(err_t *error)
 
   for(;;) {
     terror(bytes = call_syscall_receive(ANYPROC, buffer, sizeof(buffer), error))
-    //terror(call_syscall_send_by_feature(FEATURE_TTY, "unknown command!", strlen("unknown command!") + 1, FALSE, error))
-    
-    //terror(call_syscall_send_by_feature(FEATURE_TTY, buffer, strlen(buffer) + 1, FALSE, error))
     outf(error, TRUE, "got message containing %u characters", strlen(buffer));
   }
 finish:

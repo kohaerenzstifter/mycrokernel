@@ -10,11 +10,12 @@ VIDEO_SIZE = $$(stat -c %s ../tty/tty.bin)
 _VIDEO_SIZE = $$(if [ `echo $(VIDEO_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(VIDEO_SIZE); else echo "(($(VIDEO_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
 SHELL_SIZE = $$(stat -c %s ../shell/shell.bin)
 _SHELL_SIZE = $$(if [ `echo $(SHELL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(SHELL_SIZE); else echo "(($(SHELL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
-
+HD_SIZE = $$(stat -c %s ../hd/hd.bin)
+_HD_SIZE = $$(if [ `echo $(HD_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(HD_SIZE); else echo "(($(HD_SIZE) / $(SECTOR_SIZE)) + 1) * $(HD_SIZE)" | bc; fi)
 
 NO_SEGMENTS = $$(( $(GDT_SIZE) / 8 ))
 
-ENVIRONMENT = KERNEL_BASE=$(KERNEL_BASE) SECTOR_SIZE=$(SECTOR_SIZE) OFFSET=$(OFFSET) _KERNEL_SIZE=$(_KERNEL_SIZE) _GDT_SIZE=$(_GDT_SIZE) _VIDEO_SIZE=$(_VIDEO_SIZE) _SHELL_SIZE=$(_SHELL_SIZE) NO_SEGMENTS=$(NO_SEGMENTS)
+ENVIRONMENT = KERNEL_BASE=$(KERNEL_BASE) SECTOR_SIZE=$(SECTOR_SIZE) OFFSET=$(OFFSET) _KERNEL_SIZE=$(_KERNEL_SIZE) _GDT_SIZE=$(_GDT_SIZE) _VIDEO_SIZE=$(_VIDEO_SIZE) _SHELL_SIZE=$(_SHELL_SIZE) _HD_SIZE=$(_HD_SIZE) NO_SEGMENTS=$(NO_SEGMENTS)
 
 512.bin: 512.asm ../kernel/kernel.bin ../kernel/gdt.bin ../tty/tty.bin ../shell/shell.bin Makefile
 	$(ENVIRONMENT) nasm -f bin 512.asm -o 512.bin
