@@ -564,6 +564,7 @@ void syscall_send_by_feature(void)
 {
   tss_t *receiver = NULL;
   uint32_t feature = curptr->ebx_reg;
+  
   if (check_feature(feature) != 0) {
     err = INVALIDFEATURE;
     set_error(&syscallstate, curptr);

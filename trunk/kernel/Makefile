@@ -6,8 +6,10 @@ VIDEO_SIZE = $$(stat -c %s ../tty/tty.bin)
 _VIDEO_SIZE = $$(if [ `echo $(VIDEO_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(VIDEO_SIZE); else echo "(($(VIDEO_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
 SHELL_SIZE = $$(stat -c %s ../shell/shell.bin)
 _SHELL_SIZE = $$(if [ `echo $(SHELL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(SHELL_SIZE); else echo "(($(SHELL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+HD_SIZE = $$(stat -c %s ../hd/hd.bin)
+_HD_SIZE = $$(if [ `echo $(HD_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(HD_SIZE); else echo "(($(HD_SIZE) / $(SECTOR_SIZE)) + 1) * $(HD_SIZE)" | bc; fi)
 
-ENVIRONMENT = _SHELL_SIZE=$(_SHELL_SIZE) _VIDEO_SIZE=$(_VIDEO_SIZE) SECTOR_SIZE=$(SECTOR_SIZE) KERNEL_BASE=$(KERNEL_BASE)
+ENVIRONMENT = _HD_SIZE=$(_HD_SIZE) _SHELL_SIZE=$(_SHELL_SIZE) _VIDEO_SIZE=$(_VIDEO_SIZE) SECTOR_SIZE=$(SECTOR_SIZE) KERNEL_BASE=$(KERNEL_BASE)
 GDT_ENVIRONMENT = _KERNEL_SIZE=$(_KERNEL_SIZE)
 
 KERNEL_HLA_SRC = go.hla main.hla $(shell ls *.hla | grep -v "gdt.hla" | grep -v "go.hla" | grep -v "main.hla")
@@ -23,7 +25,7 @@ C_HEADERS = $(shell ls *.h ../include/*.h ../usrlib/*.h)
 
 all: kernel.bin
 
-%.o: %.hla ../tty/tty.bin ../shell/shell.bin Makefile $(HLA_HEADERS)
+%.o: %.hla ../tty/tty.bin ../shell/shell.bin ../hd/hd.bin Makefile $(HLA_HEADERS)
 	$(ENVIRONMENT) hla -c $<
 	objdump --disassemble-all -S $@ > $*.objdump
 
@@ -44,6 +46,9 @@ gdt.bin: gdt.o Makefile
 
 ../shell/shell.bin:
 	cd ../shell && make shell.bin
+
+../hd/hd.bin:
+	cd ../hd && make hd.bin
 
 ../usrlib/all-stamp:
 	cd ../usrlib && make all-stamp

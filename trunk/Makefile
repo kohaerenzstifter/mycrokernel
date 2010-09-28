@@ -38,4 +38,4 @@ shell/shell.bin:
 hd/hd.bin:
 	cd hd && make hd.bin
 clean:
-	cd boot && make clean && cd ../kernel && make clean && cd ../tty && make clean && cd ../shell && make clean && cd ../usrlib && make clean
+	cd boot && make clean && cd ../kernel && make clean && cd ../tty && make clean && cd ../shell && make clean && cd ../hd && make clean && cd ../usrlib && make clean
