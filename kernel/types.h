@@ -53,6 +53,7 @@ struct _tss {
   struct _tss *firstSender;
   struct _tss *nextSender;
   struct _tss *receivingFrom;
+  char procname[15];
 };
 #pragma pack()
 

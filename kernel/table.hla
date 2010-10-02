@@ -34,11 +34,11 @@ static //global variables go here
     #for (i := 0 to MAX_NO_PROCS-2)
     tss_t:[0,0,$fffffffc,IDX_INTSTACK*@size(segdesc_t),0,0,EMPTY,0,
      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-     0,0,0,0,0,0,0,0,@size(tss_t),0,0,0,NULL, NULL, NULL, NULL],
+     0,0,0,0,0,0,0,0,@size(tss_t),0,0,0,NULL, NULL, NULL, NULL, [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']],
     #endfor
     tss_t:[0,0,$fffffffc,IDX_INTSTACK*@size(segdesc_t),0,0,EMPTY,0,
      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-     0,0,0,0,0,0,0,0,@size(tss_t),0,0,0,NULL, NULL, NULL, NULL]
+     0,0,0,0,0,0,0,0,@size(tss_t),0,0,0,NULL, NULL, NULL, NULL, [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
   ];
   align(4);
   memory: memdesc_t[MAX_MEM_AREAS];
@@ -329,7 +329,8 @@ static //global variables go here
     NULL,
     NULL,
     NULL,
-    NULL
+    NULL,
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
   ];
 
   idlestate: tss_t := tss_t:[
@@ -379,7 +380,8 @@ static //global variables go here
     NULL,
     NULL,
     NULL,
-    NULL
+    NULL,
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
   ];
 
 #macro intrrpt_state(string _x_);
@@ -430,7 +432,8 @@ static //global variables go here
     NULL,
     NULL,
     NULL,
-    NULL
+    NULL,
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
   ];
 #endmacro
 ?@tostring:intrrpt:text := "intrrpt_state";
@@ -516,7 +519,8 @@ static //global variables go here
     NULL,
     NULL,
     NULL,
-    NULL
+    NULL,
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
   ];
 #endmacro
 ?@tostring:exceptn:text := "exceptn_state";

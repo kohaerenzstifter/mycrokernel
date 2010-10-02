@@ -1,4 +1,5 @@
 #include "../usrlib/syscall.h"
+#include "../usrlib/prototype.h"
 #include "../include/types.h"
 #include "../include/const.h"
 #include "types.h"
@@ -135,7 +136,7 @@ void show_queue()
   tss_t *cur = NULL;
   kputstring("showing q"); kputchar(LF);
   for (cur = schedqueue.head; cur != NULL; cur = cur->next) {
-    kputstring("process "); kputhex((uint32_t) cur); kputstring(" ");
+    kputstring("process "); kputstring(cur->procname); kputstring(" ");
   }
   kputchar(LF);
 }
@@ -231,6 +232,12 @@ void dequeue(tss_t *process)
   schedqueue.schedticks -= process->schedticks;
   schedqueue.ticksleft -= process->ticksleft;
 
+  if (process->next == process) {
+    process->next = NULL;
+  }
+  if (process->previous == process) {
+    process->previous = NULL;
+  }
 finish:
   return;
 }
@@ -564,7 +571,7 @@ void syscall_send_by_feature(void)
 {
   tss_t *receiver = NULL;
   uint32_t feature = curptr->ebx_reg;
-  
+
   if (check_feature(feature) != 0) {
     err = INVALIDFEATURE;
     set_error(&syscallstate, curptr);
@@ -790,14 +797,11 @@ finish:
   if (nextptr == NULL) {
     charge_process();
     pick_next_proc();
+/*      if (streq(nextptr->procname, "tty")) {
+    kputstring("tty next"); kputchar(LF);
+  }*/
   }
   return;
-}
-void myFunc()
-{
-  for(;;) {
-    //kputstring("myFunc: "); kputchar(LF);
-  }
 }
 
 void do_exception(uint32_t number, uint32_t error)
@@ -811,7 +815,8 @@ tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
   uint32_t csegmBase, uint32_t dsegmBase, uint32_t esegmBase,
   uint32_t fsegmBase, uint32_t gsegmBase, uint32_t ssegmBase,
   uint32_t csegmLimit, uint32_t dsegmLimit, uint32_t esegmLimit,
-  uint32_t fsegmLimit, uint32_t gsegmLimit, uint32_t ssegmLimit)
+  uint32_t fsegmLimit, uint32_t gsegmLimit, uint32_t ssegmLimit,
+  char *name)
 {
   uint32_t limit = 0;
   tss_t *result = NULL;
@@ -965,6 +970,7 @@ tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
   process->nextSender = NULL;
   process->receivingFrom = NULL;
   process->iomap_base = sizeof(tss_t);
+  strncpy(process->procname, name, sizeof(process->procname));
 
   process->cs_reg = csegmIdx + privilege;
   process->ds_reg = dsegmIdx + privilege;

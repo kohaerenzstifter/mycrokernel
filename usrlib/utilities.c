@@ -15,6 +15,18 @@ uint32_t strlen(char *me)
   return result;
 }
 
+void strncpy(char *dst, char *src, int num)
+{
+  int i;
+  for (i = 0; i < num; i++) {
+    dst[i] = src[i];
+    if (src[i] == '\0') {
+      break;
+    }
+  }
+  dst[num - 1] = '\0';
+}
+
 static void hex2String(int32_t what, char *buf, uint32_t buflen)
 {
   uint32_t i = 0;
@@ -187,5 +199,21 @@ char *err2String(int errnum)
   }
   result = error_strings[(-errnum)];
 finish:
+  return result;
+}
+
+boolean_t streq(char *a, char *b)
+{
+  int i;
+  boolean_t result = FALSE;
+  for(i = 0;; i++) {
+    if (a[i] != b[i]) {
+      break;
+    }
+    if (a[i] == '\0') {
+      result = TRUE;
+      break;
+    }
+  }
   return result;
 }
