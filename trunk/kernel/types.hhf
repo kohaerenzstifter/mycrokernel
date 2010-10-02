@@ -116,6 +116,7 @@ type tss_t:
     firstSender: dword;
     nextSender: dword;
     receivingFrom: dword;
+    procname: byte[15];
 //    peers: dword[(NO_AVL_DSCRPTS div @size(dword)) div 8];
   endrecord;
 

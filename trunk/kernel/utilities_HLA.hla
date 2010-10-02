@@ -8,11 +8,11 @@ procedure _create_process(privilege: dword; schedticks: dword; start: dword;
  csegmBase: dword; dsegmBase:dword; esegmBase: dword;
  fsegmBase: dword; gsegmBase: dword; ssegmBase: dword;
  csegmLimit: dword; dsegmLimit:dword; esegmLimit: dword;
- fsegmLimit: dword; gsegmLimit: dword; ssegmLimit: dword);
+ fsegmLimit: dword; gsegmLimit: dword; ssegmLimit: dword; procname: string);
 begin _create_process;
   create_process(privilege, schedticks, start, csegmBase, dsegmBase,
     esegmBase, fsegmBase, gsegmBase, ssegmBase, csegmLimit, dsegmLimit,
-    esegmLimit, fsegmLimit, gsegmLimit, ssegmLimit);
+    esegmLimit, fsegmLimit, gsegmLimit, ssegmLimit, procname);
   add(60, esp);
 end _create_process;
 

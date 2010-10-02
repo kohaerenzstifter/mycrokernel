@@ -11,8 +11,6 @@ void call_syscall_exit();
 uint32_t call_syscall_inb(uint32_t port, err_t *error);
 uint32_t call_syscall_claim_port(uint32_t port, err_t *error);
 
-uint32_t strlen(char *me);
-char *err2String(int errnum);
 
 #define hasFailed(x) (x < OK)
 
