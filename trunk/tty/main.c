@@ -406,7 +406,6 @@ static void process_scancode(uint32_t scancode)
   
   if (input_dirty) {
     restore_input();
-    goto finish;
   }
 
   if (scancode >= sizeof(km)/sizeof(km[0])) {
