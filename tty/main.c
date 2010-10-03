@@ -464,7 +464,6 @@ int main()
   terror(call_syscall_claim_port(0x3D5, error))
 
   move_cursor();
-
   terror(call_syscall_request_irq(1, error))
   terror(call_syscall_set_feature(FEATURE_TTY, error))
   terror(main_loop(error))
