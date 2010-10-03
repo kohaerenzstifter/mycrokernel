@@ -1,0 +1,10 @@
+unit Go;
+
+#includeonce("prototype.hhf")
+
+procedure g; @nodisplay; @noalignstack; @noframe;
+begin g;
+  main();
+end g;
+
+end Go;
