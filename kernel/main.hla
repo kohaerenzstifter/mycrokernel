@@ -282,12 +282,12 @@ begin start;
   //backup address of video.bin in ebx
   mov(eax,ebx);
 
-  _create_process(3,100,0,ebx,ebx,NO_BASE,NO_BASE,$b8000,ebx, $fffc,$fffc,0,0, 4096,$fffc,"tty");
+  _create_process(3,10000,0,ebx,ebx,NO_BASE,NO_BASE,$b8000,ebx, $fffc,$fffc,0,0, 4096,$fffc,"tty");
   _enqueue(eax);
 
   add(@text(@env("_VIDEO_SIZE")), ebx);
 
-  _create_process(3,100,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, $fffc,$fffc,0,0, 0,$fffc,"shell");
+  _create_process(3,10000,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, $fffc,$fffc,0,0, 0,$fffc,"shell");
   _enqueue(eax);
 
   add(@text(@env("_SHELL_SIZE")), ebx);

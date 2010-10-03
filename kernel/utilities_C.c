@@ -78,10 +78,13 @@ void uptime()
   kputchar(LF);
 }
 
+//TODO
 #define lastNeighBoursValid(p) FALSE
 
 void enqueue(tss_t *process)
 {
+  tss_t *previous = NULL;
+
   if (process->misc & ENQUEUED) {
     goto finish;
   }
@@ -100,10 +103,13 @@ void enqueue(tss_t *process)
     cur = &(schedqueue.head);
     
     while ((*cur != NULL)&&((*cur)->schedticks > process->schedticks)) {
+      previous = *cur;
       cur = &((*cur)->next);
     }
+
     process->next = *cur;
-    
+    process->previous = previous;
+
     if ((*cur) != NULL) {
       (*cur)->previous = process;
     }
@@ -207,17 +213,13 @@ void dequeue(tss_t *process)
   if (schedqueue.schedticks == process->schedticks) {
     schedqueue.schedticks = schedqueue.ticksleft = 0;
     schedqueue.head = NULL;
-    pick_next_proc();
     goto finish;
   }
-  if ((schedqueue.head == process)&&(process->next == NULL)) {
-    nextptr = &idlestate;
-  } else if (curptr == process) {
+  if (curptr == process) {
     do {
       charge_process();
       pick_next_proc();
       curptr = nextptr;
-      nextptr = NULL;
     } while (nextptr == process);
   }
   if (process->previous != NULL) {
@@ -232,12 +234,6 @@ void dequeue(tss_t *process)
   schedqueue.schedticks -= process->schedticks;
   schedqueue.ticksleft -= process->ticksleft;
 
-  if (process->next == process) {
-    process->next = NULL;
-  }
-  if (process->previous == process) {
-    process->previous = NULL;
-  }
 finish:
   return;
 }
@@ -797,9 +793,6 @@ finish:
   if (nextptr == NULL) {
     charge_process();
     pick_next_proc();
-/*      if (streq(nextptr->procname, "tty")) {
-    kputstring("tty next"); kputchar(LF);
-  }*/
   }
   return;
 }
