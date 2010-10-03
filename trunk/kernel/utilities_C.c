@@ -115,13 +115,15 @@ void enqueue(tss_t *process)
     }
     *cur = process;
   }
+
   if (schedqueue.schedticks == 0) {
-    schedqueue.schedticks = schedqueue.ticksleft = process->schedticks;
+    process->ticksleft = process->schedticks;
+  } else {
+    unsigned count1 = process->schedticks - ((schedqueue.schedticks -
+      schedqueue.ticksleft) * process->schedticks / schedqueue.schedticks);
+    unsigned count2 = process->ticksleft;
+    process->ticksleft = count1 < count2 ? count1 : count2;
   }
-  unsigned count1 = process->schedticks - ((schedqueue.schedticks -
-   schedqueue.ticksleft) * process->schedticks / schedqueue.schedticks);
-  unsigned count2 = process->ticksleft;
-  process->ticksleft = count1 < count2 ? count1 : count2;
   schedqueue.schedticks += process->schedticks;
   schedqueue.ticksleft += process->ticksleft;
 
@@ -205,7 +207,7 @@ finish:
 }
 
 void dequeue(tss_t *process)
-{
+{   
   if (!(process->misc & ENQUEUED)) {
     goto finish;
   }
@@ -515,6 +517,9 @@ void unblock_waiting_senders(tss_t *context, tss_t *process)
 
 void syscall_exit(void)
 {
+  dequeue(curptr);
+  return;
+  
   curptr->state = EMPTY;
   if (curptr->cs_reg != 0) {
     free_gdt_idx(curptr->cs_reg & 0xfffc);

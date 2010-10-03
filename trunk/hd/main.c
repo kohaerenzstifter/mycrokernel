@@ -131,6 +131,7 @@ int main()
   outf(NULL, TRUE, __FILE__ ":%d", __LINE__);
   terror(identify(FALSE, FALSE, error))
   outf(NULL, TRUE, __FILE__ ":%d", __LINE__);
+  //for(;;);
 finish:
 
   if (hasFailed(*error)) {
