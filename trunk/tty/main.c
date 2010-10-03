@@ -19,7 +19,6 @@ static boolean_t screen_echoed[BUFFER_SIZE] = {FALSE};
 static char snd_buffer[BUFFER_SIZE + 1] = {'\0'};
 static char rcv_buffer[MAX_MSG_SIZE] = {'\0'};
 static boolean_t input_dirty = FALSE;
-
 static uint32_t screen_idx = 0;
 
 typedef void (*keyfunc_t)(uint32_t no_args, void *address);
@@ -122,7 +121,7 @@ static void escape_pressed(uint32_t no_args, void *address)
 }
 
 static void noop(uint32_t no_args, void *address)
-{ 
+{
 }
 
 static void printline(uint32_t no_args, void *address)
@@ -165,7 +164,7 @@ static void backspace_pressed(uint32_t no_args, void *address)
   if (screen_idx <= 0) {
     goto finish;
   }
-  
+
   screen_idx--;
   snd_buffer[screen_idx] = '\0';
 
