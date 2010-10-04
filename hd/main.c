@@ -32,13 +32,15 @@ typedef enum { NONE, UNKNOWN, ATA, ATAPI, SATA} controller_t;
 
 static void claim_ports(err_t *error)
 {
+//  terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_DATA, error))
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_SECTORCOUNT, error))
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_LBA_LOW, error))
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_LBA_MID, error))
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_LBA_HIGH, error))
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_DRIVESELECT, error))
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_COMMAND, error))
-  
+
+  terror(call_syscall_claim_port(PORTBASE_SECONDARY | PORT_DATA, error))
   terror(call_syscall_claim_port(PORTBASE_SECONDARY | PORT_SECTORCOUNT, error))
   terror(call_syscall_claim_port(PORTBASE_SECONDARY | PORT_LBA_LOW, error))
   terror(call_syscall_claim_port(PORTBASE_SECONDARY | PORT_LBA_MID, error))
@@ -63,10 +65,9 @@ static controller_t identify(boolean_t primary, boolean_t master,
   void do_ATA(err_t *error) {
     int i = 0;
     outf(NULL, TRUE, "do_ATA()");
-    for (i = 0; i < 256; i++) {
-      terror(buffer[i] = call_syscall_inb(port_base | PORT_DATA, error))
-      //buffer[i] = 0;
-    }
+    //for (i = 0; i < 256; i++) {
+      terror(buffer[0] = call_syscall_inw(port_base | PORT_DATA, error))
+    //}
 finish:
     return;
   }
