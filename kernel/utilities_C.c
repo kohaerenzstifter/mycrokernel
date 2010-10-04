@@ -517,9 +517,6 @@ void unblock_waiting_senders(tss_t *context, tss_t *process)
 
 void syscall_exit(void)
 {
-  dequeue(curptr);
-  return;
-  
   curptr->state = EMPTY;
   if (curptr->cs_reg != 0) {
     free_gdt_idx(curptr->cs_reg & 0xfffc);
