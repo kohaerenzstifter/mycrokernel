@@ -14,5 +14,6 @@ const
   SYS_INB: text:="5";
   SYS_CLAIM_PORT: text:="6";
   SYS_OUTB: text:="7";
+  SYS_INW: text:="8";
 
   ANYPROC: text:="NULL";

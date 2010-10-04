@@ -22,6 +22,7 @@ void syscall_request_irq(void);
 void syscall_inb(void);
 void syscall_claim_port(void);
 void syscall_outb(void);
+void syscall_inw(void);
 
 static syscallFunc_t syscalls[] = {
   &syscall_exit,
@@ -31,7 +32,8 @@ static syscallFunc_t syscalls[] = {
   &syscall_request_irq,
   &syscall_inb,
   &syscall_claim_port,
-  &syscall_outb
+  &syscall_outb,
+  &syscall_inw
 };
 
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
@@ -663,6 +665,20 @@ void syscall_inb(void)
     goto finish;
   }
   curptr->eax_reg = inb(port);
+finish:
+  return;
+}
+
+void syscall_inw(void)
+{
+  uint32_t port = curptr->ebx_reg & 0xffff;
+
+  if (!has_port_access(curptr, port)) {
+    err = NOPERMS;
+    set_error(&syscallstate, curptr);
+    goto finish;
+  }
+  curptr->eax_reg = inw(port);
 finish:
   return;
 }

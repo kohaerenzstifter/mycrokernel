@@ -52,6 +52,21 @@ begin inb;
   _inb(port);
 end inb;
 
+procedure _inw(port: dword);
+begin _inw;
+  push(edx);
+  zerify(eax);
+  mov(port,edx);
+  in(dx,ax);
+  pop(edx);
+end _inw;
+
+procedure inw(port: dword); @cdecl; @external;
+procedure inw(port: dword);
+begin inw;
+  _inw(port);
+end inw;
+
 procedure _outb(port: dword; value: dword);
 begin _outb;
   mov(port, edx);
