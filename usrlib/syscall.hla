@@ -123,6 +123,22 @@ begin call_syscall_inb;
   call_syscall_inb_HLA(port, error);
 end call_syscall_inb;
 
+procedure call_syscall_inw_HLA(port: dword; error: dword);
+begin call_syscall_inw_HLA;
+  push(ebx);
+  mov(SYS_INW,eax);
+  mov(port,ebx);
+  mov(error,esi);
+  int($22);
+  pop(ebx);
+end call_syscall_inw_HLA;
+
+procedure call_syscall_inw(port: dword; error: dword); @cdecl; @external;
+procedure call_syscall_inw(port: dword; error: dword);
+begin call_syscall_inw;
+  call_syscall_inw_HLA(port, error);
+end call_syscall_inw;
+
 procedure call_syscall_claim_port_HLA(port: dword; error: dword);
 begin call_syscall_claim_port_HLA;
   push(ebx);
