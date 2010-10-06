@@ -291,8 +291,7 @@ begin start;
   _enqueue(eax);
 
   add(@text(@env("_SHELL_SIZE")), ebx);
-
-  _create_process(3,1,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, $fffc,$fffc,0,0, 0,$fffc,"hd");
+  _create_process(3,1,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, $fffffc,$fffc,0,0, 0,$fffc,"hd");
   _enqueue(eax);
 
   sti;

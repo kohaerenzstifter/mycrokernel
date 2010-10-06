@@ -25,13 +25,10 @@ begin _set_error;
   mov(4, (type tss_t [eax]).ecx_reg);
   mov(process,ebx);
   mov(4, (type tss_t [ebx]).ecx_reg);
-
   mov(&err, (type tss_t [eax]).edx_reg);
   mov((type tss_t [ebx]).esi_reg, ecx);
   mov(ecx,(type tss_t [ebx]).edx_reg);
-
   _exchange_data(eax, ebx);
-
   pop(ecx);
   pop(ebx);
   pop(eax);
