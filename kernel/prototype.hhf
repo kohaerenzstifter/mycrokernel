@@ -39,7 +39,6 @@ procedure _free_gdt_idx(what: dword); @external;
 procedure _unfree_pid(what: dword); @external;
 procedure _free_pid(what: dword); @external;
 procedure _exchange_data(sender: dword; receiver: dword); @external;
-procedure _set_error(context: dword; process:dword); @external;
 procedure _enqueue(process: dword); @external;
 procedure _dequeue(process: dword); @external;
 

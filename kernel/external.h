@@ -25,6 +25,4 @@ extern DTdesc_t gdt;
 
 extern tss_t syscallstate;
 
-extern err_t err;
-
 #endif

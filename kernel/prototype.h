@@ -33,7 +33,6 @@ void disable_interrupts();
 void enable_interrupts();
 void halt();
 
-void set_error(tss_t *context, tss_t *process);
 uint32_t exchange_data(tss_t *curptr,tss_t *receiver);
 
 #define unsetStateFlag(p,f) \
@@ -45,4 +44,8 @@ uint32_t exchange_data(tss_t *curptr,tss_t *receiver);
 #define setStateFlag(p,f) \
   p->state |= f; \
   dequeue(p);
+  
+#define set_err(proc, err) \
+  proc->esi_reg = err; \
+
 #endif
