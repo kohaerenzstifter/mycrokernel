@@ -819,7 +819,11 @@ void do_exception(uint32_t number, uint32_t error)
 {
   kputstring("exception: "); kputhex(number); kputchar(LF);
   kputstring("error: "); kputhex(error); kputchar(LF);
+  kputstring("curptr: "); kputstring(curptr->procname); kputchar(LF);
+  kputstring("curptr->eip: "); kputunsint(curptr->eip_reg); kputchar(LF);
+  kputstring("curptr->eip: "); kputhex(curptr->eip_reg); kputchar(LF);
   nextptr = curptr;
+  halt();
 }
 
 tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,

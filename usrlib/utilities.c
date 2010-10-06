@@ -192,8 +192,8 @@ char *error_strings[] = {
 char *err2String(int errnum)
 {
   char *result = NULL;
-
-  if (errnum > OK) {
+  if ((errnum > OK)||((-errnum) >=
+    sizeof(error_strings)/sizeof(error_strings[0]))) {
     result = "impossible error";
     goto finish;
   }

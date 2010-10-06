@@ -65,9 +65,11 @@ static controller_t identify(boolean_t primary, boolean_t master,
   void do_ATA(err_t *error) {
     int i = 0;
     outf(NULL, TRUE, "do_ATA()");
-    //for (i = 0; i < 256; i++) {
-      terror(buffer[0] = call_syscall_inw(port_base | PORT_DATA, error))
-    //}
+    for (i = 0; i < 256; i++) {
+      outf(NULL, TRUE, __FILE__ ":%d", __LINE__);
+      terror(buffer[i] = call_syscall_inw(port_base | PORT_DATA, error))
+      outf(NULL, TRUE, __FILE__ ":%d", __LINE__);
+    }
 finish:
     return;
   }
@@ -187,8 +189,8 @@ int main()
   terror(identify(FALSE, FALSE, buffer, error))
 finish:
 
-  if (hasFailed(*error)) {
-    outf(NULL, TRUE, err2String(err));
+  if (hasFailed(err)) {
+      outf(NULL, TRUE, err2String(err));
   } else {
     outf(NULL, TRUE, "ALLES IN OBI", err);
   }
