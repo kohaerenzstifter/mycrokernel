@@ -32,7 +32,7 @@ typedef enum { NONE, UNKNOWN, ATA, ATAPI, SATA} controller_t;
 
 static void claim_ports(err_t *error)
 {
-//  terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_DATA, error))
+  terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_DATA, error))
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_SECTORCOUNT, error))
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_LBA_LOW, error))
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_LBA_MID, error))
@@ -66,9 +66,7 @@ static controller_t identify(boolean_t primary, boolean_t master,
     int i = 0;
     outf(NULL, TRUE, "do_ATA()");
     for (i = 0; i < 256; i++) {
-      outf(NULL, TRUE, __FILE__ ":%d", __LINE__);
       terror(buffer[i] = call_syscall_inw(port_base | PORT_DATA, error))
-      outf(NULL, TRUE, __FILE__ ":%d", __LINE__);
     }
 finish:
     return;

@@ -509,8 +509,7 @@ void unblock_waiting_senders(tss_t *context, tss_t *process)
 {
   while (process->firstSender != NULL) {
     tss_t *cur = process->firstSender;
-    err = PROCESSDIED;
-    set_error(context, cur);
+    set_err(cur, PROCESSDIED);
     unsetStateFlag(cur,SENDING);
     process->firstSender = cur->nextSender;
     cur->nextSender = NULL;
@@ -550,8 +549,7 @@ void syscall_send(void)
   uint32_t bytes = curptr->ecx_reg;
   void *addr = (void *) curptr->edx_reg;
   if (validate_data_area(curptr,addr,bytes) != 0) {
-    err = INVALIDBUFFER;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, INVALIDBUFFER);
     goto finish;
   }
   if (receiving_from(receiver,curptr)) {
@@ -559,6 +557,8 @@ void syscall_send(void)
     curptr->eax_reg = bytes;
     receiver->eax_reg = bytes;
     clear_receiving_from(receiver);
+    set_err(curptr, OK);
+    set_err(receiver, OK);
     goto finish;
   }
   add_to_senders_list(curptr,receiver);
@@ -573,14 +573,12 @@ void syscall_send_by_feature(void)
   uint32_t feature = curptr->ebx_reg;
 
   if (check_feature(feature) != 0) {
-    err = INVALIDFEATURE;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, INVALIDFEATURE);
     goto finish;
   }
   receiver = get_process_by_feature(feature);
   if (receiver == curptr) {
-    err = CIRCULARSEND;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, CIRCULARSEND);
     goto finish;
   }
   if (receiver != NULL) {
@@ -593,8 +591,7 @@ void syscall_send_by_feature(void)
     dequeue(curptr);
     goto finish;
   }
-  err = WOULDBLOCK;
-  set_error(&syscallstate, curptr);
+  set_err(curptr, WOULDBLOCK);
   goto finish;
   
 finish:
@@ -609,14 +606,12 @@ void syscall_receive(void)
   void *addr = (void *) curptr->edx_reg;
 
   if (validate_data_area(curptr,addr,bytes) != 0) {
-    err = INVALIDBUFFER;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, INVALIDBUFFER);
     goto finish;
   }
   
   if (curptr->interrupts != 0) {
-    err = curptr->interrupts;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, curptr->interrupts);
     curptr->interrupts = 0;
     curptr->eax_reg = 0;
     goto finish;
@@ -627,6 +622,8 @@ void syscall_receive(void)
     curptr->eax_reg = bytes;
     sender->eax_reg = bytes;
     remove_from_senders_list(sender,curptr);
+    set_err(sender, OK);
+    set_err(curptr, OK);
     goto finish;
   }
 
@@ -640,15 +637,14 @@ void syscall_set_feature(void)
 {
   uint32_t feature = curptr->ebx_reg;
   if (check_feature(feature) != 0) {
-    err = INVALIDFEATURE;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, INVALIDFEATURE);
     goto finish;
   }
   if (set_feature(curptr, feature) != 0) {
-    err = FEATUREBUSY;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, FEATUREBUSY);
     goto finish;
   }
+  set_err(curptr, OK);
 finish:
   return;
 }
@@ -660,11 +656,11 @@ void syscall_inb(void)
   uint32_t port = curptr->ebx_reg & 0xffff;
 
   if (!has_port_access(curptr, port)) {
-    err = NOPERMS;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, NOPERMS);
     goto finish;
   }
   curptr->eax_reg = inb(port);
+  set_err(curptr, OK);
 finish:
   return;
 }
@@ -674,11 +670,11 @@ void syscall_inw(void)
   uint32_t port = curptr->ebx_reg & 0xffff;
 
   if (!has_port_access(curptr, port)) {
-    err = NOPERMS;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, NOPERMS);
     goto finish;
   }
   curptr->eax_reg = inw(port);
+  set_err(curptr, OK);
 finish:
   return;
 }
@@ -689,11 +685,11 @@ void syscall_outb(void)
   uint32_t value = curptr->ecx_reg & 0xff;
 
   if (!has_port_access(curptr, port)) {
-    err = NOPERMS;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, NOPERMS);
     goto finish;
   }
   outb(port, value);
+  set_err(curptr, OK);
 finish:
   return;
 }
@@ -703,8 +699,7 @@ void syscall_claim_port(void)
   uint32_t port = curptr->ebx_reg & 0xffff;
 
   if (port_accessers[port] != NULL) {
-    err = UNAVAILABLE;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, UNAVAILABLE);
     goto finish;
   }
   port_accessers[port] = curptr;
@@ -717,16 +712,15 @@ void syscall_request_irq(void)
   
   uint32_t irq = curptr->ebx_reg;
   if ((irq == 0)||(irq == 2)||(irq > MAX_IRQ)) {
-    err = INVALIDIRQ;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, INVALIDIRQ);
     goto finish;
   }
   if (irqs[irq] != NULL) {
-    err = IRQINUSE;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, IRQINUSE);
     goto finish;
   }
   irqs[irq] = curptr;
+  set_err(curptr, OK);
 finish:
   return;
 }
@@ -747,8 +741,7 @@ void clockIsr()
 void syscallIsr()
 {
   if (curptr->eax_reg > NO_SYSCALLS - 1) {
-    err = UNKNOWNSYSCALL;
-    set_error(&syscallstate, curptr);
+    set_err(curptr, UNKNOWNSYSCALL);
     goto finish;
   }
   syscalls[curptr->eax_reg]();
@@ -780,8 +773,7 @@ void notify_irq(uint32_t number)
   uint16_t mask = (1 << number);
 
   if (irqs[number]->state & RECEIVING) {
-    err = mask;
-    set_error(interrupt_states[number], irqs[number]);
+    set_err(irqs[number], mask);
     clear_receiving_from(irqs[number]);
     irqs[number]->eax_reg = 0;
     goto finish;

@@ -50,7 +50,6 @@ static //global variables go here
   gdtBitmap: dword[(NO_AVL_DSCRPTS div @size(dword)) div 8]; @external;
   pidBitmap: dword[(NO_AVL_PIDS div @size(dword)) div 8]; @external;
   curQueue: int32; @external;
-  err: uns32; @external;
 storage //uninitialised global variables go here 
 readonly //global, initialised, read-only variables go here; (better not use readonly section)
   pproctab: dword[MAX_NO_PROCS]; @external;

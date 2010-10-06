@@ -16,24 +16,6 @@ begin _create_process;
   add(60, esp);
 end _create_process;
 
-procedure _set_error(context: dword; process:dword);
-begin _set_error;
-  push(eax);
-  push(ebx);
-  push(ecx);
-  mov(context,eax);
-  mov(4, (type tss_t [eax]).ecx_reg);
-  mov(process,ebx);
-  mov(4, (type tss_t [ebx]).ecx_reg);
-  mov(&err, (type tss_t [eax]).edx_reg);
-  mov((type tss_t [ebx]).esi_reg, ecx);
-  mov(ecx,(type tss_t [ebx]).edx_reg);
-  _exchange_data(eax, ebx);
-  pop(ecx);
-  pop(ebx);
-  pop(eax);
-end _set_error;
-
 procedure _inb(port: dword);
 begin _inb;
   push(edx);
@@ -337,12 +319,6 @@ begin _exchange_data;
   pop(ecx);
   pop(ebx);
 end _exchange_data;
-
-procedure set_error(context: dword; process:dword); @cdecl; @external;
-procedure set_error(context: dword; process:dword);
-begin set_error;
-  _set_error(context, process);
-end set_error;
 
 procedure free_gdt_idx(what: dword); @cdecl; @external;
 procedure free_gdt_idx(what: dword);
