@@ -30,6 +30,21 @@
 
 typedef enum { NONE, UNKNOWN, ATA, ATAPI, SATA} controller_t;
 
+typedef struct _channel {
+  controller_t controller;
+} channel_t;
+
+#define NR_PORTS 2
+#define CHANNELS_PER_PORT 2
+
+#define PRIMARY 0
+#define SECONDARY 1
+#define MASTER 0
+#define SLAVE 1
+
+static channel_t channels[NR_PORTS][CHANNELS_PER_PORT] =
+  {{{UNKNOWN}, {UNKNOWN}}, {{UNKNOWN}, {UNKNOWN}}};
+
 static void claim_ports(err_t *error)
 {
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_DATA, error))
@@ -178,13 +193,17 @@ int main()
   terror(claim_ports(error))
 
   outf(NULL, TRUE, "IDENTIFY PRIMARY MASTER");
-  terror(identify(TRUE, TRUE, buffer, error))
+  terror(channels[PRIMARY][MASTER].controller =
+    identify(TRUE, TRUE, buffer, error))
   outf(NULL, TRUE, "IDENTIFY PRIMARY SLAVE");
-  terror(identify(TRUE, FALSE, buffer, error))
+  terror(channels[PRIMARY][SLAVE].controller =
+    identify(TRUE, FALSE, buffer, error))
   outf(NULL, TRUE, "IDENTIFY SECONDARY MASTER");
-  terror(identify(FALSE, TRUE, buffer, error))
+  terror(channels[SECONDARY][MASTER].controller =
+    identify(FALSE, TRUE, buffer, error))
   outf(NULL, TRUE, "IDENTIFY SECONDARY SLAVE");
-  terror(identify(FALSE, FALSE, buffer, error))
+  terror(channels[SECONDARY][SLAVE].controller =
+    identify(FALSE, FALSE, buffer, error))
 finish:
 
   if (hasFailed(err)) {
