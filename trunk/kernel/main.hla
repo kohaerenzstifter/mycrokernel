@@ -313,12 +313,12 @@ _kputstring("kernel_size: "); _kputhex(ebx); _kputchar(LF);
   //backup address of video.bin in ebx
   mov(eax,ebx);
 
-  _create_process(3,10000,0,ebx,ebx,NO_BASE,NO_BASE,$b8000,ebx, @text(@env("_VIDEO_SIZE")),@text(@env("_VIDEO_SIZE")),0,0, 4096,@text(@env("_VIDEO_SIZE")),"tty");
+  _create_process(3,1,0,ebx,ebx,NO_BASE,NO_BASE,$b8000,ebx, @text(@env("_VIDEO_SIZE")),@text(@env("_VIDEO_SIZE")),0,0, 4096,@text(@env("_VIDEO_SIZE")),"tty");
   _enqueue(eax);
 
   add(@text(@env("_VIDEO_SIZE")), ebx);
 
-  _create_process(3,10000,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, @text(@env("_SHELL_SIZE")),@text(@env("_SHELL_SIZE")),0,0, 0,@text(@env("_SHELL_SIZE")),"shell");
+  _create_process(3,1,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, @text(@env("_SHELL_SIZE")),@text(@env("_SHELL_SIZE")),0,0, 0,@text(@env("_SHELL_SIZE")),"shell");
   _enqueue(eax);
 
   add(@text(@env("_SHELL_SIZE")), ebx);
