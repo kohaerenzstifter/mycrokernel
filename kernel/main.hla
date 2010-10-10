@@ -165,19 +165,48 @@ var //local variables go here
 begin start;
   mov(pass,eax);	//eax=pointer to the data passed over
 
+  add(@size(uns16), eax); //42 (mycromagic)!
+
+  fseg: mov([eax], bx);
+  movzx(bx,ebx);
+  _kputstring("noMemsegs: "); _kputunsint(ebx); _kputchar(LF);
+
   fseg: mov((type DTdesc_t [eax]).limit,bx);	//We copy the
   mov(bx,gdt.limit);				//global descriptor table
   fseg: mov((type DTdesc_t [eax]).base,ebx);	//descriptor so we can address
   mov(ebx,gdt.base);				//it more easily
 
-  add(@size(DTdesc_t)+2,eax);		//eax=pointer to memory map (preceded by number of memory regions found)
+  add(@size(DTdesc_t),eax);		//eax=pointer to memory map (preceded by number of memory regions found)
   _kcls();
+
+  fseg: mov([eax],ebx);
+  mov(ebx,kernel_size);
+
+_kputstring("kernel_size: "); _kputhex(ebx); _kputchar(LF);
+
+  add(@size(uns32), eax);
+
+#macro intrrpt_esp(string _x_);
+  mov(ebx, @text("intrrpt" + _x_ + "state.esp_reg"));
+  mov(ebx, @text("intrrpt" + _x_ + "state.ebp_reg"));
+#endmacro
+?@tostring:intrrpt:text := "intrrpt_esp";
+
+  #include("interrupts.hhf");
+
+#macro exceptn_esp(string _x_);
+  mov(ebx, @text("exceptn" + _x_ + "state.esp_reg"));
+  mov(ebx, @text("exceptn" + _x_ + "state.ebp_reg"));
+#endmacro
+?@tostring:exceptn:text := "exceptn_esp";
+
+  #include("exceptions.hhf");
+
   do_mem(eax);				//Make sense of data found in memory map and adjust gdt accordingly
+
   _kmove_cursor();
   _kcls();
   init_port_accessers();
-
-//  _clear_echoline();
 
   /*The following entries in the gdt are
   used and need be marked in gdtBitmap via
@@ -273,25 +302,28 @@ begin start;
   _kputchar(LF);
 
   zerify(edx);
-  mov(&kernel_size,eax);
+  mov(kernel_size,eax);
+
+
   div(SECTOR_SIZE,edx:eax);
-  inc(eax);
   mul(SECTOR_SIZE,eax);
   add(KERNEL_BASE,eax);
+
 
   //backup address of video.bin in ebx
   mov(eax,ebx);
 
-  _create_process(3,10000,0,ebx,ebx,NO_BASE,NO_BASE,$b8000,ebx, $fffc,$fffc,0,0, 4096,$fffc,"tty");
+  _create_process(3,10000,0,ebx,ebx,NO_BASE,NO_BASE,$b8000,ebx, @text(@env("_VIDEO_SIZE")),@text(@env("_VIDEO_SIZE")),0,0, 4096,@text(@env("_VIDEO_SIZE")),"tty");
   _enqueue(eax);
 
   add(@text(@env("_VIDEO_SIZE")), ebx);
 
-  _create_process(3,10000,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, $fffc,$fffc,0,0, 0,$fffc,"shell");
+  _create_process(3,10000,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, @text(@env("_SHELL_SIZE")),@text(@env("_SHELL_SIZE")),0,0, 0,@text(@env("_SHELL_SIZE")),"shell");
   _enqueue(eax);
 
   add(@text(@env("_SHELL_SIZE")), ebx);
-  _create_process(3,1,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, $fffffc,$fffc,0,0, 0,$fffc,"hd");
+
+  _create_process(3,1,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, @text(@env("_HD_SIZE")),@text(@env("_HD_SIZE")),0,0, 0,@text(@env("_HD_SIZE")),"hd");
   _enqueue(eax);
 
   sti;

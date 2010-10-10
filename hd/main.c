@@ -204,6 +204,8 @@ int main()
   outf(NULL, TRUE, "IDENTIFY SECONDARY SLAVE");
   terror(channels[SECONDARY][SLAVE].controller =
     identify(FALSE, FALSE, buffer, error))
+  outf(NULL, TRUE, "now doing nothing any more");
+  for(;;);
 finish:
 
   if (hasFailed(err)) {

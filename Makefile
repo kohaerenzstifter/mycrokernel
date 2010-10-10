@@ -3,14 +3,20 @@ _GDT_SIZE = $$(if [ `echo $(GDT_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo 
 SECTOR_SIZE = 512
 OFFSET = 1
 #OFFSET is 1 because the first 512 bytes to boot from are ONE sector big
+STACK_SIZE = 8192
+
 KERNEL_SIZE = $$(stat -c %s kernel/kernel.bin)
-_KERNEL_SIZE = $$(if [ `echo $(KERNEL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(KERNEL_SIZE); else echo "(($(KERNEL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+__KERNEL_SIZE = $$(if [ `echo $(KERNEL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(KERNEL_SIZE); else echo "(($(KERNEL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+_KERNEL_SIZE = $$(echo $(__KERNEL_SIZE) + $(STACK_SIZE))
 TTY_SIZE = $$(stat -c %s tty/tty.bin)
-_TTY_SIZE = $$(if [ `echo $(TTY_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(TTY_SIZE); else echo "(($(TTY_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+__TTY_SIZE = $$(if [ `echo $(TTY_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(TTY_SIZE); else echo "(($(TTY_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+_TTY_SIZE = $$(echo $(__TTY_SIZE) + $(STACK_SIZE))
 SHELL_SIZE = $$(stat -c %s shell/shell.bin)
-_SHELL_SIZE = $$(if [ `echo $(SHELL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(SHELL_SIZE); else echo "(($(SHELL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+__SHELL_SIZE = $$(if [ `echo $(SHELL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(SHELL_SIZE); else echo "(($(SHELL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+_SHELL_SIZE = $$(echo $(__SHELL_SIZE) + $(STACK_SIZE))
 HD_SIZE = $$(stat -c %s hd/hd.bin)
-_HD_SIZE = $$(if [ `echo $(HD_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(HD_SIZE); else echo "(($(HD_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+__HD_SIZE = $$(if [ `echo $(HD_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(HD_SIZE); else echo "(($(HD_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+_HD_SIZE = $$(echo $(__HD_SIZE) + $(STACK_SIZE))
 
 bochs: image
 	bochs -f bochs.conf

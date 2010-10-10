@@ -1,13 +1,19 @@
 SECTOR_SIZE = 512
 KERNEL_BASE = 83968
+STACK_SIZE = 8192
+
 KERNEL_SIZE = $$(stat -c %s kernel.bin)
-_KERNEL_SIZE = $$(if [ `echo $(KERNEL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(KERNEL_SIZE); else echo "(($(KERNEL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+__KERNEL_SIZE = $$(if [ `echo $(KERNEL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(KERNEL_SIZE); else echo "(($(KERNEL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+_KERNEL_SIZE = $$(echo $(__KERNEL_SIZE) + $(STACK_SIZE))
 VIDEO_SIZE = $$(stat -c %s ../tty/tty.bin)
-_VIDEO_SIZE = $$(if [ `echo $(VIDEO_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(VIDEO_SIZE); else echo "(($(VIDEO_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+__VIDEO_SIZE = $$(if [ `echo $(VIDEO_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(VIDEO_SIZE); else echo "(($(VIDEO_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+_VIDEO_SIZE = $$(echo $(__VIDEO_SIZE) + $(STACK_SIZE))
 SHELL_SIZE = $$(stat -c %s ../shell/shell.bin)
-_SHELL_SIZE = $$(if [ `echo $(SHELL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(SHELL_SIZE); else echo "(($(SHELL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+__SHELL_SIZE = $$(if [ `echo $(SHELL_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(SHELL_SIZE); else echo "(($(SHELL_SIZE) / $(SECTOR_SIZE)) + 1) * $(SECTOR_SIZE)" | bc; fi)
+_SHELL_SIZE = $$(echo $(__SHELL_SIZE) + $(STACK_SIZE))
 HD_SIZE = $$(stat -c %s ../hd/hd.bin)
-_HD_SIZE = $$(if [ `echo $(HD_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(HD_SIZE); else echo "(($(HD_SIZE) / $(SECTOR_SIZE)) + 1) * $(HD_SIZE)" | bc; fi)
+__HD_SIZE = $$(if [ `echo $(HD_SIZE) % $(SECTOR_SIZE) | bc` -eq 0 ]; then echo $(HD_SIZE); else echo "(($(HD_SIZE) / $(SECTOR_SIZE)) + 1) * $(HD_SIZE)" | bc; fi)
+_HD_SIZE = $$(echo $(__HD_SIZE) + $(STACK_SIZE))
 
 ENVIRONMENT = _HD_SIZE=$(_HD_SIZE) _SHELL_SIZE=$(_SHELL_SIZE) _VIDEO_SIZE=$(_VIDEO_SIZE) SECTOR_SIZE=$(SECTOR_SIZE) KERNEL_BASE=$(KERNEL_BASE)
 GDT_ENVIRONMENT = _KERNEL_SIZE=$(_KERNEL_SIZE)
