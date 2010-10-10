@@ -8,6 +8,10 @@ unit Table;
 
 static //global variables go here
   align(4);
+  kernel_size: uns32;
+  align(4);
+  flag: uns32;
+  align(4);
   curQueue: int32;
   align(4);
   gdtBitmap: dword[(NO_AVL_DSCRPTS div @size(dword)) div 8] := 
@@ -411,7 +415,7 @@ static //global variables go here
     0,
     IDX_KERNELCODE*@size(segdesc_t),
     0,
-    IDX_INTSTACK*@size(segdesc_t),
+    IDX_KERNELDATA*@size(segdesc_t),//IDX_INTSTACK*@size(segdesc_t),
     0,
     IDX_KERNELDATA*@size(segdesc_t),
     0,

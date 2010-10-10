@@ -69,6 +69,13 @@ void init_port_accessers()
   }
 }
 
+#define kputstring_if(c) \
+  { \
+    if (c) { \
+      kputstring(__FILE__); kputstring(":"); kputunsint(__LINE__); kputchar(LF); \
+    } \
+  }
+
 void uptime()
 {
   kputunsint(hours);
@@ -546,6 +553,7 @@ void syscall_exit(void)
 void syscall_send(void)
 {
   tss_t *receiver = (tss_t *) curptr->ebx_reg;
+
   uint32_t bytes = curptr->ecx_reg;
   void *addr = (void *) curptr->edx_reg;
   if (validate_data_area(curptr,addr,bytes) != 0) {
@@ -795,6 +803,7 @@ void do_hard_int(uint32_t number)
     syscallIsr();
     goto finish;
   }
+
   if (irqs[number] == NULL) {
     goto finish;
   }
@@ -811,10 +820,12 @@ void do_exception(uint32_t number, uint32_t error)
 {
   kputstring("exception: "); kputhex(number); kputchar(LF);
   kputstring("error: "); kputhex(error); kputchar(LF);
+  kputstring("flag: "); kputunsint(flag); kputchar(LF);
   kputstring("curptr: "); kputstring(curptr->procname); kputchar(LF);
   kputstring("curptr->eip: "); kputunsint(curptr->eip_reg); kputchar(LF);
-  kputstring("curptr->eip: "); kputhex(curptr->eip_reg); kputchar(LF);
-  nextptr = curptr;
+  kputstring("curptr->eip: (hex)"); kputhex(curptr->eip_reg); kputchar(LF);
+  kputstring("curptr->esp: "); kputunsint(curptr->esp_reg); kputchar(LF);
+  kputstring("curptr->esp: (hex)"); kputhex(curptr->esp_reg); kputchar(LF);
   halt();
 }
 

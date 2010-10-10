@@ -18,8 +18,6 @@
 %define SECTORS_PER_HEAD 18
 %define MINSECTOR 1
 %define MAXSECTOR 18
-;%define MINCYLINDER 0
-;%define MAXCYLINDER 79
 %define MINHEAD 0
 %define MAXHEAD 1
 %define NO_SECTORS 18
@@ -71,7 +69,8 @@ here:
   mov ax, STACK_BASE/010h		;and
   cli			;the
   mov ss, ax		;stack
-  mov esp, STACKTOP	;of
+  mov ebp, _KERNEL_SIZE	;of
+  mov esp, _KERNEL_SIZE	;of
   sti			;course
   mov si, rlctn_msg	;Now let's tell the user
   call printstring	;that we have successfully relocated
@@ -226,7 +225,7 @@ endprintstring:
   ret
 align 2
 rlctn_msg:
-  db 0ah, 0dh, 'Relocated myself...',0
+  db 0ah, 0dh, 'Relocated myself.',0
 align 2
 rsterr_msg:
   db 0ah, 0dh, 'Reset boot drive error!',0
@@ -254,27 +253,32 @@ enter_32:
   mov gs, ax
   mov ax, 018h
   ;DONT forget to disable interrupts here, if they are enabled!!!
-  mov esp, 0fffffffch
+  mov esp, _KERNEL_SIZE
+  mov ebp, _KERNEL_SIZE
   mov ss, ax
   ;(reenable interrupts here)
   push _512_BASE+pass 	;the parameter for start
   push 0			;this is a dummy because HLA procedures
 			  ;don't support far calls
-
   jmp 08h:0h
 
 ;this is the data that is passed to the kernel with a pointer
 
 align 4
 pass:
+mycromagic:
+  dw 42
 gdt_desc:
   dw (8*NO_SEGMENTS)-1	;limit of the gdt
   dd GDT_BASE		;base address of the gdt
-align 4
+;align 4
+kernel_size:
+  dd _KERNEL_SIZE	;size of the kernel + stack
+;align 4
 no_memsegs:
   dd 0
 align 4
 memmap:
 
 times 510-($-$$) db 0 ; Fill the file with 0s
-dw 0aa55h
+ dw 0aa55h

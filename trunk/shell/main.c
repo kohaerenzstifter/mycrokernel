@@ -22,6 +22,7 @@ int main()
   err_t *error = &err;
 
   terror(call_syscall_set_feature(FEATURE_CMD, error))
+ 
   terror(main_loop(error))
 finish:
   call_syscall_exit();
