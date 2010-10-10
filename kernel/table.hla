@@ -415,7 +415,7 @@ static //global variables go here
     0,
     IDX_KERNELCODE*@size(segdesc_t),
     0,
-    IDX_KERNELDATA*@size(segdesc_t),//IDX_INTSTACK*@size(segdesc_t),
+    IDX_INTSTACK*@size(segdesc_t),
     0,
     IDX_KERNELDATA*@size(segdesc_t),
     0,
