@@ -1,7 +1,7 @@
 #includeonce("types.hhf")
 
 static //global variables go here
-  flag: uns32; @external;
+  flag: int32; @external;
   memory: memdesc_t[MAX_MEM_AREAS]; @external;
   no_memregs: uns32; @external;
   cursor: uns16; @external;//the position of the cursor (absolute memory offset from gs, i.e. ALWAYS even)
@@ -15,7 +15,6 @@ static //global variables go here
   syscalls: syscall_t[NO_SYSCALLS]; @external;
   cmds: command_t[NO_COMMANDS]; @external;
   params: byte[NO_COLUMNS*2]; @external;
-  derstring: string; @external;
   shiftSemaphore: uns32; @external;
   kernel_size: uns32; @external;
   dummystate: tss_t; @external;

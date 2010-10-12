@@ -10,7 +10,7 @@ extern unsigned char seconds;
 
 extern uint32_t gdtBitmap[NO_AVL_DSCRPTS / sizeof(unsigned) / 8];
 extern uint32_t pidBitmap[NO_AVL_PIDS / sizeof(unsigned) / 8];
-extern uint32_t flag;
+extern int32_t flag;
 extern schedqueue_t schedqueue;
 
 extern tss_t *curptr;

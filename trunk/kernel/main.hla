@@ -182,8 +182,6 @@ begin start;
   fseg: mov([eax],ebx);
   mov(ebx,kernel_size);
 
-_kputstring("kernel_size: "); _kputhex(ebx); _kputchar(LF);
-
   add(@size(uns32), eax);
 
 #macro intrrpt_esp(string _x_);
@@ -201,6 +199,9 @@ _kputstring("kernel_size: "); _kputhex(ebx); _kputchar(LF);
 ?@tostring:exceptn:text := "exceptn_esp";
 
   #include("exceptions.hhf");
+
+  mov(ebx, idlestate.esp_reg);
+  mov(ebx, idlestate.ebp_reg);
 
   do_mem(eax);				//Make sense of data found in memory map and adjust gdt accordingly
 
@@ -232,7 +233,6 @@ _kputstring("kernel_size: "); _kputhex(ebx); _kputchar(LF);
   _write_tss_desc(IDX_IDLETASKTSS*@size(segdesc_t),104,&idlestate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
 
 #macro intrrpt_write_tss(string _x_);
-//_kputstring(@text("""IDX_INTERRUPT + " + _x_ + """") + ":"); _kputunsint(@text("IDX_INTERRUPT" + _x_)); _kputchar(LF);
   _write_tss_desc(@text("IDX_INTERRUPT"+_x_+"*@size(segdesc_t)"),104,&@text("intrrpt" + _x_ + "state")+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
 #endmacro
 ?@tostring:intrrpt:text := "intrrpt_write_tss";
@@ -304,25 +304,20 @@ _kputstring("kernel_size: "); _kputhex(ebx); _kputchar(LF);
   zerify(edx);
   mov(kernel_size,eax);
 
-
-  div(SECTOR_SIZE,edx:eax);
-  mul(SECTOR_SIZE,eax);
   add(KERNEL_BASE,eax);
 
 
   //backup address of video.bin in ebx
   mov(eax,ebx);
 
-  _create_process(3,1,0,ebx,ebx,NO_BASE,NO_BASE,$b8000,ebx, @text(@env("_VIDEO_SIZE")),@text(@env("_VIDEO_SIZE")),0,0, 4096,@text(@env("_VIDEO_SIZE")),"tty");
+  _create_process(3,1000000,0,ebx,ebx,NO_BASE,NO_BASE,$b8000,ebx, @text(@env("_VIDEO_SIZE")),@text(@env("_VIDEO_SIZE")),0,0, 4096,@text(@env("_VIDEO_SIZE")),"tty");
   _enqueue(eax);
 
   add(@text(@env("_VIDEO_SIZE")), ebx);
-
-  _create_process(3,1,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, @text(@env("_SHELL_SIZE")),@text(@env("_SHELL_SIZE")),0,0, 0,@text(@env("_SHELL_SIZE")),"shell");
+  _create_process(3,1000000,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, @text(@env("_SHELL_SIZE")),@text(@env("_SHELL_SIZE")),0,0, 0,@text(@env("_SHELL_SIZE")),"shell");
   _enqueue(eax);
 
   add(@text(@env("_SHELL_SIZE")), ebx);
-
   _create_process(3,1,0,ebx,ebx,NO_BASE,NO_BASE,NO_BASE,ebx, @text(@env("_HD_SIZE")),@text(@env("_HD_SIZE")),0,0, 0,@text(@env("_HD_SIZE")),"hd");
   _enqueue(eax);
 

@@ -12,14 +12,14 @@ unit Hardint;
 procedure @text("hw_intrrpt" +_x_); @nodisplay; @noalignstack; @noframe;
 begin @text("hw_intrrpt" +_x_);
   forever
-    mov(1, flag);
+    and($7FFFFFFF,flag);
     do_hard_int(@text(_x_));
     add(4,esp);
     schedule(&@text("intrrpt" + _x_ + "state"));
     mov(PIC_EOI,al);
     out(al,PIC1_COMMAND);
     out(al,PIC2_COMMAND);
-    mov(0, flag);
+    or($80000000, flag);
     iret();
   endfor;
 end @text("hw_intrrpt" +_x_);
