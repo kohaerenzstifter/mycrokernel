@@ -4,7 +4,6 @@
 #pragma pack(1)
 struct _tss {
   unsigned short backlink;
-//  unsigned short zeroes1;
   unsigned short interrupts;
   unsigned esp0;
   unsigned short ss0;
@@ -53,7 +52,7 @@ struct _tss {
   struct _tss *firstSender;
   struct _tss *nextSender;
   struct _tss *receivingFrom;
-  char procname[15];
+  char procname[18];
 };
 #pragma pack()
 

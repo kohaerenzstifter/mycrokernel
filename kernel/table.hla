@@ -10,7 +10,7 @@ static //global variables go here
   align(4);
   kernel_size: uns32;
   align(4);
-  flag: uns32;
+  flag: int32;
   align(4);
   curQueue: int32;
   align(4);
@@ -34,13 +34,13 @@ static //global variables go here
   proctab: tss_t[MAX_NO_PROCS] :=
   [
     #for (i := 0 to MAX_NO_PROCS-2)
-    tss_t:[0,0,$fffffffc,IDX_INTSTACK*@size(segdesc_t),0,0,EMPTY,0,
+    tss_t:[0,0,0,IDX_INTSTACK*@size(segdesc_t),0,0,EMPTY,0,
      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-     0,0,0,0,0,0,0,0,@size(tss_t),0,0,0,NULL, NULL, NULL, NULL, [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']],
+     0,0,0,0,0,0,0,0,@size(tss_t),0,0,0,NULL, NULL, NULL, NULL, [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']],
     #endfor
-    tss_t:[0,0,$fffffffc,IDX_INTSTACK*@size(segdesc_t),0,0,EMPTY,0,
+    tss_t:[0,0,0,IDX_INTSTACK*@size(segdesc_t),0,0,EMPTY,0,
      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-     0,0,0,0,0,0,0,0,@size(tss_t),0,0,0,NULL, NULL, NULL, NULL, [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
+     0,0,0,0,0,0,0,0,@size(tss_t),0,0,0,NULL, NULL, NULL, NULL, [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
   ];
   align(4);
   memory: memdesc_t[MAX_MEM_AREAS];
@@ -279,9 +279,6 @@ static //global variables go here
   align(4);
   params: byte[NO_COLUMNS*2];
   align(4);
-  derstring: string; @nostorage;
-  byte 'I', ' ', 'P','u','d','a','a','a',0;
-  align(4);
   shiftSemaphore: uns32;
   align(4);
   kernelstate: tss_t := tss_t:[
@@ -332,7 +329,7 @@ static //global variables go here
     NULL,
     NULL,
     NULL,
-    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
   ];
 
   idlestate: tss_t := tss_t:[
@@ -383,7 +380,7 @@ static //global variables go here
     NULL,
     NULL,
     NULL,
-    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+    ['I', 'D', 'L', 'E', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
   ];
 
 #macro intrrpt_state(string _x_);
@@ -435,7 +432,7 @@ static //global variables go here
     NULL,
     NULL,
     NULL,
-    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
   ];
 #endmacro
 ?@tostring:intrrpt:text := "intrrpt_state";
@@ -522,32 +519,12 @@ static //global variables go here
     NULL,
     NULL,
     NULL,
-    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
   ];
 #endmacro
 ?@tostring:exceptn:text := "exceptn_state";
 
 #include("exceptions.hhf");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 storage //uninitialised global variables go here
   align(4);

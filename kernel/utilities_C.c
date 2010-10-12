@@ -72,7 +72,7 @@ void init_port_accessers()
 #define kputstring_if(c) \
   { \
     if (c) { \
-      kputstring(__FILE__); kputstring(":"); kputunsint(__LINE__); kputchar(LF); \
+      kputstring("(conditional) " __FILE__); kputstring(":"); kputunsint(__LINE__); kputchar(LF); \
     } \
   }
 
@@ -178,6 +178,7 @@ void charge_process()
 
 void pick_next_proc()
 {
+  tss_t *lastptr = curptr;
   if (schedqueue.head == NULL) {
     nextptr = &idlestate;
     goto finish;
@@ -216,7 +217,7 @@ finish:
 }
 
 void dequeue(tss_t *process)
-{   
+{
   if (!(process->misc & ENQUEUED)) {
     goto finish;
   }
@@ -821,11 +822,12 @@ void do_exception(uint32_t number, uint32_t error)
   kputstring("exception: "); kputhex(number); kputchar(LF);
   kputstring("error: "); kputhex(error); kputchar(LF);
   kputstring("flag: "); kputunsint(flag); kputchar(LF);
-  kputstring("curptr: "); kputstring(curptr->procname); kputchar(LF);
+  kputstring("curptr->procname: "); kputstring(curptr->procname); kputchar(LF);
   kputstring("curptr->eip: "); kputunsint(curptr->eip_reg); kputchar(LF);
   kputstring("curptr->eip: (hex)"); kputhex(curptr->eip_reg); kputchar(LF);
   kputstring("curptr->esp: "); kputunsint(curptr->esp_reg); kputchar(LF);
   kputstring("curptr->esp: (hex)"); kputhex(curptr->esp_reg); kputchar(LF);
+  show_queue();
   halt();
 }
 
