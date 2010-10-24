@@ -143,7 +143,7 @@ static void read_char(uint32_t no_args, void *address)
       screen_echoed[screen_idx] = FALSE;
     }
 
-    snd_buffer[screen_idx] = (char) address;
+    snd_buffer[screen_idx] = (char) ((int) address);
     screen_idx++;
     snd_buffer[screen_idx] = '\0';
   }

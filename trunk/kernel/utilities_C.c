@@ -23,6 +23,7 @@ void syscall_inb(void);
 void syscall_claim_port(void);
 void syscall_outb(void);
 void syscall_inw(void);
+void syscall_outw(void);
 
 static syscallFunc_t syscalls[] = {
   &syscall_exit,
@@ -33,7 +34,8 @@ static syscallFunc_t syscalls[] = {
   &syscall_inb,
   &syscall_claim_port,
   &syscall_outb,
-  &syscall_inw
+  &syscall_inw,
+  &syscall_outw
 };
 
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
@@ -178,7 +180,6 @@ void charge_process()
 
 void pick_next_proc()
 {
-  tss_t *lastptr = curptr;
   if (schedqueue.head == NULL) {
     nextptr = &idlestate;
     goto finish;
@@ -703,11 +704,26 @@ finish:
   return;
 }
 
+void syscall_outw(void)
+{
+  uint32_t port = curptr->ebx_reg & 0xffff;
+  uint32_t value = curptr->ecx_reg & 0xffff;
+
+  if (!has_port_access(curptr, port)) {
+    set_err(curptr, NOPERMS);
+    goto finish;
+  }
+  outw(port, value);
+  set_err(curptr, OK);
+finish:
+  return;
+}
+
 void syscall_claim_port(void)
 {
   uint32_t port = curptr->ebx_reg & 0xffff;
 
-  if (port_accessers[port] != NULL) {
+  if ((port_accessers[port] != NULL)&&(port_accessers[port] != curptr)) {
     set_err(curptr, UNAVAILABLE);
     goto finish;
   }
@@ -724,7 +740,7 @@ void syscall_request_irq(void)
     set_err(curptr, INVALIDIRQ);
     goto finish;
   }
-  if (irqs[irq] != NULL) {
+  if ((irqs[irq] != NULL)&&(irqs[irq] != curptr)) {
     set_err(curptr, IRQINUSE);
     goto finish;
   }
@@ -804,7 +820,7 @@ void do_hard_int(uint32_t number)
     syscallIsr();
     goto finish;
   }
-
+  //kputstring("INTERRUPT: "); kputchar(LF); kputunsint(number); halt();
   if (irqs[number] == NULL) {
     goto finish;
   }
