@@ -200,6 +200,30 @@ begin call_syscall_outb;
   call_syscall_outb_HLA(port, value, error);
 end call_syscall_outb;
 
+procedure call_syscall_outw_HLA(port: dword; value: dword; error: dword);
+begin call_syscall_outw_HLA;
+  push(ebx);
+  push(ecx);
+  push(esi);
+  pushfd();
+  mov(SYS_OUTW,eax);
+  mov(port,ebx);
+  mov(value,ecx);
+  int($22);
+  mov(error,ebx);
+  mov(esi,[ebx]);
+  popfd();
+  pop(esi);
+  pop(ecx);
+  pop(ebx);
+end call_syscall_outw_HLA;
+
+procedure call_syscall_outw(port: dword; value: dword; error: dword); @cdecl; @external;
+procedure call_syscall_outw(port: dword; value: dword; error: dword);
+begin call_syscall_outw;
+  call_syscall_outw_HLA(port, value, error);
+end call_syscall_outw;
+
 
 
 

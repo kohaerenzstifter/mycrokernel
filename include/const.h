@@ -25,6 +25,11 @@
 #define ERR_MSG10 "requested resource unavailable"
 #define FEATUREBUSY -11
 #define ERR_MSG11 "feature busy"
+#define BEYONDENDOFDEVICE -12
+#define ERR_MSG12 "attempt to read beyond end of device"
+#define NOTATA -13
+#define ERR_MSG13 "not an ATA device"
+
 
 
 #define INT0 1

@@ -186,7 +186,9 @@ char *error_strings[] = {
   ERR_MSG8,
   ERR_MSG9,
   ERR_MSG10,
-  ERR_MSG11
+  ERR_MSG11,
+  ERR_MSG12,
+  ERR_MSG13
 };
 
 char *err2String(int errnum)
