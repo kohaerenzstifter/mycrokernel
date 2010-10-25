@@ -129,9 +129,9 @@ const
   E_NONEWPROCESS: text:="MAX_NO_PROCS*@size(dword)";
 
   //generic system call replies
-  OK: text:="0";
-  UNKNOWNSYSCALL: text:="-1";
-  INVALIDBUFFER: text:="-2";
-  CIRCULARSEND: text:="-3";
-  WOULDBLOCK: text:="-4";
-  INVALIDFEATURE: text:="-5";
+//  OK: text:="0";
+//  UNKNOWNSYSCALL: text:="-1";
+//  INVALIDBUFFER: text:="-2";
+//  CIRCULARSEND: text:="-3";
+//  WOULDBLOCK: text:="-4";
+//  INVALIDFEATURE: text:="-5";
