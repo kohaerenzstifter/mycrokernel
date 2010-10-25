@@ -94,6 +94,16 @@ static channel_t channels[NR_PORTS][CHANNELS_PER_PORT] =
     }
   };
 
+int test;
+static void doIt(err_t *error)
+{
+  uint32_t phys = (uint32_t) NULL;
+  terror(phys = call_syscall_vir2phys(&test, error));
+  outf(NULL, TRUE, "virtual %u is physical %u", (uint32_t) &test, phys);
+finish:
+  return;
+}
+
 static void claim_ports(err_t *error)
 {
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_DATA, error))
@@ -416,7 +426,7 @@ int main()
 {
   err_t err = OK;
   err_t *error = &err;
-
+terror(doIt(error))
   terror(claim_ports(error))
 
   outf(NULL, TRUE, "IDENTIFY PRIMARY MASTER");
@@ -433,6 +443,7 @@ int main()
   } else {
     outf(NULL, TRUE, "will NOT read");
   }
+
   //for(;;);
 finish:
   if (hasFailed(err)) {

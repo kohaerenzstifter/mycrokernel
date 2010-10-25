@@ -18,6 +18,7 @@ void kputstring(char *what);
 void kputchar(char what);
 void pickNextProc();
 uint32_t get_limit(uint32_t gdtIndex);
+uint32_t get_base(uint32_t gdtIndex);
 void free_gdt_idx(uint32_t gdtIndex);
 void free_pid(uint32_t pid);
 uint32_t inb(uint32_t port);

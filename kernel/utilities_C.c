@@ -24,6 +24,7 @@ void syscall_claim_port(void);
 void syscall_outb(void);
 void syscall_inw(void);
 void syscall_outw(void);
+void syscall_vir2phys(void);
 
 static syscallFunc_t syscalls[] = {
   &syscall_exit,
@@ -35,7 +36,8 @@ static syscallFunc_t syscalls[] = {
   &syscall_claim_port,
   &syscall_outb,
   &syscall_inw,
-  &syscall_outw
+  &syscall_outw,
+  &syscall_vir2phys
 };
 
 static feature_t featureTable[sizeof(uint32_t)] = { {NULL, NULL} };
@@ -336,7 +338,7 @@ void writer()
 
 unsigned validate_data_area(tss_t *process, void *mem, unsigned size)
 {
-  unsigned index = process->ds_reg & 0xfff8;
+  uint32_t index = process->ds_reg & 0xfff8;
   //TODO: verify this!
   if (get_limit(index) < ((uint32_t) mem + size)) {
     return -1;
@@ -715,6 +717,25 @@ void syscall_outw(void)
   }
   outw(port, value);
   set_err(curptr, OK);
+finish:
+  return;
+}
+
+static uint32_t vir2phys(tss_t *process, uint32_t virtual)
+{
+  uint32_t index = process->ds_reg & 0xfff8;
+  uint32_t base = get_base(index);
+  return (base + virtual);
+}
+
+void syscall_vir2phys(void)
+{
+  if (validate_data_area(curptr, (void *) curptr->ebx_reg, 0) != 0) {
+    set_err(curptr, INVALIDADDRESS);
+    goto finish;
+  }
+  curptr->eax_reg = vir2phys(curptr, curptr->ebx_reg);
+
 finish:
   return;
 }

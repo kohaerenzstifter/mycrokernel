@@ -29,7 +29,8 @@
 #define ERR_MSG12 "attempt to read beyond end of device"
 #define NOTATA -13
 #define ERR_MSG13 "not an ATA device"
-
+#define INVALIDADDRESS -14
+#define ERR_MSG14 "invalid memory address"
 
 
 #define INT0 1

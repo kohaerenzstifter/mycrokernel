@@ -224,7 +224,26 @@ begin call_syscall_outw;
   call_syscall_outw_HLA(port, value, error);
 end call_syscall_outw;
 
+procedure call_syscall_vir2phys_HLA(virtual: dword; error: dword);
+begin call_syscall_vir2phys_HLA;
+  push(ebx);
+  push(esi);
+  pushfd();
+  mov(SYS_VIR2PHYS,eax);
+  mov(virtual,ebx);
+  int($22);
+  mov(error,ebx);
+  mov(esi,[ebx]);
+  popfd();
+  pop(esi);
+  pop(ebx);
+end call_syscall_vir2phys_HLA;
 
+procedure call_syscall_vir2phys(virtual: dword; error: dword); @cdecl; @external;
+procedure call_syscall_vir2phys(virtual: dword; error: dword);
+begin call_syscall_vir2phys;
+  call_syscall_vir2phys_HLA(virtual, error);
+end call_syscall_vir2phys;
 
 
 

@@ -175,6 +175,26 @@ begin _get_limit;
   popfd();
   pop(ebx);
 end _get_limit;
+
+procedure _get_base(gdtIndex: dword);
+begin _get_base;
+  push(ebx);
+  push(ecx);
+  pushfd();
+  mov(gdtIndex, ebx);
+  add(GDT_BASE, ebx);
+  fseg: movzx((type segdesc_t [ebx]).base3,eax);
+  shl(24,eax);
+  fseg: movzx((type segdesc_t [ebx]).base2,ecx);
+  shl(16,ecx);
+  or(ecx,eax);
+  fseg: movzx((type segdesc_t [ebx]).base1,ecx);
+  or(ecx,eax);
+  popfd();
+  pop(ecx);
+  pop(ebx);
+end _get_base;
+
 /*
 procedure _create_process(privilege: dword; schedticks: dword; start: dword;
  csegmBase: dword; dsegmBase:dword; esegmBase: dword;
@@ -513,6 +533,12 @@ procedure get_limit(gdtIndex: dword);
 begin get_limit;
   _get_limit(gdtIndex);
 end get_limit;
+
+procedure get_base(gdtIndex: dword); @returns("eax"); @cdecl; @external;
+procedure get_base(gdtIndex: dword);
+begin get_base;
+  _get_base(gdtIndex);
+end get_base;
 
 procedure write_segment_desc
   (index: dword; limit: dword; base: dword;

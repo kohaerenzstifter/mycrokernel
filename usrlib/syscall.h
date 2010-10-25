@@ -14,6 +14,7 @@ uint32_t call_syscall_inw(uint32_t port, err_t *error);
 void call_syscall_outb(uint32_t port_base, uint32_t value, err_t *error);
 void call_syscall_outw(uint32_t port_base, uint32_t value, err_t *error);
 uint32_t call_syscall_claim_port(uint32_t port, err_t *error);
+uint32_t call_syscall_vir2phys(void *virt, err_t *error);
 
 
 #define hasFailed(x) (x < OK)
