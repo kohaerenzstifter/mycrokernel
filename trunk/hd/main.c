@@ -14,7 +14,8 @@
 #define PORT_HEADSELECT PORT_DRIVESELECT
 #define PORT_COMMAND 0x7
 
-#define PORT_STATUS PORT_COMMAND
+#define PORT_REGULAR_STATUS PORT_COMMAND
+#define PORT_ALTERNATE_STATUS 0x206
 
 #define COMMAND_IDENTIFY 0xec
 #define COMMAND_READSECTORS 0x20
@@ -71,6 +72,15 @@ typedef struct _channel {
 static uint16_t buffer[256];
 static channel_t *channel_selected = NULL;
 
+typedef struct _prdt_entry {
+  uint32_t word1;
+  uint32_t word2;
+} prdt_entry_t;
+
+static prdt_entry_t prdt_space[16384];
+static prdt_entry_t *prdt = NULL;
+static uint32_t prdt_phys = 0;
+
 #define NR_PORTS 2
 #define CHANNELS_PER_PORT 2
 
@@ -94,12 +104,18 @@ static channel_t channels[NR_PORTS][CHANNELS_PER_PORT] =
     }
   };
 
-int test;
-static void doIt(err_t *error)
+
+static void do_prdt(err_t *error)
 {
   uint32_t phys = (uint32_t) NULL;
-  terror(phys = call_syscall_vir2phys(&test, error));
-  outf(NULL, TRUE, "virtual %u is physical %u", (uint32_t) &test, phys);
+  terror(phys = call_syscall_vir2phys(&prdt_space[0], error));
+  if ((phys % 65536) == 0) {
+    prdt = &prdt_space[0];
+    prdt_phys = phys;
+    goto finish;
+  }
+  prdt_phys = ((phys / 65536) + 1) * 65536;
+  prdt = (prdt_entry_t *) (((uint32_t) &prdt_space[0]) + (next_boundary - phys));
 finish:
   return;
 }
@@ -114,6 +130,7 @@ static void claim_ports(err_t *error)
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_DRIVESELECT, error))
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_COMMAND, error))
   terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_ERROR, error))
+  terror(call_syscall_claim_port(PORTBASE_PRIMARY | PORT_ALTERNATE_STATUS, error))
 
   terror(call_syscall_claim_port(PORTBASE_SECONDARY | PORT_DATA, error))
   terror(call_syscall_claim_port(PORTBASE_SECONDARY | PORT_SECTORCOUNT, error))
@@ -123,6 +140,7 @@ static void claim_ports(err_t *error)
   terror(call_syscall_claim_port(PORTBASE_SECONDARY | PORT_DRIVESELECT, error))
   terror(call_syscall_claim_port(PORTBASE_SECONDARY | PORT_COMMAND, error))
   terror(call_syscall_claim_port(PORTBASE_SECONDARY | PORT_ERROR, error))
+  terror(call_syscall_claim_port(PORTBASE_SECONDARY | PORT_ALTERNATE_STATUS, error))
 finish:
   return;
 }
@@ -204,7 +222,7 @@ finish:
 
   terror(call_syscall_outb(get_port_base(channel) | PORT_COMMAND, COMMAND_IDENTIFY, error))
   
-  terror(value = call_syscall_inb(get_port_base(channel) | PORT_STATUS, error))
+  terror(value = call_syscall_inb(get_port_base(channel) | PORT_ALTERNATE_STATUS, error))
 
   if (value == 0) {
     channel->controller = NONE;
@@ -242,7 +260,7 @@ finish:
     break;
 
 carryOn:
-    terror(value = call_syscall_inb(get_port_base(channel) | PORT_STATUS, error))
+    terror(value = call_syscall_inb(get_port_base(channel) | PORT_ALTERNATE_STATUS, error))
   }
 
   if (suspect == ATA) {
@@ -322,7 +340,7 @@ static void write_sector(uint32_t number, channel_t *channel, err_t *error)
   terror(call_syscall_outb(get_port_base(channel) | PORT_LBA_HIGH, ((number >> 16) & 0xff), error))
   terror(call_syscall_outb(get_port_base(channel) | PORT_COMMAND, COMMAND_WRITESECTORS, error))
 
-  terror(status = call_syscall_inb(get_port_base(channel) | PORT_STATUS, error))
+  terror(status = call_syscall_inb(get_port_base(channel) | PORT_ALTERNATE_STATUS, error))
   
   //TODO: check for error in status
 
@@ -331,7 +349,7 @@ static void write_sector(uint32_t number, channel_t *channel, err_t *error)
     if ((*error) != irq_expected(channel)) {
       continue;
     }
-    terror(status = call_syscall_inb(get_port_base(channel) | PORT_STATUS, error))
+    terror(status = call_syscall_inb(get_port_base(channel) | PORT_ALTERNATE_STATUS, error))
     //TODO: check for error in status
   }
 
@@ -375,7 +393,7 @@ static void read_sector(uint32_t number, channel_t *channel, err_t *error)
   terror(call_syscall_outb(get_port_base(channel) | PORT_LBA_HIGH, ((number >> 16) & 0xff), error))
   terror(call_syscall_outb(get_port_base(channel) | PORT_COMMAND, COMMAND_READSECTORS, error))
 
-  terror(status = call_syscall_inb(get_port_base(channel) | PORT_STATUS, error))
+  terror(status = call_syscall_inb(get_port_base(channel) | PORT_ALTERNATE_STATUS, error))
   
   //TODO: check for error in status
 
@@ -384,7 +402,7 @@ static void read_sector(uint32_t number, channel_t *channel, err_t *error)
     if ((*error) != irq_expected(channel)) {
       continue;
     }
-    terror(status = call_syscall_inb(get_port_base(channel) | PORT_STATUS, error))
+    terror(status = call_syscall_inb(get_port_base(channel) | PORT_ALTERNATE_STATUS, error))
     //TODO: check for error in status
   }
 
@@ -426,7 +444,7 @@ int main()
 {
   err_t err = OK;
   err_t *error = &err;
-terror(doIt(error))
+  terror(do_prdt(error));
   terror(claim_ports(error))
 
   outf(NULL, TRUE, "IDENTIFY PRIMARY MASTER");

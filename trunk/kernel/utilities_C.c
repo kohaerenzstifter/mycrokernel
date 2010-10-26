@@ -868,6 +868,26 @@ void do_exception(uint32_t number, uint32_t error)
   halt();
 }
 
+static boolean_t memAreaValid(uint32_t base, uint32_t limit, boolean_t video)
+{
+  uint32_t lowerBound = video ? 0xc0000 : 0xa0000;
+  boolean_t result = FALSE;
+  if ((base > 0xc0000)&&(base < 0x100000)) {
+    kputstring("1");kputchar(LF);
+    //this region cannot be used
+    goto finish;
+  }
+  if ((base <= 0xc0000)&&((base + limit) > 0xc0000)) {
+    kputstring("2");kputchar(LF);
+    goto finish;
+  }
+  //TODO: add further checks here...
+  kputstring("valid"); kputchar(LF);
+  result = TRUE;
+finish:
+  return result;
+}
+
 tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
   uint32_t csegmBase, uint32_t dsegmBase, uint32_t esegmBase,
   uint32_t fsegmBase, uint32_t gsegmBase, uint32_t ssegmBase,
@@ -898,6 +918,9 @@ tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
     idx++;
   }
   if (csegmBase != NO_BASE) {
+    if (!memAreaValid(csegmBase, csegmLimit, FALSE)) {
+      goto finish;
+    }
     csegmIdx = get_free_gdt_idx();
     if (csegmIdx == INVALID_GDT_IDX) {
       goto finish;
@@ -916,6 +939,9 @@ tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
     }
   }
   if (dsegmBase != NO_BASE) {
+    if (!memAreaValid(dsegmBase, dsegmLimit, FALSE)) {
+      goto finish;
+    }
     dsegmIdx = get_free_gdt_idx();
     if (dsegmIdx == INVALID_GDT_IDX) {
       goto finish;
@@ -934,6 +960,9 @@ tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
     }
   }
   if (esegmBase != NO_BASE) {
+    if (!memAreaValid(esegmBase, esegmLimit, FALSE)) {
+      goto finish;
+    }
     esegmIdx = get_free_gdt_idx();
     if (esegmIdx == INVALID_GDT_IDX) {
       goto finish;
@@ -952,6 +981,9 @@ tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
     }
   }
   if (fsegmBase != NO_BASE) {
+    if (!memAreaValid(fsegmBase, fsegmLimit, FALSE)) {
+      goto finish;
+    }
     fsegmIdx = get_free_gdt_idx();
     if (fsegmIdx == INVALID_GDT_IDX) {
       goto finish;
@@ -970,6 +1002,9 @@ tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
     }
   }
   if (gsegmBase != NO_BASE) {
+    if (!memAreaValid(gsegmBase, gsegmLimit, TRUE)) {
+      goto finish;
+    }
     gsegmIdx = get_free_gdt_idx();
     if (gsegmIdx == INVALID_GDT_IDX) {
       goto finish;
@@ -988,6 +1023,9 @@ tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
     }
   }
   if (ssegmBase != NO_BASE) {
+    if (!memAreaValid(ssegmBase, ssegmLimit, FALSE)) {
+      goto finish;
+    }
     ssegmIdx = get_free_gdt_idx();
     if (ssegmIdx == INVALID_GDT_IDX) {
       goto finish;
