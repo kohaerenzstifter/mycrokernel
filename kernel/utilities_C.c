@@ -872,17 +872,14 @@ static boolean_t memAreaValid(uint32_t base, uint32_t limit, boolean_t video)
 {
   uint32_t lowerBound = video ? 0xc0000 : 0xa0000;
   boolean_t result = FALSE;
-  if ((base > 0xc0000)&&(base < 0x100000)) {
-    kputstring("1");kputchar(LF);
+  if ((base > lowerBound)&&(base < 0x100000)) {
     //this region cannot be used
     goto finish;
   }
-  if ((base <= 0xc0000)&&((base + limit) > 0xc0000)) {
-    kputstring("2");kputchar(LF);
+  if ((base <= lowerBound)&&((base + limit) > lowerBound)) {
     goto finish;
   }
   //TODO: add further checks here...
-  kputstring("valid"); kputchar(LF);
   result = TRUE;
 finish:
   return result;
