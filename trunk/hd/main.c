@@ -77,9 +77,13 @@ typedef struct _prdt_entry {
   uint32_t word2;
 } prdt_entry_t;
 
-static prdt_entry_t prdt_space[16384];
+static prdt_entry_t prdt_space[2];
 static prdt_entry_t *prdt = NULL;
 static uint32_t prdt_phys = 0;
+
+static char dma_buffer_space[131072];
+static char *dma_buffer = NULL;
+static uint32_t dma_buffer_phys = (uint32_t) NULL;
 
 #define NR_PORTS 2
 #define CHANNELS_PER_PORT 2
@@ -105,17 +109,36 @@ static channel_t channels[NR_PORTS][CHANNELS_PER_PORT] =
   };
 
 
+static void do_dma_buffer(err_t *error)
+{
+  uint32_t phys = (uint32_t) NULL;
+  uint32_t next_boundary = (uint32_t) NULL;
+  terror(phys = call_syscall_vir2phys(&dma_buffer_space[0], error));
+  if ((phys % 65536) == 0) {
+    dma_buffer = &dma_buffer_space[0];
+    dma_buffer_phys = phys;
+    goto finish;
+  }
+  next_boundary = ((phys / 65536) + 1) * 65536;
+  dma_buffer = (char *) (((uint32_t) &dma_buffer_space[0]) + (next_boundary - phys));
+  dma_buffer_phys = next_boundary;
+finish:
+  return;
+}
+
 static void do_prdt(err_t *error)
 {
   uint32_t phys = (uint32_t) NULL;
+  uint32_t next_boundary = (uint32_t) NULL;
   terror(phys = call_syscall_vir2phys(&prdt_space[0], error));
-  if ((phys % 65536) == 0) {
+  if ((phys / 65536) == ((phys + sizeof(prdt_entry_t)) / 65536)) {
     prdt = &prdt_space[0];
     prdt_phys = phys;
-    goto finish;
+    goto finish;    
   }
-  prdt_phys = ((phys / 65536) + 1) * 65536;
+  next_boundary = ((phys / 65536) + 1) * 65536;
   prdt = (prdt_entry_t *) (((uint32_t) &prdt_space[0]) + (next_boundary - phys));
+  prdt_phys = next_boundary;
 finish:
   return;
 }
@@ -414,7 +437,7 @@ finish:
   return;
 }
 
-static void show_off_drive_read(channel_t *channel, err_t *error)
+/*static void show_off_drive_read(channel_t *channel, err_t *error)
 {
   uint32_t value = 0;
 
@@ -438,20 +461,34 @@ static void show_off_drive_read(channel_t *channel, err_t *error)
   outf(NULL, TRUE, "value 2nd read is %u", value);
 finish:
   return;
+}*/
+
+static void dma_read_sector(uint32_t number, channel_t *channel, err_t *error)
+{
+  //TODO
+}
+
+static void show_off_drive_read(channel_t *channel, err_t *error)
+{
+  terror(dma_read_sector(0,  &(channels[PRIMARY][MASTER]), error))
+  //TODO
+finish:
+  return;
 }
 
 int main()
 {
   err_t err = OK;
   err_t *error = &err;
+  terror(do_dma_buffer(error));
   terror(do_prdt(error));
   terror(claim_ports(error))
 
-  outf(NULL, TRUE, "IDENTIFY PRIMARY MASTER");
+/*  outf(NULL, TRUE, "IDENTIFY PRIMARY MASTER");
   terror(identify(&(channels[PRIMARY][MASTER]), error))
   outf(NULL, TRUE, "IDENTIFY PRIMARY SLAVE");
   terror(identify(&(channels[PRIMARY][SLAVE]), error))
-/*  outf(NULL, TRUE, "IDENTIFY SECONDARY MASTER");
+  outf(NULL, TRUE, "IDENTIFY SECONDARY MASTER");
   terror(identify(&(channels[SECONDARY][MASTER]), error))
   outf(NULL, TRUE, "IDENTIFY SECONDARY SLAVE");
   terror(identify(&(channels[SECONDARY][SLAVE]), error))*/
