@@ -23,8 +23,10 @@ void free_gdt_idx(uint32_t gdtIndex);
 void free_pid(uint32_t pid);
 uint32_t inb(uint32_t port);
 uint32_t inw(uint32_t port);
+uint32_t indw(uint32_t port);
 void outb(uint32_t port, uint32_t value);
 void outw(uint32_t port, uint32_t value);
+void outdw(uint32_t port, uint32_t value);
 //void call_syscall_setFeatures_C(uint8_t features);
 //TODO: should return error (parameter)
 //tss_t *call_syscall_requestFeatures_C(uint8_t features);

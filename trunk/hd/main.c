@@ -207,7 +207,7 @@ static void identify(channel_t *channel, err_t *error)
     channel->lba_sectors <<= 16;
     channel->lba_sectors |= buffer[60];
     
-    outf(NULL, TRUE, "physikalische Zahl der Zylinder: %u", buffer[0]);
+    /*outf(NULL, TRUE, "physikalische Zahl der Zylinder: %u", buffer[0]);
     outf(NULL, TRUE, "Zahl der Koepfe: %u", buffer[3]);
     outf(NULL, TRUE, "Zahl der unformatierten Bytes je physikalischer Spur: %u", buffer[4]);
     outf(NULL, TRUE, "Zahl der unformatierten Bytes je Sektor: %u", buffer[5]);
@@ -223,7 +223,7 @@ static void identify(channel_t *channel, err_t *error)
     dword <<= 16;
     dword |= buffer[57];
     outf(NULL, TRUE, "Bytes je logischem Sektor: %u", dword);
-    outf(NULL, TRUE, "Anzahl Sektoren im LBA-Modus: %u", channel->lba_sectors);
+    outf(NULL, TRUE, "Anzahl Sektoren im LBA-Modus: %u", channel->lba_sectors);*/
 finish:
     return;
   }
@@ -476,28 +476,74 @@ finish:
   return;
 }
 
+#define partition_get_bootable(entry) ((uint8_t) (*((char *) entry)))
+#define partition_get_type(entry) ((uint8_t) (*(((char *) (entry)) + 4)))
+#define partition_get_first_cylinder(entry) (((((uint16_t) (*(((char *) (entry)) + 2))) & 0xc0) << 2) | ((uint8_t) (*(((char *) (entry)) + 3))))
+#define partition_get_first_head(entry) ((uint8_t) (*(((char *) (entry)) + 1)))
+#define partition_get_first_sector(entry) (((uint8_t) (*(((char *) (entry)) + 2))) & 0x3f)
+#define partition_get_last_cylinder(entry) (((((uint16_t) (*(((char *) (entry)) + 6))) & 0xc0) << 2) | ((uint8_t) (*(((char *) (entry)) + 7))))
+#define partition_get_last_head(entry) ((uint8_t) (*(((char *) (entry)) + 5)))
+#define partition_get_last_sector(entry) (((uint8_t) (*(((char *) (entry)) + 6))) & 0x3f)
+
+void read_partition_table(channel_t *channel, err_t *error)
+{
+	char *entry_start = NULL;
+	uint32_t i = 0;
+
+	terror(read_sector(0, channel, error))
+
+	for (i = 446; i < (446 + (4 * 16)); i += 16) {
+		entry_start = (char *) &(buffer[(i / 2)]);
+		if (partition_get_type(entry_start) == 0) {
+			continue;
+		}
+		outf(NULL, TRUE, "partition: %d", ((i - 446) / 16));
+		outf(NULL, TRUE, "bootable: %x", partition_get_bootable(entry_start));
+		outf(NULL, TRUE, "type: %x", partition_get_type(entry_start));
+		outf(NULL, TRUE, "first cylinder: %x", partition_get_first_cylinder(entry_start));
+		outf(NULL, TRUE, "first head: %x", partition_get_first_head(entry_start));
+		outf(NULL, TRUE, "first sector: %x", partition_get_first_sector(entry_start));
+		outf(NULL, TRUE, "last cylinder: %x", partition_get_last_cylinder(entry_start));
+		outf(NULL, TRUE, "last head: %x", partition_get_last_head(entry_start));
+		outf(NULL, TRUE, "last sector: %x", partition_get_last_sector(entry_start));
+	}
+
+finish:
+	return;
+}
+
 int main()
 {
+	uint32_t i = 0;
+	uint32_t j = 0;
   err_t err = OK;
   err_t *error = &err;
-  terror(do_dma_buffer(error));
-  terror(do_prdt(error));
+//  terror(do_dma_buffer(error));
+//  terror(do_prdt(error));
   terror(claim_ports(error))
 
-/*  outf(NULL, TRUE, "IDENTIFY PRIMARY MASTER");
+  outf(NULL, TRUE, "IDENTIFY PRIMARY MASTER");
   terror(identify(&(channels[PRIMARY][MASTER]), error))
   outf(NULL, TRUE, "IDENTIFY PRIMARY SLAVE");
   terror(identify(&(channels[PRIMARY][SLAVE]), error))
   outf(NULL, TRUE, "IDENTIFY SECONDARY MASTER");
   terror(identify(&(channels[SECONDARY][MASTER]), error))
   outf(NULL, TRUE, "IDENTIFY SECONDARY SLAVE");
-  terror(identify(&(channels[SECONDARY][SLAVE]), error))*/
+  terror(identify(&(channels[SECONDARY][SLAVE]), error))
   outf(NULL, TRUE, "now doing nothing any more");
-  if (channels[PRIMARY][MASTER].controller == ATA) {
+	for (i = PRIMARY; i <= SECONDARY; i++) {
+		for (j = MASTER; j <= SLAVE; j++) {
+			if (channels[i][j].controller == ATA) {
+				outf(NULL, TRUE, "reading partition table of channel[%d][%d]", i, j);
+				terror(read_partition_table(&channels[i][j], err))
+			}
+		}
+	}
+  /*if (channels[PRIMARY][MASTER].controller == ATA) {
     terror(show_off_drive_read(&(channels[PRIMARY][MASTER]), error));
   } else {
     outf(NULL, TRUE, "will NOT read");
-  }
+  }*/
 
   //for(;;);
 finish:
