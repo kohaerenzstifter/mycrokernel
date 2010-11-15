@@ -46,6 +46,22 @@ begin inw;
   _inw(port);
 end inw;
 
+procedure _indw(port: dword);
+begin _indw;
+  push(edx);
+  zerify(eax);
+  mov(port,edx);
+  in(dx,ax);
+  pop(edx);
+end _indw;
+
+procedure indw(port: dword); @cdecl; @external;
+procedure indw(port: dword);
+begin indw;
+  _indw(port);
+end indw;
+
+
 procedure _outb(port: dword; value: dword);
 begin _outb;
   mov(port, edx);
@@ -71,6 +87,21 @@ procedure outw(port: dword; value: dword);
 begin outw;
   _outw(port, value);
 end outw;
+
+procedure _outdw(port: dword; value: dword);
+begin _outdw;
+  mov(port, edx);
+  mov(value, eax);
+  out(eax, dx);
+end _outdw;
+
+procedure outdw(port: dword; value: dword); @cdecl; @external;
+procedure outdw(port: dword; value: dword);
+begin outdw;
+  _outdw(port, value);
+end outdw;
+
+
 
 procedure _enqueue(process: dword);
 begin _enqueue;

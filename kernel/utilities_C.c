@@ -80,6 +80,79 @@ void init_port_accessers()
     } \
   }
 
+unsigned short pciConfigReadDWord (unsigned short bus, unsigned short slot,
+                                   unsigned short func, unsigned short offset)
+ {
+    unsigned long address;
+    unsigned long lbus = (unsigned long)bus;
+    unsigned long lslot = (unsigned long)slot;
+    unsigned long lfunc = (unsigned long)func;
+ 
+    /* create configuration address as per Figure 1 */
+    address = (unsigned long)((lbus << 16) | (lslot << 11) |
+              (lfunc << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
+ 
+    /* write out the address */
+    outw(0xCF8, address);
+
+    /* read in the data */
+    return indw(0xCFC);
+ }
+
+boolean_t device_present(int bus, int device)
+{
+	if (((uint16_t) pciConfigReadDWord(bus, device, 0, 0)) == 0xffff) {
+		return FALSE;
+	}
+	return TRUE;
+}
+
+uint8_t get_class_code(int bus, int device)
+{
+	uint32_t reg = 0;
+	reg = pciConfigReadDWord(bus, device, 0, 8);
+	return (uint8_t) (reg >> 24);
+}
+
+uint8_t get_subclass(int bus, int device)
+{
+	uint32_t reg = 0;
+	reg = pciConfigReadDWord(bus, device, 0, 8);
+	return (uint8_t) (reg >> 16);
+}
+
+#define NR_PCI_BUSSES 256
+#define NR_DEVS_PER_PCI_BUS 32
+
+void enumeratePci()
+{
+	int i = 0;
+	int j = 0;
+	uint8_t class_code = 0;
+	uint8_t sub_class = 0;
+
+	for (i = 0; i < NR_PCI_BUSSES; i++) {
+		for (j = 0; j < NR_DEVS_PER_PCI_BUS; j++) {
+			if (!device_present(i, j)) {
+				kputstring("no device"); kputchar(LF);
+				continue;
+			}
+			class_code = get_class_code(i, j);
+			if (class_code != 0x01) {
+				kputstring("wrong class code"); kputchar(LF);
+				continue;
+			}
+			sub_class = get_subclass(i, j);
+			if (sub_class != 0x05) {
+				kputstring("wrong subclass"); kputchar(LF);
+				continue;
+			}
+			kputstring("found ATA controller"); kputchar(LF);
+		}
+	}
+	halt();
+}
+
 void uptime()
 {
   kputunsint(hours);
@@ -833,6 +906,7 @@ finish:
 //this may unblock the process
 void do_hard_int(uint32_t number)
 {
+
   if (number == 0) {
     clockIsr();
     goto finish;
