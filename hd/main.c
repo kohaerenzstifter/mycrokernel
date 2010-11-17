@@ -67,9 +67,11 @@ typedef struct _channel {
   uint32_t lba_sectors;
   uint16_t bytes_per_sector;
   uint16_t bus_info;
+	uint16_t nr_heads;
+	uint16_t nr_sectors_per_track;
 } channel_t;
 
-static uint16_t buffer[256];
+//static uint16_t buffer[256];
 static channel_t *channel_selected = NULL;
 
 typedef struct _prdt_entry {
@@ -195,6 +197,7 @@ static void identify(channel_t *channel, err_t *error)
   uint32_t mid = 0;
   uint32_t high = 0;
   boolean_t jump = FALSE;
+	uint16_t buffer[256];
 
   void do_ATA(err_t *error) {
     int i = 0;
@@ -206,7 +209,9 @@ static void identify(channel_t *channel, err_t *error)
     channel->lba_sectors = buffer[61];
     channel->lba_sectors <<= 16;
     channel->lba_sectors |= buffer[60];
-    
+		channel->nr_heads = buffer[3];
+		channel->nr_sectors_per_track = buffer[6];
+
     /*outf(NULL, TRUE, "physikalische Zahl der Zylinder: %u", buffer[0]);
     outf(NULL, TRUE, "Zahl der Koepfe: %u", buffer[3]);
     outf(NULL, TRUE, "Zahl der unformatierten Bytes je physikalischer Spur: %u", buffer[4]);
@@ -331,12 +336,13 @@ static void display_status(uint32_t status)
   outf(NULL, TRUE, "busy: %u", (status & BIT_BUSY) ? 1 : 0);   
 }
 
-static void write_sector(uint32_t number, channel_t *channel, err_t *error)
+static void write_sector(uint32_t number, channel_t *channel, void *b, err_t *error)
 {
   uint32_t i = 0;
   uint32_t bytes = 0;
   uint8_t value = 0;
   uint32_t status = 0;
+	uint16_t *buffer = (uint16_t *) b;
 
   terror(check_ata(channel, error))
   terror(check_lba_supported(channel, error))
@@ -384,12 +390,13 @@ finish:
   return;
 }
 
-static void read_sector(uint32_t number, channel_t *channel, err_t *error)
+static void read_sector(uint32_t number, channel_t *channel, void *b, err_t *error)
 {
   uint32_t i = 0;
   uint32_t bytes = 0;
   uint8_t value = 0;
   uint32_t status = 0;
+	uint16_t *buffer = (uint16_t *) b;
 
   terror(check_ata(channel, error))
   terror(check_lba_supported(channel, error))
@@ -476,6 +483,20 @@ finish:
   return;
 }
 
+void read_superblock(channel_t *channel, uint32_t first_partition_sector, err_t *error)
+{
+	char superblock[1024];
+	char *curbuf = superblock;
+	uint32_t sector = first_partition_sector + 2;
+	terror(read_sector(sector, channel, curbuf, error))
+	sector++; curbuf += 512;
+	terror(read_sector(sector, channel, curbuf, error))
+	//outf(NULL, TRUE, "signature: %x", superblock[56]);
+
+finish:
+	return;
+}
+	
 #define partition_get_bootable(entry) ((uint8_t) (*((char *) entry)))
 #define partition_get_type(entry) ((uint8_t) (*(((char *) (entry)) + 4)))
 #define partition_get_first_cylinder(entry) (((((uint16_t) (*(((char *) (entry)) + 2))) & 0xc0) << 2) | ((uint8_t) (*(((char *) (entry)) + 3))))
@@ -485,27 +506,40 @@ finish:
 #define partition_get_last_head(entry) ((uint8_t) (*(((char *) (entry)) + 5)))
 #define partition_get_last_sector(entry) (((uint8_t) (*(((char *) (entry)) + 6))) & 0x3f)
 
+/*#define chs2lba(ch, c, h, s) ((c * (ch)->nr_heads * (ch)->nr_sectors_per_track) + (h * (ch)->nr_sectors_per_track) + s - 1)*/
+#define chs2lba(ch, c, h, s) (c * (ch)->nr_heads + h) * (ch)->nr_sectors_per_track + s - 1
+
 void read_partition_table(channel_t *channel, err_t *error)
 {
 	char *entry_start = NULL;
 	uint32_t i = 0;
+	uint16_t cylinder = 0;
+	uint16_t head = 0;
+	uint16_t sector = 0;
+	uint16_t buffer[256];
 
-	terror(read_sector(0, channel, error))
+	terror(read_sector(0, channel, buffer, error))
 
 	for (i = 446; i < (446 + (4 * 16)); i += 16) {
 		entry_start = (char *) &(buffer[(i / 2)]);
 		if (partition_get_type(entry_start) == 0) {
 			continue;
 		}
-		outf(NULL, TRUE, "partition: %d", ((i - 446) / 16));
+		/*outf(NULL, TRUE, "partition: %d", ((i - 446) / 16));
 		outf(NULL, TRUE, "bootable: %x", partition_get_bootable(entry_start));
 		outf(NULL, TRUE, "type: %x", partition_get_type(entry_start));
-		outf(NULL, TRUE, "first cylinder: %x", partition_get_first_cylinder(entry_start));
-		outf(NULL, TRUE, "first head: %x", partition_get_first_head(entry_start));
-		outf(NULL, TRUE, "first sector: %x", partition_get_first_sector(entry_start));
+		outf(NULL, TRUE, "first cylinder: %x", cylinder = (partition_get_first_cylinder(entry_start)));
+		outf(NULL, TRUE, "first head: %x", head = (partition_get_first_head(entry_start)));
+		outf(NULL, TRUE, "first sector: %x", sector = (partition_get_first_sector(entry_start)));
 		outf(NULL, TRUE, "last cylinder: %x", partition_get_last_cylinder(entry_start));
 		outf(NULL, TRUE, "last head: %x", partition_get_last_head(entry_start));
 		outf(NULL, TRUE, "last sector: %x", partition_get_last_sector(entry_start));
+    outf(NULL, TRUE, "partition starts at sector: %d", chs2lba(channel,
+      cylinder, head, sector));*/
+		if (partition_get_type(entry_start) == 0x83) {
+			terror(read_superblock(channel, chs2lba(channel, cylinder, head, sector),
+        error));
+		}
 	}
 
 finish:
@@ -535,7 +569,7 @@ int main()
 		for (j = MASTER; j <= SLAVE; j++) {
 			if (channels[i][j].controller == ATA) {
 				outf(NULL, TRUE, "reading partition table of channel[%d][%d]", i, j);
-				terror(read_partition_table(&channels[i][j], err))
+				terror(read_partition_table(&channels[i][j], error))
 			}
 		}
 	}
