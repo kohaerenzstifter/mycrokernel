@@ -483,6 +483,11 @@ finish:
   return;
 }
 
+#define get_block_size(superblock) (1024 << (*((uint32_t *) (&superblock[24]))))
+#define get_nr_inodes(superblock) (*((uint32_t *) (&superblock[0])))
+#define get_nr_blocks(superblock) (*((uint32_t *) (&superblock[4])))
+
+
 void read_superblock(channel_t *channel, uint32_t first_partition_sector, err_t *error)
 {
 	char superblock[1024];
@@ -491,7 +496,12 @@ void read_superblock(channel_t *channel, uint32_t first_partition_sector, err_t 
 	terror(read_sector(sector, channel, curbuf, error))
 	sector++; curbuf += 512;
 	terror(read_sector(sector, channel, curbuf, error))
-	//outf(NULL, TRUE, "signature: %x", superblock[56]);
+	outf(NULL, TRUE, "signature: %x", superblock[56]);
+	outf(NULL, TRUE, "block size: %d", get_block_size(superblock));
+	outf(NULL, TRUE, "number of inodes: %d", get_nr_inodes(superblock));
+	outf(NULL, TRUE, "total number of blocks: %d", get_nr_blocks(superblock));
+/*	outf(NULL, TRUE, "number of blocks per group: %d", get_nr_blocks_per_group(superblock));
+	outf(NULL, TRUE, "number of inodes per block group: %d", get_nr_inodes_per_group(superblock));*/
 
 finish:
 	return;
@@ -525,7 +535,7 @@ void read_partition_table(channel_t *channel, err_t *error)
 		if (partition_get_type(entry_start) == 0) {
 			continue;
 		}
-		/*outf(NULL, TRUE, "partition: %d", ((i - 446) / 16));
+		outf(NULL, TRUE, "partition: %d", ((i - 446) / 16));
 		outf(NULL, TRUE, "bootable: %x", partition_get_bootable(entry_start));
 		outf(NULL, TRUE, "type: %x", partition_get_type(entry_start));
 		outf(NULL, TRUE, "first cylinder: %x", cylinder = (partition_get_first_cylinder(entry_start)));
@@ -534,8 +544,9 @@ void read_partition_table(channel_t *channel, err_t *error)
 		outf(NULL, TRUE, "last cylinder: %x", partition_get_last_cylinder(entry_start));
 		outf(NULL, TRUE, "last head: %x", partition_get_last_head(entry_start));
 		outf(NULL, TRUE, "last sector: %x", partition_get_last_sector(entry_start));
+
     outf(NULL, TRUE, "partition starts at sector: %d", chs2lba(channel,
-      cylinder, head, sector));*/
+      cylinder, head, sector));
 		if (partition_get_type(entry_start) == 0x83) {
 			terror(read_superblock(channel, chs2lba(channel, cylinder, head, sector),
         error));
