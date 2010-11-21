@@ -62,6 +62,16 @@
 
 typedef enum { NONE, UNKNOWN, ATA, ATAPI, SATA} controller_t;
 
+typedef struct _partition {
+	uint32_t major_version;
+	uint32_t minor_version;
+	uint32_t nr_block_groups;
+	uint32_t block_size;
+	uint32_t nr_inodes;
+	uint32_t nr_blocks;
+	uint32_t nr_blocks_per_group;
+} partition_t;
+
 typedef struct _channel {
   controller_t controller;
   uint32_t lba_sectors;
@@ -69,6 +79,7 @@ typedef struct _channel {
   uint16_t bus_info;
 	uint16_t nr_heads;
 	uint16_t nr_sectors_per_track;
+	partition_t partitions[4];
 } channel_t;
 
 //static uint16_t buffer[256];
@@ -483,13 +494,65 @@ finish:
   return;
 }
 
+#define get_addr_block_usage_bitmap(block_descriptor) \
+  (*((uint32_t *) (&block_descriptor[0])))
+#define get_addr_inode_usage_bitmap(block_descriptor) \
+  (*((uint32_t *) (&block_descriptor[4])))
+#define get_block_address_inode_table(block_descriptor) \
+  (*((uint32_t *) (&block_descriptor[8])))
+#define get_nr_unallocated_blocks(block_descriptor) \
+  (*((uint16_t *) (&block_descriptor[12])))
+#define get_nr_unallocated_inodes(block_descriptor) \
+  (*((uint16_t *) (&block_descriptor[14])))
+#define get_nr_directories(block_descriptor) \
+  (*((uint16_t *) (&block_descriptor[16])))
+
+void read_group_descriptor_table(channel_t *channel, uint32_t nr_block_groups,
+  uint32_t block_size, uint32_t first_partition_sector, err_t *error)
+{
+	int i = 0;
+	char block_descriptor_table[1024];
+	char *block_descriptor = NULL;
+	char *curbuf = block_descriptor_table;
+	uint32_t sector = first_partition_sector;
+	sector += first_partition_sector = (block_size == 1024) ? 4 :
+	  (block_size / 512);
+	terror(read_sector(sector, channel, curbuf, error))
+	sector++; curbuf += 512;
+	terror(read_sector(sector, channel, curbuf, error))
+ 
+	block_descriptor = block_descriptor_table;
+	for (i = 0; i < nr_block_groups; i++) {
+		outf(NULL, TRUE, "address of block usage bitmap: %d",
+			get_addr_block_usage_bitmap(block_descriptor));
+		outf(NULL, TRUE, "address of inode usage bitmap: %d",
+			get_addr_inode_usage_bitmap(block_descriptor));
+		outf(NULL, TRUE, "block address of inode table: %d",
+		  get_block_address_inode_table(block_descriptor));
+		outf(NULL, TRUE, "number unallocated blocks in group: %d",
+		  get_nr_unallocated_blocks(block_descriptor));
+		outf(NULL, TRUE, "number unallocated inodes in group: %d",
+		  get_nr_unallocated_inodes(block_descriptor));
+		outf(NULL, TRUE, "number directories in group: %d",
+		  get_nr_directories(block_descriptor));
+		block_descriptor += 32;
+	}
+finish:
+	return;
+}
+
 #define get_block_size(superblock) (1024 << (*((uint32_t *) (&superblock[24]))))
 #define get_nr_inodes(superblock) (*((uint32_t *) (&superblock[0])))
 #define get_nr_blocks(superblock) (*((uint32_t *) (&superblock[4])))
+#define get_nr_blocks_per_group(superblock) (*((uint32_t *) (&superblock[32])))
+#define get_nr_inodes_per_group(superblock)  (*((uint32_t *) (&superblock[40])))
+#define get_major_version(superblock) (*((uint32_t *) (&superblock[76])))
+#define get_minor_version(superblock)(*((uint16_t *) (&superblock[62])))
 
-
-void read_superblock(channel_t *channel, uint32_t first_partition_sector, err_t *error)
+void read_superblock(channel_t *channel, uint32_t first_partition_sector,
+  uint8_t partition_number, err_t *error)
 {
+	uint32_t nr_block_groups = 0;
 	char superblock[1024];
 	char *curbuf = superblock;
 	uint32_t sector = first_partition_sector + 2;
@@ -497,11 +560,39 @@ void read_superblock(channel_t *channel, uint32_t first_partition_sector, err_t 
 	sector++; curbuf += 512;
 	terror(read_sector(sector, channel, curbuf, error))
 	outf(NULL, TRUE, "signature: %x", superblock[56]);
-	outf(NULL, TRUE, "block size: %d", get_block_size(superblock));
-	outf(NULL, TRUE, "number of inodes: %d", get_nr_inodes(superblock));
-	outf(NULL, TRUE, "total number of blocks: %d", get_nr_blocks(superblock));
-/*	outf(NULL, TRUE, "number of blocks per group: %d", get_nr_blocks_per_group(superblock));
-	outf(NULL, TRUE, "number of inodes per block group: %d", get_nr_inodes_per_group(superblock));*/
+	channel->partitions[partition_number].block_size =
+	  get_block_size(superblock);
+	//outf(NULL, TRUE, "block size: %d", get_block_size(superblock));
+	channel->partitions[partition_number].nr_inodes =
+	  get_nr_inodes(superblock);
+	//outf(NULL, TRUE, "number of inodes: %d", get_nr_inodes(superblock));
+	channel->partitions[partition_number].nr_blocks =
+	  get_nr_blocks(superblock);
+	//outf(NULL, TRUE, "total number of blocks: %d", get_nr_blocks(superblock));
+	channel->partitions[partition_number].nr_blocks_per_group =
+	  get_nr_blocks_per_group(superblock);
+	//outf(NULL, TRUE, "number of blocks per group: %d", get_nr_blocks_per_group(superblock));
+	channel->partitions[partition_number].nr_blocks_per_group =
+	  get_nr_inodes_per_group(superblock);
+	//outf(NULL, TRUE, "number of inodes per block group: %d", get_nr_inodes_per_group(superblock));
+	channel->partitions[partition_number].major_version =
+	  get_major_version(superblock);
+	/*outf(NULL, TRUE, "file system version: %d.%d", get_major_version(superblock),
+		  get_minor_version(superblock));*/
+	channel->partitions[partition_number].minor_version =
+	  get_minor_version(superblock);
+	//outf(NULL, TRUE, "size inode table: %d", (get_nr_inodes_per_group(superblock) * 128));
+	nr_block_groups = (get_nr_inodes(superblock) / get_nr_inodes_per_group(superblock)) <
+	  (get_nr_blocks(superblock) / get_nr_blocks_per_group(superblock)) ?
+	  (get_nr_inodes(superblock) / get_nr_inodes_per_group(superblock)) :
+	  (get_nr_blocks(superblock) / get_nr_blocks_per_group(superblock));
+	channel->partitions[partition_number].nr_block_groups =
+	  nr_block_groups;
+	outf(NULL, TRUE, "number of groups: %d or %d",
+	  get_nr_inodes(superblock) / get_nr_inodes_per_group(superblock),
+		get_nr_blocks(superblock) / get_nr_blocks_per_group(superblock));
+	terror(read_group_descriptor_table(channel, nr_block_groups,
+	  get_block_size(superblock), first_partition_sector, error))
 
 finish:
 	return;
@@ -535,7 +626,13 @@ void read_partition_table(channel_t *channel, err_t *error)
 		if (partition_get_type(entry_start) == 0) {
 			continue;
 		}
-		outf(NULL, TRUE, "partition: %d", ((i - 446) / 16));
+
+		cylinder = (partition_get_first_cylinder(entry_start));
+		head = (partition_get_first_head(entry_start));
+		sector = (partition_get_first_sector(entry_start));
+
+
+		/*outf(NULL, TRUE, "partition: %d", ((i - 446) / 16));
 		outf(NULL, TRUE, "bootable: %x", partition_get_bootable(entry_start));
 		outf(NULL, TRUE, "type: %x", partition_get_type(entry_start));
 		outf(NULL, TRUE, "first cylinder: %x", cylinder = (partition_get_first_cylinder(entry_start)));
@@ -546,10 +643,10 @@ void read_partition_table(channel_t *channel, err_t *error)
 		outf(NULL, TRUE, "last sector: %x", partition_get_last_sector(entry_start));
 
     outf(NULL, TRUE, "partition starts at sector: %d", chs2lba(channel,
-      cylinder, head, sector));
+      cylinder, head, sector));*/
 		if (partition_get_type(entry_start) == 0x83) {
 			terror(read_superblock(channel, chs2lba(channel, cylinder, head, sector),
-        error));
+        i, error));
 		}
 	}
 
