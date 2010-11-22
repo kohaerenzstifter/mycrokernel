@@ -43,6 +43,12 @@
 
 #define irq_expected(c) (is_primary(c) ? IRQ_PRIMARY : IRQ_SECONDARY)
 
+#define TODOERROR \
+	{ \
+		outf(NULL, TRUE, "%s:%d: UNDEFINED ERROR", __FILE__, __LINE__); \
+		goto finish; \
+	}
+
 #define check_ata(c, e) \
   { \
     if (c->controller != ATA) { \
@@ -62,7 +68,25 @@
 
 typedef enum { NONE, UNKNOWN, ATA, ATAPI, SATA} controller_t;
 
+typedef struct _inode {
+	//TODO
+} inode_t;
+
+typedef struct _block_group {
+	uint32_t addr_inode_usage_bitmap;
+	uint32_t addr_block_usage_bitmap;
+	uint32_t block_address_inode_table;
+} block_group_t;
+
+//until I can think of a better value...
+#define MAX_NR_BLOCK_GROUPS 5
+
 typedef struct _partition {
+	boolean_t used;
+	boolean_t bootable;
+	uint32_t first_sector;
+	uint32_t last_sector;
+	uint32_t type;
 	uint32_t major_version;
 	uint32_t minor_version;
 	uint32_t nr_block_groups;
@@ -70,6 +94,9 @@ typedef struct _partition {
 	uint32_t nr_inodes;
 	uint32_t nr_blocks;
 	uint32_t nr_blocks_per_group;
+	uint32_t nr_inodes_per_group;
+	uint32_t inode_size;
+	block_group_t block_groups[MAX_NR_BLOCK_GROUPS];
 } partition_t;
 
 typedef struct _channel {
@@ -455,32 +482,6 @@ finish:
   return;
 }
 
-/*static void show_off_drive_read(channel_t *channel, err_t *error)
-{
-  uint32_t value = 0;
-
-  outf(NULL, TRUE, "now reading sector 0");
-  terror(read_sector(0, &(channels[PRIMARY][MASTER]), error))
-  outf(NULL, TRUE, "read sector 0:");
-  value = buffer[0];
-  value <<= 16;
-  value |= buffer[1];
-  outf(NULL, TRUE, "value 1st read is %u", value);
-  value = value + 1;
-  outf(NULL, TRUE, "changing value to %u", value);
-  buffer[0] = ((value & (0xffff0000)) >> 16);
-  buffer[1] = (value & (0xffff));
-  terror(write_sector(0, &(channels[PRIMARY][MASTER]), error))
-  value = 0;
-  terror(read_sector(0, &(channels[PRIMARY][MASTER]), error))
-  value = buffer[0];
-  value <<= 16;
-  value |= buffer[1];
-  outf(NULL, TRUE, "value 2nd read is %u", value);
-finish:
-  return;
-}*/
-
 static void dma_read_sector(uint32_t number, channel_t *channel, err_t *error)
 {
   //TODO
@@ -507,36 +508,97 @@ finish:
 #define get_nr_directories(block_descriptor) \
   (*((uint16_t *) (&block_descriptor[16])))
 
-void read_group_descriptor_table(channel_t *channel, uint32_t nr_block_groups,
-  uint32_t block_size, uint32_t first_partition_sector, err_t *error)
+static void read_group_descriptor_table(channel_t *channel,
+  uint8_t partition_nr, err_t *error)
 {
 	int i = 0;
 	char block_descriptor_table[1024];
 	char *block_descriptor = NULL;
 	char *curbuf = block_descriptor_table;
-	uint32_t sector = first_partition_sector;
-	sector += first_partition_sector = (block_size == 1024) ? 4 :
-	  (block_size / 512);
+	uint32_t sector = channel->partitions[partition_nr].first_sector;
+	sector += (channel->partitions[partition_nr].block_size == 1024) ? 4 :
+	  (channel->partitions[partition_nr].block_size / 512);
+
 	terror(read_sector(sector, channel, curbuf, error))
 	sector++; curbuf += 512;
 	terror(read_sector(sector, channel, curbuf, error))
  
 	block_descriptor = block_descriptor_table;
-	for (i = 0; i < nr_block_groups; i++) {
-		outf(NULL, TRUE, "address of block usage bitmap: %d",
-			get_addr_block_usage_bitmap(block_descriptor));
-		outf(NULL, TRUE, "address of inode usage bitmap: %d",
-			get_addr_inode_usage_bitmap(block_descriptor));
-		outf(NULL, TRUE, "block address of inode table: %d",
-		  get_block_address_inode_table(block_descriptor));
-		outf(NULL, TRUE, "number unallocated blocks in group: %d",
+	for (i = 0; i < channel->partitions[partition_nr].nr_block_groups; i++) {
+		channel->partitions[partition_nr].block_groups[i].addr_block_usage_bitmap =
+			get_addr_block_usage_bitmap(block_descriptor);
+		channel->partitions[partition_nr].block_groups[i].addr_inode_usage_bitmap =
+			get_addr_inode_usage_bitmap(block_descriptor);
+		channel->partitions[partition_nr].block_groups[i].block_address_inode_table =
+		  get_block_address_inode_table(block_descriptor);
+		/*outf(NULL, TRUE, "number unallocated blocks in group: %d",
 		  get_nr_unallocated_blocks(block_descriptor));
 		outf(NULL, TRUE, "number unallocated inodes in group: %d",
 		  get_nr_unallocated_inodes(block_descriptor));
 		outf(NULL, TRUE, "number directories in group: %d",
-		  get_nr_directories(block_descriptor));
+		  get_nr_directories(block_descriptor));*/
 		block_descriptor += 32;
 	}
+finish:
+	return;
+}
+
+static void read_inode(channel_t *channel, uint8_t partition_nr,
+  uint32_t inode_nr, inode_t *inode, err_t *error)
+{
+	char buffer[512];
+	uint32_t block_group_nr = 0;
+	uint32_t block_nr = 0;
+	uint32_t inode_index = 0;
+	partition_t *partition = NULL;
+	block_group_t *block_group = NULL;
+	uint32_t inode_size = 0;
+	uint32_t block_size = 0;
+	uint32_t inode_offset = 0;
+	uint32_t block_address_inode_table = 0;
+	uint32_t sector = 0;
+	uint32_t offset = 0;
+	char *inode_start = NULL;
+
+	if ((inode_nr < 1)||(inode_nr >
+	  channel->partitions[partition_nr].nr_inodes)) {
+		TODOERROR
+	}
+
+	partition = &(channel->partitions[partition_nr]);
+
+	block_group_nr = (inode_nr - 1) /
+	  channel->partitions[partition_nr].nr_inodes_per_group;
+	inode_index = (inode_nr - 1) %
+	  channel->partitions[partition_nr].nr_inodes_per_group;
+	block_size = partition->block_size;
+	inode_size = partition->inode_size;
+	block_nr = (inode_index * inode_size) / block_size; 
+
+	block_group = &(partition->block_groups[block_group_nr]);
+	block_address_inode_table = block_group->block_address_inode_table;
+
+	inode_offset = partition->first_sector * 512;
+	inode_offset += (block_group_nr * partition->nr_blocks_per_group
+	  * partition->block_size);
+	inode_offset += (block_address_inode_table * partition->block_size);
+	inode_offset += (inode_index * inode_size);
+
+	sector = inode_offset / 512;
+	offset = inode_offset % 512;
+
+	terror(read_sector(sector, channel, buffer, error));
+	inode_start = &(buffer[offset]);
+
+finish:
+	return;
+}
+
+static void read_root_inode(channel_t *channel, uint8_t partition_nr,
+  err_t *error)
+{
+	inode_t inode;
+	terror(read_inode(channel, partition_nr, 2, &inode, error))
 finish:
 	return;
 }
@@ -547,52 +609,50 @@ finish:
 #define get_nr_blocks_per_group(superblock) (*((uint32_t *) (&superblock[32])))
 #define get_nr_inodes_per_group(superblock)  (*((uint32_t *) (&superblock[40])))
 #define get_major_version(superblock) (*((uint32_t *) (&superblock[76])))
-#define get_minor_version(superblock)(*((uint16_t *) (&superblock[62])))
+#define get_minor_version(superblock) (*((uint16_t *) (&superblock[62])))
+#define get_inode_size(superblock) (*((uint16_t *) (&superblock[88])))
 
-void read_superblock(channel_t *channel, uint32_t first_partition_sector,
-  uint8_t partition_number, err_t *error)
+static void read_superblock(channel_t *channel, uint8_t partition_nr,
+  err_t *error)
 {
-	uint32_t nr_block_groups = 0;
 	char superblock[1024];
 	char *curbuf = superblock;
-	uint32_t sector = first_partition_sector + 2;
+	uint32_t sector = channel->partitions[partition_nr].first_sector + 2;
+
 	terror(read_sector(sector, channel, curbuf, error))
 	sector++; curbuf += 512;
 	terror(read_sector(sector, channel, curbuf, error))
 	outf(NULL, TRUE, "signature: %x", superblock[56]);
-	channel->partitions[partition_number].block_size =
+	channel->partitions[partition_nr].block_size =
 	  get_block_size(superblock);
-	//outf(NULL, TRUE, "block size: %d", get_block_size(superblock));
-	channel->partitions[partition_number].nr_inodes =
+	channel->partitions[partition_nr].nr_inodes =
 	  get_nr_inodes(superblock);
-	//outf(NULL, TRUE, "number of inodes: %d", get_nr_inodes(superblock));
-	channel->partitions[partition_number].nr_blocks =
+	channel->partitions[partition_nr].nr_blocks =
 	  get_nr_blocks(superblock);
-	//outf(NULL, TRUE, "total number of blocks: %d", get_nr_blocks(superblock));
-	channel->partitions[partition_number].nr_blocks_per_group =
+	channel->partitions[partition_nr].nr_blocks_per_group =
 	  get_nr_blocks_per_group(superblock);
-	//outf(NULL, TRUE, "number of blocks per group: %d", get_nr_blocks_per_group(superblock));
-	channel->partitions[partition_number].nr_blocks_per_group =
+	channel->partitions[partition_nr].nr_inodes_per_group =
 	  get_nr_inodes_per_group(superblock);
-	//outf(NULL, TRUE, "number of inodes per block group: %d", get_nr_inodes_per_group(superblock));
-	channel->partitions[partition_number].major_version =
+	channel->partitions[partition_nr].major_version =
 	  get_major_version(superblock);
-	/*outf(NULL, TRUE, "file system version: %d.%d", get_major_version(superblock),
-		  get_minor_version(superblock));*/
-	channel->partitions[partition_number].minor_version =
+	channel->partitions[partition_nr].inode_size =
+	  (channel->partitions[partition_nr].major_version < 1) ?
+		128 : get_inode_size(superblock);
+	outf(NULL, TRUE, "inode_size: %d",
+	  channel->partitions[partition_nr].inode_size);
+	channel->partitions[partition_nr].minor_version =
 	  get_minor_version(superblock);
-	//outf(NULL, TRUE, "size inode table: %d", (get_nr_inodes_per_group(superblock) * 128));
-	nr_block_groups = (get_nr_inodes(superblock) / get_nr_inodes_per_group(superblock)) <
+	channel->partitions[partition_nr].nr_block_groups =
+		(get_nr_inodes(superblock) / get_nr_inodes_per_group(superblock)) <
 	  (get_nr_blocks(superblock) / get_nr_blocks_per_group(superblock)) ?
 	  (get_nr_inodes(superblock) / get_nr_inodes_per_group(superblock)) :
 	  (get_nr_blocks(superblock) / get_nr_blocks_per_group(superblock));
-	channel->partitions[partition_number].nr_block_groups =
-	  nr_block_groups;
-	outf(NULL, TRUE, "number of groups: %d or %d",
-	  get_nr_inodes(superblock) / get_nr_inodes_per_group(superblock),
-		get_nr_blocks(superblock) / get_nr_blocks_per_group(superblock));
-	terror(read_group_descriptor_table(channel, nr_block_groups,
-	  get_block_size(superblock), first_partition_sector, error))
+	if (channel->partitions[partition_nr].nr_block_groups > MAX_NR_BLOCK_GROUPS)
+	  {
+		TODOERROR;
+	}
+	terror(read_group_descriptor_table(channel, partition_nr, error))
+	terror(read_root_inode(channel, partition_nr, error))
 
 finish:
 	return;
@@ -600,18 +660,26 @@ finish:
 	
 #define partition_get_bootable(entry) ((uint8_t) (*((char *) entry)))
 #define partition_get_type(entry) ((uint8_t) (*(((char *) (entry)) + 4)))
-#define partition_get_first_cylinder(entry) (((((uint16_t) (*(((char *) (entry)) + 2))) & 0xc0) << 2) | ((uint8_t) (*(((char *) (entry)) + 3))))
-#define partition_get_first_head(entry) ((uint8_t) (*(((char *) (entry)) + 1)))
-#define partition_get_first_sector(entry) (((uint8_t) (*(((char *) (entry)) + 2))) & 0x3f)
-#define partition_get_last_cylinder(entry) (((((uint16_t) (*(((char *) (entry)) + 6))) & 0xc0) << 2) | ((uint8_t) (*(((char *) (entry)) + 7))))
+#define partition_get_first_cylinder(entry) (((((uint16_t) \
+  (*(((char *) (entry)) + 2))) & 0xc0) << 2) | ((uint8_t) \
+  (*(((char *) (entry)) + 3))))
+#define partition_get_first_head(entry) ((uint8_t) (*(((char *) \
+  (entry)) + 1)))
+#define partition_get_first_sector(entry) (((uint8_t) (*(((char *) \
+  (entry)) + 2))) & 0x3f)
+#define partition_get_last_cylinder(entry) (((((uint16_t) (*(((char *) \
+  (entry)) + 6))) & 0xc0) << 2) | ((uint8_t) (*(((char *) (entry)) + 7))))
 #define partition_get_last_head(entry) ((uint8_t) (*(((char *) (entry)) + 5)))
-#define partition_get_last_sector(entry) (((uint8_t) (*(((char *) (entry)) + 6))) & 0x3f)
+#define partition_get_last_sector(entry) (((uint8_t) (*(((char *) \
+  (entry)) + 6))) & 0x3f)
 
-/*#define chs2lba(ch, c, h, s) ((c * (ch)->nr_heads * (ch)->nr_sectors_per_track) + (h * (ch)->nr_sectors_per_track) + s - 1)*/
+/*#define chs2lba(ch, c, h, s) ((c * (ch)->nr_heads *
+  (ch)->nr_sectors_per_track) + (h * (ch)->nr_sectors_per_track) + s - 1)*/
 #define chs2lba(ch, c, h, s) (c * (ch)->nr_heads + h) * (ch)->nr_sectors_per_track + s - 1
 
 void read_partition_table(channel_t *channel, err_t *error)
 {
+	uint8_t partition_nr = 0;
 	char *entry_start = NULL;
 	uint32_t i = 0;
 	uint16_t cylinder = 0;
@@ -623,33 +691,35 @@ void read_partition_table(channel_t *channel, err_t *error)
 
 	for (i = 446; i < (446 + (4 * 16)); i += 16) {
 		entry_start = (char *) &(buffer[(i / 2)]);
+
+		partition_nr = ((i - 446) / 16);
+
 		if (partition_get_type(entry_start) == 0) {
+			channel->partitions[partition_nr].used = FALSE;
 			continue;
 		}
-
+		
+		channel->partitions[partition_nr].bootable =
+		  partition_get_bootable(entry_start);
+		channel->partitions[partition_nr].type =
+			partition_get_type(entry_start);
 		cylinder = (partition_get_first_cylinder(entry_start));
 		head = (partition_get_first_head(entry_start));
 		sector = (partition_get_first_sector(entry_start));
+		channel->partitions[partition_nr].first_sector =
+		  chs2lba(channel, cylinder, head, sector);
+		cylinder = partition_get_last_cylinder(entry_start);
+		head = partition_get_last_head(entry_start);
+		sector = partition_get_last_sector(entry_start);
+		channel->partitions[partition_nr].last_sector =
+			chs2lba(channel, cylinder, head, sector);
 
-
-		/*outf(NULL, TRUE, "partition: %d", ((i - 446) / 16));
-		outf(NULL, TRUE, "bootable: %x", partition_get_bootable(entry_start));
-		outf(NULL, TRUE, "type: %x", partition_get_type(entry_start));
-		outf(NULL, TRUE, "first cylinder: %x", cylinder = (partition_get_first_cylinder(entry_start)));
-		outf(NULL, TRUE, "first head: %x", head = (partition_get_first_head(entry_start)));
-		outf(NULL, TRUE, "first sector: %x", sector = (partition_get_first_sector(entry_start)));
-		outf(NULL, TRUE, "last cylinder: %x", partition_get_last_cylinder(entry_start));
-		outf(NULL, TRUE, "last head: %x", partition_get_last_head(entry_start));
-		outf(NULL, TRUE, "last sector: %x", partition_get_last_sector(entry_start));
-
-    outf(NULL, TRUE, "partition starts at sector: %d", chs2lba(channel,
-      cylinder, head, sector));*/
 		if (partition_get_type(entry_start) == 0x83) {
-			terror(read_superblock(channel, chs2lba(channel, cylinder, head, sector),
-        i, error));
+			terror(read_superblock(channel, partition_nr, error));
 		}
-	}
 
+		channel->partitions[partition_nr].used = TRUE;
+	} 
 finish:
 	return;
 }
@@ -672,7 +742,7 @@ int main()
   terror(identify(&(channels[SECONDARY][MASTER]), error))
   outf(NULL, TRUE, "IDENTIFY SECONDARY SLAVE");
   terror(identify(&(channels[SECONDARY][SLAVE]), error))
-  outf(NULL, TRUE, "now doing nothing any more");
+
 	for (i = PRIMARY; i <= SECONDARY; i++) {
 		for (j = MASTER; j <= SLAVE; j++) {
 			if (channels[i][j].controller == ATA) {
@@ -681,13 +751,7 @@ int main()
 			}
 		}
 	}
-  /*if (channels[PRIMARY][MASTER].controller == ATA) {
-    terror(show_off_drive_read(&(channels[PRIMARY][MASTER]), error));
-  } else {
-    outf(NULL, TRUE, "will NOT read");
-  }*/
 
-  //for(;;);
 finish:
   if (hasFailed(err)) {
       outf(NULL, TRUE, err2String(err));
