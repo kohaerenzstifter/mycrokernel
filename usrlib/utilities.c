@@ -15,6 +15,36 @@ uint32_t strlen(char *me)
   return result;
 }
 
+void memcpy(char *dst, char *src, uint32_t num)
+{
+	uint32_t bytes_pending = num;
+	uint32_t *src_dword = NULL;
+	uint32_t *dst_dword = NULL;
+	uint16_t *src_word = NULL;
+	uint16_t *dst_word = NULL;
+	uint8_t *src_byte = NULL;
+	uint8_t *dst_byte = NULL;
+
+	src_dword = (uint32_t *) src;
+	dst_dword = (uint32_t *) dst;
+
+	while (bytes_pending > 3) {
+		*dst_dword = *src_dword;
+		src_dword++; dst_dword++;	
+		bytes_pending -= 4;
+	}
+	src_word = (uint16_t *) src_dword;
+	dst_word = (uint16_t *) dst_word;
+	while (bytes_pending > 1) {
+		*dst_word = *src_word;
+		src_word++; dst_word++;
+		bytes_pending -= 2;
+	}
+	src_byte = (uint8_t *) src_word;
+	dst_byte = (uint8_t *) dst_word;
+	*dst_byte = *src_byte;
+}
+
 void strncpy(char *dst, char *src, int num)
 {
   int i;

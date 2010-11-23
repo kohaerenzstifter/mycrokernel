@@ -69,7 +69,38 @@
 typedef enum { NONE, UNKNOWN, ATA, ATAPI, SATA} controller_t;
 
 typedef struct _inode {
-	//TODO
+	uint16_t type_and_perms;
+	uint16_t user_id;
+	uint32_t size;
+	uint32_t last_access;
+	uint32_t last_change;
+	uint32_t last_modify_time;
+	uint32_t deletion_time;
+	uint16_t group_id;
+	uint16_t nr_hard_links;
+	uint32_t nr_disk_sectors;
+	uint32_t flags;
+	uint32_t os_specific1;
+	uint32_t direct0;
+	uint32_t direct1;
+	uint32_t direct2;
+	uint32_t direct3;
+	uint32_t direct4;
+	uint32_t direct5;
+	uint32_t direct6;
+	uint32_t direct7;
+	uint32_t direct8;
+	uint32_t direct9;
+	uint32_t direct10;
+	uint32_t direct11;
+	uint32_t singly_indirect;
+	uint32_t doubly_indirect;
+	uint32_t triply_indirect;
+	uint32_t generation_nr;
+	uint32_t special1;
+	uint32_t special2;
+	uint32_t fragment_block_addr;
+	char os_specific2[12];
 } inode_t;
 
 typedef struct _block_group {
@@ -109,7 +140,6 @@ typedef struct _channel {
 	partition_t partitions[4];
 } channel_t;
 
-//static uint16_t buffer[256];
 static channel_t *channel_selected = NULL;
 
 typedef struct _prdt_entry {
@@ -148,6 +178,9 @@ static channel_t channels[NR_PORTS][CHANNELS_PER_PORT] =
     }
   };
 
+
+static void show_inode(channel_t *channel, uint8_t partition_nr,
+  inode_t *inode, err_t *error);
 
 static void do_dma_buffer(err_t *error)
 {
@@ -428,7 +461,8 @@ finish:
   return;
 }
 
-static void read_sector(uint32_t number, channel_t *channel, void *b, err_t *error)
+static void read_sector(uint32_t number, channel_t *channel,
+  char *b, err_t *error)
 {
   uint32_t i = 0;
   uint32_t bytes = 0;
@@ -546,7 +580,6 @@ finish:
 static void read_inode(channel_t *channel, uint8_t partition_nr,
   uint32_t inode_nr, inode_t *inode, err_t *error)
 {
-	char buffer[512];
 	uint32_t block_group_nr = 0;
 	uint32_t block_nr = 0;
 	uint32_t inode_index = 0;
@@ -558,7 +591,8 @@ static void read_inode(channel_t *channel, uint8_t partition_nr,
 	uint32_t block_address_inode_table = 0;
 	uint32_t sector = 0;
 	uint32_t offset = 0;
-	char *inode_start = NULL;
+	char buffer[512];
+	inode_t *in = NULL;
 
 	if ((inode_nr < 1)||(inode_nr >
 	  channel->partitions[partition_nr].nr_inodes)) {
@@ -588,8 +622,120 @@ static void read_inode(channel_t *channel, uint8_t partition_nr,
 	offset = inode_offset % 512;
 
 	terror(read_sector(sector, channel, buffer, error));
-	inode_start = &(buffer[offset]);
+	in = ((inode_t *) (&(buffer[offset])));
 
+	memcpy(inode, in, sizeof(inode_t));
+
+finish:
+	return;
+}
+
+static void do_direct_directory(channel_t *channel, uint8_t partition_nr,
+  char *block, err_t *error)
+{
+	uint16_t size = 0;
+	uint16_t *size_addr = NULL;
+	char *cur = NULL;
+	inode_t inode;
+	uint32_t inode_nr = 0;
+
+	//TODO: termination condition?
+	for (cur = block; cur < &(block[1024]);) {
+		size_addr = &(cur[4]); 
+		if (size_addr > &(block[1023])) {
+			goto finish;
+		}
+
+		outf(NULL, TRUE, "entry:");
+		outf(NULL, TRUE, &(cur[8]));
+
+		inode_nr = *((uint32_t *) cur);
+
+		/*terror(read_inode(channel, partition_nr, inode_nr, &inode, error))
+		terror(show_inode(channel, partition_nr, &inode, error))*/
+
+		size = *size_addr;
+		cur += size;
+	}
+finish:
+	return;
+}
+
+static void do_indirect_directory(channel_t *channel, uint8_t partition_nr,
+  uint32_t block_nr, uint8_t indirection_level, err_t *error)
+{
+	char block[1024];
+	char *cur = NULL;
+	uint32_t block_size = channel->partitions[partition_nr].block_size;
+	uint32_t byte_offset = block_nr * block_size;
+	uint32_t sector_nr = byte_offset / 512;
+	sector_nr += channel->partitions[partition_nr].first_sector;
+	uint32_t *indirect = NULL;
+
+	if (block_size != 1024) {
+		TODOERROR
+	}
+
+	cur = block;
+	terror(read_sector(sector_nr, channel, cur, error))
+	cur += 512;
+	terror(read_sector(sector_nr, channel, cur, error))
+	if (indirection_level < 1) {
+		terror(do_direct_directory(channel, partition_nr, block, error))
+	} else {
+		for (indirect = &(block[0]); indirect < &(block[1024]); indirect++) {
+			if ((*indirect) == 0) {
+				goto finish;
+			}
+			terror(do_indirect_directory(channel, partition_nr, (*indirect),
+			  (indirection_level - 1), error))
+		}
+	}
+finish:
+	return;
+}
+
+static void read_directory(channel_t *channel, uint8_t partition_nr,
+  inode_t *inode, err_t *error)
+{
+	uint32_t *direct = NULL;
+	for (direct = &(inode->direct0); direct <= &(inode->direct11);
+	  direct++) {
+		if ((*direct) == 0) {
+			goto finish;
+		}
+		terror(do_indirect_directory(channel, partition_nr, (*direct), 0, error))
+	}
+	if (inode->singly_indirect == 0) {
+		goto finish;
+	}
+	terror(do_indirect_directory(channel, partition_nr, inode->singly_indirect,
+	  1, error))
+	if (inode->doubly_indirect == 0) {
+		goto finish;
+	}
+	terror(do_indirect_directory(channel, partition_nr, inode->doubly_indirect,
+	  2, error))
+	if (inode->triply_indirect == 0) {
+		goto finish;
+	}
+	terror(do_indirect_directory(channel, partition_nr, inode->triply_indirect,
+	  3, error))
+finish:
+	return;
+}
+
+#define DIRECTORY 0x4000
+
+static void show_inode(channel_t *channel, uint8_t partition_nr,
+  inode_t *inode, err_t *error)
+{
+	if (inode->type_and_perms & DIRECTORY) {
+		outf(NULL, TRUE, "opening directory");
+		terror(read_directory(channel, partition_nr, inode, error))
+	} else {
+		outf(NULL, TRUE, "type of inode is %x", inode->type_and_perms);
+	}
 finish:
 	return;
 }
@@ -599,6 +745,7 @@ static void read_root_inode(channel_t *channel, uint8_t partition_nr,
 {
 	inode_t inode;
 	terror(read_inode(channel, partition_nr, 2, &inode, error))
+	terror(show_inode(channel, partition_nr, &inode, error))
 finish:
 	return;
 }
@@ -638,8 +785,6 @@ static void read_superblock(channel_t *channel, uint8_t partition_nr,
 	channel->partitions[partition_nr].inode_size =
 	  (channel->partitions[partition_nr].major_version < 1) ?
 		128 : get_inode_size(superblock);
-	outf(NULL, TRUE, "inode_size: %d",
-	  channel->partitions[partition_nr].inode_size);
 	channel->partitions[partition_nr].minor_version =
 	  get_minor_version(superblock);
 	channel->partitions[partition_nr].nr_block_groups =
