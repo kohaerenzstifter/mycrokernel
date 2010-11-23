@@ -6,5 +6,6 @@ uint32_t strlen(char *me);
 char *err2String(err_t errnum);
 void strncpy(char *dst, char *src, int num);
 boolean_t streq(char *a, char *b);
+void memcpy(char *dst, char *src, uint32_t num);
 
 #endif
