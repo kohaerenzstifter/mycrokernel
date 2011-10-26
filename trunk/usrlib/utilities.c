@@ -4,16 +4,6 @@
 
 #include "syscall.h"
 
-uint32_t strlen(char *me)
-{
-  char *cur = me;
-  uint32_t result = 0;
-  while (*cur != '\0') {
-    cur++;
-    result++;
-  }
-  return result;
-}
 
 void memcpy(char *dst, char *src, uint32_t num)
 {
@@ -43,6 +33,17 @@ void memcpy(char *dst, char *src, uint32_t num)
 	src_byte = (uint8_t *) src_word;
 	dst_byte = (uint8_t *) dst_word;
 	*dst_byte = *src_byte;
+}
+
+uint32_t stringLength(char *me)
+{
+  char *cur = me;
+  uint32_t result = 0;
+  while (*cur != '\0') {
+    cur++;
+    result++;
+  }
+  return result;
 }
 
 void strncpy(char *dst, char *src, int num)
@@ -183,7 +184,7 @@ void outf(err_t *error, boolean_t block, char *fmt, ...)
       sval = va_arg(vl, int32_t);
       hex2String(sval, buf, sizeof(buf));
     }
-    len = strlen(buf);
+    len = stringLength(buf);
 
     if (len >= (sizeof(msg) - idx)) {
       msg[idx] = '\0';

@@ -37,6 +37,8 @@ static //global variables go here
 
   #include("exceptions.hhf");
 
+  in_kernel: dword; @external;
+
   hours: dword; @external;
   minutes: byte; @external;
   seconds: byte; @external;

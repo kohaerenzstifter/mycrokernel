@@ -65,6 +65,8 @@ static //global variables go here
   align(4);
   counter2: byte;
   align(4);
+  in_kernel: dword;
+  align(4);
   hours: dword;
   align(4);
   minutes: byte;
