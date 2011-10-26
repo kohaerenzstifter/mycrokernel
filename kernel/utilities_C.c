@@ -938,6 +938,7 @@ void do_exception(uint32_t number, uint32_t error)
   kputstring("curptr->eip: (hex)"); kputhex(curptr->eip_reg); kputchar(LF);
   kputstring("curptr->esp: "); kputunsint(curptr->esp_reg); kputchar(LF);
   kputstring("curptr->esp: (hex)"); kputhex(curptr->esp_reg); kputchar(LF);
+  kputstring("in_kernel: "); kputhex(in_kernel); kputchar(LF);
   show_queue();
   halt();
 }

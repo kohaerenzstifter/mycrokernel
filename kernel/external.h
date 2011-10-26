@@ -4,6 +4,7 @@
 #include "const.h"
 #include "types.h"
 
+extern unsigned in_kernel;
 extern unsigned hours;
 extern unsigned char minutes;
 extern unsigned char seconds;

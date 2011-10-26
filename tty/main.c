@@ -29,6 +29,7 @@ typedef struct _keymap {
   void *args;
 } keymap_t;
 
+
 static void puthex(uint32_t what, boolean_t tty)
 {
   uint32_t val = 0;
@@ -105,7 +106,7 @@ static void enter_pressed(uint32_t no_args, void *address)
 {
   putcharacter(LF);
   call_syscall_send_by_feature(FEATURE_CMD, snd_buffer,
-    strlen(snd_buffer) + 1, FALSE, NULL);
+    stringLength(snd_buffer) + 1, FALSE, NULL);
   flush();
 }
 
@@ -193,12 +194,14 @@ static void process_message(char *buffer, uint32_t bytes)
   putcharacter(LF);
 }
 
+
+
 static void alt_pressed(uint32_t no_args, void *address)
 {
   char *message = "I am a sudden message";
   tty_putcharacter(LF);
   putstring("faking sudden message", TRUE);
-  process_message(message, strlen(message) + 1);
+  process_message(message, stringLength(message) + 1);
 }
 
 static keymap_t km[183][2] =
