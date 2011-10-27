@@ -35,7 +35,7 @@ void memcpy(char *dst, char *src, uint32_t num)
 	*dst_byte = *src_byte;
 }
 
-uint32_t stringLength(char *me)
+uint32_t strlen(char *me)
 {
   char *cur = me;
   uint32_t result = 0;
@@ -184,7 +184,7 @@ void outf(err_t *error, boolean_t block, char *fmt, ...)
       sval = va_arg(vl, int32_t);
       hex2String(sval, buf, sizeof(buf));
     }
-    len = stringLength(buf);
+    len = strlen(buf);
 
     if (len >= (sizeof(msg) - idx)) {
       msg[idx] = '\0';

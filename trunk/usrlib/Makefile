@@ -17,7 +17,7 @@ all-stamp: $(URSLIB_HLA_OBJ) $(URSLIB_C_OBJ)
 	objdump --disassemble-all -S $@ > $*.objdump
 
 %.o: %.c Makefile $(C_HEADERS)
-	cc -m32 -Wall -fno-stack-protector -fno-leading-underscore -c $<
+	cc -fno-builtin -m32 -Wall -fno-stack-protector -fno-leading-underscore -c $<
 	objdump --disassemble-all -S $@ > $*.objdump
 clean:
 	-rm *.o *~ all-stamp
