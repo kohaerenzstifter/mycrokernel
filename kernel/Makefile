@@ -36,7 +36,7 @@ all: kernel.bin
 	objdump --disassemble-all -S $@ > $*.objdump
 
 %.o: %.c Makefile $(C_HEADERS)
-	cc -m32 -Wall -fno-leading-underscore -c $<
+	cc -fno-builtin -m32 -Wall -fno-leading-underscore -c $<
 	objdump --disassemble-all -S $@ > $*.objdump
 
 kernel.bin: ../usrlib/all-stamp $(KERNEL_OBJ) Makefile

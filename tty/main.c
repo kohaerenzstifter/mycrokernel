@@ -106,7 +106,7 @@ static void enter_pressed(uint32_t no_args, void *address)
 {
   putcharacter(LF);
   call_syscall_send_by_feature(FEATURE_CMD, snd_buffer,
-    stringLength(snd_buffer) + 1, FALSE, NULL);
+    strlen(snd_buffer) + 1, FALSE, NULL);
   flush();
 }
 
@@ -201,7 +201,7 @@ static void alt_pressed(uint32_t no_args, void *address)
   char *message = "I am a sudden message";
   tty_putcharacter(LF);
   putstring("faking sudden message", TRUE);
-  process_message(message, stringLength(message) + 1);
+  process_message(message, strlen(message) + 1);
 }
 
 static keymap_t km[183][2] =

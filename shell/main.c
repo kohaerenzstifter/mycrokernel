@@ -5,12 +5,12 @@
 
 static void main_loop(err_t *error)
 {
-  char buffer[MAX_MSG_SIZE] = "jjj";
+  char buffer[MAX_MSG_SIZE];
   uint32_t bytes = 0;
 
   for(;;) {
     terror(bytes = call_syscall_receive(ANYPROC, buffer, sizeof(buffer), error))
-    outf(error, TRUE, "got message containing %u characters", stringLength(buffer));
+    outf(error, TRUE, "got message containing %u characters", strlen(buffer));
   }
 finish:
   return;

@@ -27,7 +27,7 @@ shell.bin: $(SHELL_OBJ) ../usrlib/all-stamp Makefile
 	objdump --disassemble-all -S $@ > $*.objdump
 
 %.o: %.c Makefile $(C_HEADERS)
-	cc -m32 -Wall -fno-stack-protector -fno-leading-underscore -c $<
+	cc -fno-builtin -m32 -Wall -fno-stack-protector -fno-leading-underscore -c $<
 	objdump --disassemble-all -S $*.o > $*.objdump
 
 
