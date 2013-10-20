@@ -45,7 +45,7 @@ begin idle_task;
   endfor;
 end idle_task;
 
-procedure _write_tss_desc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; busy: dword; granularity: dword);
+procedure _write_tss_desc(index: dword; limit: dword; base: dword; present: dword; busy: dword; granularity: dword);
 begin _write_tss_desc;
   push(eax);
   push(ebx);
@@ -76,7 +76,7 @@ begin _write_tss_desc;
   fseg: mov(bl,(type segdesc_t [eax]).base2);
   fseg: mov(bh,(type segdesc_t [eax]).base3);
 
-  mov(privilege,ebx);
+  mov(0,ebx); //0 is the privilege level necessary to access *any* tss segments!
   shl(5,ebx);
   mov(busy,edx);
   shl(1,edx);
@@ -555,7 +555,7 @@ end write_segment_desc;
 procedure write_tss_desc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; busy: dword; granularity: dword); @cdecl; @external;
 procedure write_tss_desc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; busy: dword; granularity: dword);
 begin write_tss_desc;
-  _write_tss_desc(index, limit, base, present, privilege, busy, granularity);
+  _write_tss_desc(index, limit, base, present, busy, granularity);
 end write_tss_desc;
 
 end Utilities;

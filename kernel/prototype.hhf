@@ -31,7 +31,7 @@ procedure _kputunsint(what: dword); @external;
 procedure _kputsint(what: dword); @external;
 procedure _kscrollscreen; @external;
 procedure _kmove_cursor; @external;
-procedure _write_tss_desc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; busy: dword; granularity: dword); @external;
+procedure _write_tss_desc(index: dword; limit: dword; base: dword; present: dword; busy: dword; granularity: dword); @external;
 procedure _write_segment_desc(index: dword; limit: dword; base: dword; present: dword; privilege: dword; _type: dword; granularity: dword); @external;
 procedure _create_process(privilege: dword; schedticks: dword; start: dword; csegmBase: dword; dsegmBase:dword; esegmBase: dword; fsegmBase: dword; gsegmBase: dword; ssegmBase: dword; csegmLimit: dword; dsegmLimit:dword; esegmLimit: dword; fsegmLimit: dword; gsegmLimit: dword; ssegmLimit: dword; procname: string); @returns("eax"); @external;
 procedure _unfree_gdt_idx(what: dword); @external;

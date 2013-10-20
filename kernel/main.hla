@@ -228,19 +228,19 @@ begin start;
   This function also marks the respective
   entries in gdtBitmap as "in use".*/
 
-  _write_tss_desc(IDX_KERNELTSS*@size(segdesc_t),104,&kernelstate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  _write_tss_desc(IDX_KERNELTSS*@size(segdesc_t),104,&kernelstate+KERNEL_BASE,TRUE,FALSE,BYTE_GRANULARITY);
 
-  _write_tss_desc(IDX_IDLETASKTSS*@size(segdesc_t),104,&idlestate+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  _write_tss_desc(IDX_IDLETASKTSS*@size(segdesc_t),104,&idlestate+KERNEL_BASE,TRUE,FALSE,BYTE_GRANULARITY);
 
 #macro intrrpt_write_tss(string _x_);
-  _write_tss_desc(@text("IDX_INTERRUPT"+_x_+"*@size(segdesc_t)"),104,&@text("intrrpt" + _x_ + "state")+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  _write_tss_desc(@text("IDX_INTERRUPT"+_x_+"*@size(segdesc_t)"),104,&@text("intrrpt" + _x_ + "state")+KERNEL_BASE,TRUE,FALSE,BYTE_GRANULARITY);
 #endmacro
 ?@tostring:intrrpt:text := "intrrpt_write_tss";
 
  #include("interrupts.hhf");
 
 #macro exceptn_write_tss(string _x_);
-  _write_tss_desc(@text("IDX_EXCEPTION"+_x_+"*@size(segdesc_t)"),104,&@text("exceptn" + _x_ + "state")+KERNEL_BASE,TRUE,0,FALSE,BYTE_GRANULARITY);
+  _write_tss_desc(@text("IDX_EXCEPTION"+_x_+"*@size(segdesc_t)"),104,&@text("exceptn" + _x_ + "state")+KERNEL_BASE,TRUE,FALSE,BYTE_GRANULARITY);
 #endmacro
 ?@tostring:exceptn:text := "exceptn_write_tss";
 
