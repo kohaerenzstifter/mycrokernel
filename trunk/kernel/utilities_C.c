@@ -1119,7 +1119,7 @@ tss_t *create_process(uint32_t privilege, uint32_t schedticks, uint32_t start,
   if (tssIdx == INVALID_GDT_IDX) {
     goto finish;
   }
-  write_tss_desc(tssIdx, sizeof(tss_t), KERNEL_BASE + (uint32_t ) process, TRUE, privilege, TRUE, BYTE_GRANULARITY);
+  write_tss_desc(tssIdx, sizeof(tss_t), KERNEL_BASE + (uint32_t ) process, TRUE, TRUE, BYTE_GRANULARITY);
 
   process->idx_tss = tssIdx;
   process->schedticks = schedticks;

@@ -9,7 +9,7 @@ uint32_t get_free_gdt_idx(void);
 void write_segment_desc(uint32_t index, uint32_t limit, uint32_t base,
   uint32_t present, uint32_t privilege, uint32_t type, uint32_t granularity);
 void write_tss_desc(uint32_t index, uint32_t limit, uint32_t base,
-  uint32_t present, uint32_t privilege, uint32_t busy, uint32_t granularity);
+  uint32_t present, uint32_t busy, uint32_t granularity);
 
 void kputsint(uint32_t what);
 void kputhex(uint32_t what);
