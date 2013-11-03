@@ -164,8 +164,43 @@ void uptime()
   kputchar(LF);
 }
 
-//TODO
-#define lastNeighBoursValid(p) FALSE
+#define processEligibleFirst(p) \
+  ((schedqueue.head == NULL) ? \
+    FALSE : \
+  (schedqueue.head->schedticks <= p->schedticks))
+
+#define processEligibleLast(p) \
+  ((p->previous == NULL) ? \
+    FALSE : \
+  (!(p->previous->misc & ENQUEUED)) ? \
+    FALSE : \
+  (p->previous->next == NULL))
+
+#define previousValid(p) \
+  ((p->previous == NULL) ? \
+    processEligibleFirst(p) : \
+  (!(p->previous->misc & ENQUEUED)) ? \
+    FALSE : \
+  (p->previous->next != p->next) ? \
+    FALSE : \
+  (p->previous->schedticks >= p->schedticks))
+
+#define nextValid(p) \
+  ((p->next == NULL) ? \
+    processEligibleLast(p) : \
+  (!(p->next->misc & ENQUEUED)) ? \
+    FALSE : \
+  (p->next->previous != p->previous) ? \
+    FALSE : \
+  (p->next->schedticks <= p->schedticks))
+
+#define lastNeighboursValid(p) \
+  (((p->previous == NULL)&&(p->next == NULL)) ? \
+    FALSE : \
+  (!previousValid(p)) ? \
+    FALSE : \
+  (nextValid(p)))
+
 
 void enqueue(tss_t *process)
 {
@@ -176,9 +211,11 @@ void enqueue(tss_t *process)
   }
   process->misc |= ENQUEUED;
   tss_t **cur;
-  if (lastNeighBoursValid(process)) {
+  if (lastNeighboursValid(process)) {
     if (process->previous != NULL) {
       process->previous->next = process;
+    } else {
+      schedqueue.head = process;
     }
     if (process->next != NULL) {
       process->next->previous = process;

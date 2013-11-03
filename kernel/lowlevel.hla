@@ -211,6 +211,7 @@ begin _create_process;
   push(esi);
   pushfd();
   mov(privilege,esi);
+  mov(0,esi);
   zerify(edi);
   forever
     mov(pproctab[edi],ebx);
