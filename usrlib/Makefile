@@ -20,4 +20,5 @@ all-stamp: $(URSLIB_HLA_OBJ) $(URSLIB_C_OBJ)
 	cc -fno-builtin -m32 -Wall -fno-stack-protector -fno-leading-underscore -c $<
 	objdump --disassemble-all -S $@ > $*.objdump
 clean:
+	rm -rf *.objdump
 	-rm *.o *~ all-stamp

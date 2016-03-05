@@ -44,4 +44,5 @@ shell/shell.bin:
 hd/hd.bin:
 	cd hd && make hd.bin
 clean:
+	rm -rf bootdisk.bin image
 	cd boot && make clean && cd ../kernel && make clean && cd ../tty && make clean && cd ../shell && make clean && cd ../hd && make clean && cd ../usrlib && make clean
