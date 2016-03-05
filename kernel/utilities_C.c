@@ -1214,3 +1214,10 @@ finish:
   }
   return result;
 }
+
+void busy_pause(void)
+{
+	int i = 0;
+
+	for (i = 0; i < 100000000; i++);
+}

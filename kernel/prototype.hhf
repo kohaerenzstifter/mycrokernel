@@ -3,7 +3,7 @@
 #includeonce("types.hhf")
 
 //routines for use in C and HLA
-procedure myFunc; @external;
+procedure busy_pause; @external;
 procedure disable_interrupts; @external;
 procedure enable_interrupts; @external;
 procedure halt; @external;

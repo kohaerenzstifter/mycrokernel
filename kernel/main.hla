@@ -58,6 +58,9 @@ begin do_mem;
   mov(pass,esi);			//esi=pointer to memory map (preceded by number of memory regions found)
   fseg: mov([esi],eax);		//eax=number of memory regions found
   add(4,esi); //esi is now base of memory segments passed w/o the number of them
+  _kputstring("BIOS has identified "); _kputunsint(eax); _kputstring(" memory regions:");
+  _kputchar(LF);
+  _kputchar(LF);
   if (eax>MAX_MEM_AREAS) then
     mov(MAX_MEM_AREAS,eax);		//We can only take so many
   endif;					//memory regions into account
@@ -68,8 +71,6 @@ begin do_mem;
   mov(&memory,edi);					//the memory map
   cld();							//into our address
   fseg: rep.movsd();					//space
-  _kputstring("Following memory regions identified by BIOS:");
-  _kputchar(LF);	
   mul(@size(dword),eax);					//Now let's
   zerify(edx);						//show the
   while(edx<eax) do					//user all
@@ -80,7 +81,13 @@ begin do_mem;
     _kputhex(memory.l[edx]);				//map
     _kputchar(TAB);
     _kputstring("Type: ");
-    _kputhex(memory.t[edx]);
+    if (memory.t[edx] = RAM) then
+      _kputstring("FREE");
+    elseif (memory.t[edx] = RESERVED) then
+      _kputstring("RESERVED");
+    else
+      _kputhex(memory.t[edx]);
+    endif;
     _kputchar(LF);
     add(@size(memdesc_t),edx);
   endwhile;
@@ -107,9 +114,16 @@ begin do_mem;
   sub(SIZE_RMIVT+SIZE_BDA+512+SIZE_GDT+SIZE_IDT,ebx); //ebx now contains size of memory available for kernel
 
   _kputchar(LF);
+  _kputstring("Size of bootstrapper (512.asm)     : "); _kputhex(512); _kputchar(LF);
+  _kputstring("Size of Interrupt Descriptor Table : "); _kputhex(SIZE_RMIVT); _kputchar(LF);
+  _kputstring("Size of BIOS Data Area             : "); _kputhex(SIZE_BDA); _kputchar(LF);
+  _kputstring("Size of Global Descriptor Table    : "); _kputhex(SIZE_GDT); _kputchar(LF);
+  _kputstring("Size of Interrupt Descriptor Table : "); _kputhex(SIZE_IDT); _kputchar(LF);
+
   _kputchar(LF);
-  _kputstring("Memory available for kernel: ");
+  _kputstring("===================> Memory available for kernel: ");
   _kputhex(ebx);
+  _kputstring(" <===================");
   _kputchar(LF);
 
   /*Now that we actually know how much space there is left for the kernel
@@ -166,10 +180,10 @@ begin start;
   mov(pass,eax);	//eax=pointer to the data passed over
 
   add(@size(uns16), eax); //42 (mycromagic)!
-
+  busy_pause();
+   _kcls();
   fseg: mov([eax], bx);
   movzx(bx,ebx);
-  _kputstring("noMemsegs: "); _kputunsint(ebx); _kputchar(LF);
 
   fseg: mov((type DTdesc_t [eax]).limit,bx);	//We copy the
   mov(bx,gdt.limit);				//global descriptor table
@@ -177,7 +191,6 @@ begin start;
   mov(ebx,gdt.base);				//it more easily
 
   add(@size(DTdesc_t),eax);		//eax=pointer to memory map (preceded by number of memory regions found)
-  _kcls();
 
   fseg: mov([eax],ebx);
   mov(ebx,kernel_size);
@@ -204,9 +217,9 @@ begin start;
   mov(ebx, idlestate.ebp_reg);
 
   do_mem(eax);				//Make sense of data found in memory map and adjust gdt accordingly
-
   _kmove_cursor();
-  _kcls();
+  busy_pause();
+
   init_port_accessers();
 
   /*The following entries in the gdt are
@@ -291,16 +304,6 @@ begin start;
   ltreg(ax);
   init_clock(CLOCK_DIVIDER);
 
-  _kputstring("This is HL-OS. Known commands are:");
-  _kputchar(LF);
-  _kputstring("1) say {something}+");
-  _kputchar(LF);
-  _kputstring("2) cls");
-  _kputchar(LF);
-  _kputstring("3) uptime");
-  _kputchar(LF);
-  _kputchar(LF);
-
   zerify(edx);
   mov(kernel_size,eax);
 
@@ -310,16 +313,29 @@ begin start;
   //backup address of video.bin in ebx
   mov(eax,ebx);
 
+  _kputstring("Creating display driver process at address: "); _kputhex(ebx); _kputstring(" ... "); _kputchar(LF);
   _create_process(3,1,0,ebx,ebx,ebx,ebx,$b8000,ebx, @text(@env("_VIDEO_SIZE")),@text(@env("_VIDEO_SIZE")),@text(@env("_VIDEO_SIZE")),@text(@env("_VIDEO_SIZE")), 4096,@text(@env("_VIDEO_SIZE")),"tty");
+  _kputstring("Adding display driver process to the run queue ..."); _kputchar(LF);
   _enqueue(eax);
 
   add(@text(@env("_VIDEO_SIZE")), ebx);
+  _kputstring("Creating shell process at address: "); _kputhex(ebx); _kputstring(" ... "); _kputchar(LF);
   _create_process(3,1,0,ebx,ebx,ebx,ebx,ebx,ebx, @text(@env("_SHELL_SIZE")),@text(@env("_SHELL_SIZE")),@text(@env("_SHELL_SIZE")),@text(@env("_SHELL_SIZE")), @text(@env("_SHELL_SIZE")),@text(@env("_SHELL_SIZE")),"shell");
+  _kputstring("Adding shell process to the run queue ..."); _kputchar(LF);
   _enqueue(eax);
 
   add(@text(@env("_SHELL_SIZE")), ebx);
+  _kputstring("Creating IDE driver process at address: "); _kputhex(ebx); _kputstring(" ... "); _kputchar(LF);
   _create_process(3,1,0,ebx,ebx,ebx,ebx,ebx,ebx, @text(@env("_HD_SIZE")),@text(@env("_HD_SIZE")),@text(@env("_HD_SIZE")),@text(@env("_HD_SIZE")), @text(@env("_HD_SIZE")),@text(@env("_HD_SIZE")),"hd");
+  _kputstring("Adding IDE driver process to the run queue ..."); _kputchar(LF);
   _enqueue(eax);
+
+  busy_pause();
+
+  _kputchar(LF);
+  _kputstring("Will now enable interrupts and yield control to the process scheduler ...");
+
+  busy_pause();
 
   sti;
 here:	hlt;

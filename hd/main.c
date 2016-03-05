@@ -261,7 +261,7 @@ finish:
   return;
 }
 
-static void identify(channel_t *channel, err_t *error)
+static void identify(int port, int ch, err_t *error)
 {
   controller_t suspect = UNKNOWN;
   uint32_t value = 0;
@@ -269,10 +269,10 @@ static void identify(channel_t *channel, err_t *error)
   uint32_t high = 0;
   boolean_t jump = FALSE;
 	uint16_t buffer[256];
+  channel_t *channel = &(channels[port][ch]);
 
   void do_ATA(err_t *error) {
     int i = 0;
-    outf(NULL, TRUE, "do_ATA()");
     for (i = 0; i < 256; i++) {
       terror(buffer[i] = call_syscall_inw(get_port_base(channel) | PORT_DATA, error))
     }
@@ -280,26 +280,27 @@ static void identify(channel_t *channel, err_t *error)
     channel->lba_sectors = buffer[61];
     channel->lba_sectors <<= 16;
     channel->lba_sectors |= buffer[60];
-		channel->nr_heads = buffer[3];
-		channel->nr_sectors_per_track = buffer[6];
+	channel->nr_heads = buffer[3];
+	channel->nr_sectors_per_track = buffer[6];
 
-    /*outf(NULL, TRUE, "physikalische Zahl der Zylinder: %u", buffer[0]);
-    outf(NULL, TRUE, "Zahl der Koepfe: %u", buffer[3]);
-    outf(NULL, TRUE, "Zahl der unformatierten Bytes je physikalischer Spur: %u", buffer[4]);
-    outf(NULL, TRUE, "Zahl der unformatierten Bytes je Sektor: %u", buffer[5]);
-    outf(NULL, TRUE, "Zahl der physikalischen Sektoren je Spur: %u", buffer[6]);
-    outf(NULL, TRUE, "Puffertyp: %u", buffer[20]);
-    outf(NULL, TRUE, "Puffergroesse/512: %u", buffer[21]);
-    outf(NULL, TRUE, "Zahl der ECC-Bytes, die bei Befehlen Schreib/Lies-Lang uebergeben werden: %u", buffer[22]);
-    outf(NULL, TRUE, "Anzahl der Sektoren zwischen zwei Interrupts: %u", buffer[47]);
-    outf(NULL, TRUE, "logische Zahl der Zylinder: %u", buffer[54]);
-    outf(NULL, TRUE, "logische Zahl der Köpfe: %u", buffer[55]);
-    outf(NULL, TRUE, "logische Zahl der Sektoren je Spur: %u", buffer[56]);
+    outf(NULL, TRUE, "Number of physical cylinders: %u", buffer[0]);
+    outf(NULL, TRUE, "Number of heads: %u", buffer[3]);
+    //outf(NULL, TRUE, "Zahl der unformatierten Bytes je physikalischer Spur: %u", buffer[4]);
+    //outf(NULL, TRUE, "Zahl der unformatierten Bytes je Sektor: %u", buffer[5]);
+    //outf(NULL, TRUE, "Zahl der physikalischen Sektoren je Spur: %u", buffer[6]);
+    //outf(NULL, TRUE, "Puffertyp: %u", buffer[20]);
+    //outf(NULL, TRUE, "Puffergroesse/512: %u", buffer[21]);
+    //outf(NULL, TRUE, "Zahl der ECC-Bytes, die bei Befehlen Schreib/Lies-Lang uebergeben werden: %u", buffer[22]);
+    //outf(NULL, TRUE, "Anzahl der Sektoren zwischen zwei Interrupts: %u", buffer[47]);
+    outf(NULL, TRUE, "Number of logical cylinders: %u", buffer[54]);
+    outf(NULL, TRUE, "Number of logical heads: %u", buffer[55]);
+    outf(NULL, TRUE, "Number of logical sectors per track: %u", buffer[56]);
     uint32_t dword = buffer[58];
     dword <<= 16;
     dword |= buffer[57];
-    outf(NULL, TRUE, "Bytes je logischem Sektor: %u", dword);
-    outf(NULL, TRUE, "Anzahl Sektoren im LBA-Modus: %u", channel->lba_sectors);*/
+    outf(NULL, TRUE, "Bytes per logical sector: %u", dword);
+    outf(NULL, TRUE, "Number of sectors in LBA mode: %u", channel->lba_sectors);
+	outf(NULL, TRUE, "");
 finish:
     return;
   }
@@ -364,6 +365,8 @@ carryOn:
 
   if (suspect == ATA) {
     if (value & BIT_DRQ) {
+	  outf(NULL, TRUE, "Detected ATA drive on port %x channel %x:");
+	  outf(NULL, TRUE, "");
       terror(do_ATA(error))
       channel->controller = ATA;
       goto finish;
@@ -384,9 +387,9 @@ carryOn:
  
 finish:
   if (channel->controller == NONE) {
-    outf(NULL, TRUE, "NO DRIVE PRESENT");
+    //outf(NULL, TRUE, "NO DRIVE PRESENT");
   } else if (channel->controller == UNKNOWN) {
-    outf(NULL, TRUE, "UNKNOWN CONTROLLER");
+    //outf(NULL, TRUE, "UNKNOWN CONTROLLER");
   } else if (!hasFailed(error)) {
     if (is_primary(channel)) {
       call_syscall_request_irq(14, error);
@@ -646,7 +649,7 @@ static void do_direct_directory(channel_t *channel, uint8_t partition_nr,
 			goto finish;
 		}
 
-		outf(NULL, TRUE, "entry:");
+		outf(NULL, TRUE, "Found entry:");
 		outf(NULL, TRUE, &(cur[8]));
 
 		inode_nr = *((uint32_t *) cur);
@@ -731,7 +734,7 @@ static void show_inode(channel_t *channel, uint8_t partition_nr,
   inode_t *inode, err_t *error)
 {
 	if (inode->type_and_perms & DIRECTORY) {
-		outf(NULL, TRUE, "opening directory");
+		outf(NULL, TRUE, "Reading directory");
 		terror(read_directory(channel, partition_nr, inode, error))
 	} else {
 		outf(NULL, TRUE, "type of inode is %x", inode->type_and_perms);
@@ -744,6 +747,7 @@ static void read_root_inode(channel_t *channel, uint8_t partition_nr,
   err_t *error)
 {
 	inode_t inode;
+	outf(NULL, TRUE, "Reading root inode ...");
 	terror(read_inode(channel, partition_nr, 2, &inode, error))
 	terror(show_inode(channel, partition_nr, &inode, error))
 finish:
@@ -769,7 +773,7 @@ static void read_superblock(channel_t *channel, uint8_t partition_nr,
 	terror(read_sector(sector, channel, curbuf, error))
 	sector++; curbuf += 512;
 	terror(read_sector(sector, channel, curbuf, error))
-	outf(NULL, TRUE, "signature: %x", superblock[56]);
+	outf(NULL, TRUE, "Suberblock signature: %x", superblock[56]);
 	channel->partitions[partition_nr].block_size =
 	  get_block_size(superblock);
 	channel->partitions[partition_nr].nr_inodes =
@@ -843,7 +847,7 @@ void read_partition_table(channel_t *channel, err_t *error)
 			channel->partitions[partition_nr].used = FALSE;
 			continue;
 		}
-		
+		outf(NULL, TRUE, "Partition %u in use ...", partition_nr);
 		channel->partitions[partition_nr].bootable =
 		  partition_get_bootable(entry_start);
 		channel->partitions[partition_nr].type =
@@ -864,7 +868,8 @@ void read_partition_table(channel_t *channel, err_t *error)
 		}
 
 		channel->partitions[partition_nr].used = TRUE;
-	} 
+	}
+	outf(NULL, TRUE, "");
 finish:
 	return;
 }
@@ -879,19 +884,15 @@ int main()
 //  terror(do_prdt(error));
   terror(claim_ports(error))
 
-  outf(NULL, TRUE, "IDENTIFY PRIMARY MASTER");
-  terror(identify(&(channels[PRIMARY][MASTER]), error))
-  outf(NULL, TRUE, "IDENTIFY PRIMARY SLAVE");
-  terror(identify(&(channels[PRIMARY][SLAVE]), error))
-  outf(NULL, TRUE, "IDENTIFY SECONDARY MASTER");
-  terror(identify(&(channels[SECONDARY][MASTER]), error))
-  outf(NULL, TRUE, "IDENTIFY SECONDARY SLAVE");
-  terror(identify(&(channels[SECONDARY][SLAVE]), error))
+  terror(identify(PRIMARY, MASTER, error))
+  terror(identify(PRIMARY, SLAVE, error))
+  terror(identify(SECONDARY, MASTER, error))
+  terror(identify(SECONDARY, SLAVE, error))
 
 	for (i = PRIMARY; i <= SECONDARY; i++) {
 		for (j = MASTER; j <= SLAVE; j++) {
 			if (channels[i][j].controller == ATA) {
-				outf(NULL, TRUE, "reading partition table of channel[%d][%d]", i, j);
+				outf(NULL, TRUE, "Reading partition table of channel[%d][%d] ...", i, j);
 				terror(read_partition_table(&channels[i][j], error))
 			}
 		}
@@ -901,7 +902,7 @@ finish:
   if (hasFailed(err)) {
       outf(NULL, TRUE, err2String(err));
   } else {
-    outf(NULL, TRUE, "ALLES IN OBI");
+    outf(NULL, TRUE, "IDE driver exiting without errors!");
   }
   call_syscall_exit();
   return 0;
