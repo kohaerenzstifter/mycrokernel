@@ -52,5 +52,88 @@ many things made sense in my head but were never documented. I also know that th
 stuff that was later replaced by other functionality and is now probably dead. Maybe at some point in time I will try to again
 make sense of what I did and clean everything up a bit. But don't count on that!
 
-At the very least I'll add some documentation on how to set your environment in order to compile and run ...
-environment in order to get mycrokernel running and see
+For now, at the very least I'll add some documentation on how to set your environment in order to compile and run, which shall
+also be a help for myself, as I myself struggle every time I try to get it to work after years.
+
+## How to run mycrokernel
+
+### I'll first summarise what we'll be doing:
+
+* Create a virtual machine with an i386-compatible CPU and a virgin 32-Bit [Lubuntu 14.04](http://cdimages.ubuntu.com/lubuntu/releases/trusty/release/lubuntu-14.04.4-desktop-i386.iso). If you prefer a different
+setup, of course, your mileage may vary
+* the [High Level Assembler](http://www.plantation-productions.com/Webster/) by [Randall Hyde](https://en.wikipedia.org/wiki/Randall_Hyde): You won't be able to install from the repositories, but I'll explain how to
+set it up
+* the [Bochs emulator](http://bochs.sourceforge.net/): Unfortunately, mycrokernel seems to be broken on a current version of bochs installed from the repositories. I found version 2.3 still to be working, so you have to compile and install manually, but I'll also explain how
+* Simple DirectMedia Layer Development files: Needed to build Bochs
+* the NASM assembler: When writing an OS to boot from the bare metal, you also need to write a tiny little part of assembly in 16-bit Real Mode. This can't be done with HLA, so you'll also need NASM, which can be installed from  the repositories
+* Subversion: Needed to checkout Bochs
+* GIT: Needed to checkout mycrokernel
+* build-essential: Everything and the kitchen sink ...
+
+### And here's what you'll need to do:
+
+#### Install required packages from the repository:
+
+> sudo apt-get install build-essential nasm git subversion libsdl1.2-dev
+
+#### Install the [High Level Assembler](http://www.plantation-productions.com/Webster/):
+
+> mkdir hla  
+> cd hla  
+> wget http://www.plantation-productions.com/Webster/HighLevelAsm/HLAv2.16/linux.hla.tar.gz  
+> gzip -d linux.hla.tar.gz  
+> tar xvf linux.hla.tar  
+> sudo cp -r usr/hla /usr/  
+> cd ..  
+> rm -rf hla  
+> vi ~/.bashrc  
+
+At the end of your .bashrc, add the following lines:
+
+> PATH=/usr/hla:$PATH  
+> hlalib=/usr/hla/hlalib  
+> export hlalib  
+> hlainc=/usr/hla/include  
+> export hlainc  
+> hlatemp=/tmp  
+> export hlatemp  
+
+Now do:
+
+> source ~/.bashrc
+
+#### Checkout, compile and install [Bochs](http://bochs.sourceforge.net/):
+
+> svn co http://svn.code.sf.net/p/bochs/code/tags/REL_2_3_FINAL/bochs bochs  
+> cd bochs  
+> ./configure --enable-cpu-level=6 --enable-x86-debugger --enable-cdrom --enable-all-optimizations --enable-readline --enable-disasm --with-sdl  
+> make  
+> sudo make install  
+
+#### Clone, compile and run:
+
+> git clone https://github.com/kohaerenzstifter/mycrokernel.git mycrokernel
+> cd mycrokernel/
+
+#### You' first see this screen:
+![1](https://github.com/kohaerenzstifter/mycrokernel/blob/master/1.png)
+The messages "Relocated myself." and "Successfully loaded GDT!" already come from the the Real Mode bootloader. I added some busy loop into the kernel so you actually get a chance to see these messages and get a better feel of what is going on.
+
+#### Next thing you'll see is this:
+![1](https://github.com/kohaerenzstifter/mycrokernel/blob/master/2.png)
+
+These are already messages from the kernel. It's showing information on the memory regions available in the system as obtained from the BIOS. The second part explains how the kernel calculates the space that's available to kernel (everything that's left below 1 MByte after subtracting the sizes of all of the different parts of the loaded image).
+
+The third part then documents how three processes were created and set up to run as soon as the scheduler kicks in.
+
+#### Now you'll see this:
+![1](https://github.com/kohaerenzstifter/mycrokernel/blob/master/3.png)
+
+As mentioned earlier, I later implemented a small dummy hard disk driver process that gets a chance to speak up here. It tells you some of the details of the (virtual) drive it found and spits out the content of the root inode off the Ext filesystem contained therein. Then the "driver" exits, also to show off how a process can gracefully end when it's work has been done.
+
+#### You're now left with this:
+![1](https://github.com/kohaerenzstifter/mycrokernel/blob/master/4.png)
+
+This is still basically the same screen, but do try to type in something with your keyboard and hit enter. What you type here is sent to the shell process, which just sleeps around waiting for anything you've got to say. It'll count the number of characters you enter and spit out a short message.
+
+I'll stop writing for now, I think you got the basic idea. Comments are welcome, of course ...
