@@ -36,7 +36,7 @@ rudimentary operating system that does the following:
 * create a mock shell to read input from the user, count the number of characters read and
   spit out a message "got message containing n characters"
 
-It may also be interesting to point out here that I've realised all this in a real microkernel way, as I had learnt from the
+It may also be interesting to point out here that I've realised all this in a real microkernel fashion, as I had learnt from the
 MINIX book mentioned before. This means that the TTY driver is not allowed to directly access the hardware but must communicate
 with the kernel and ask for help (as in "send me a message when an interrupt occurs" or "read so many bytes from that port",
 etc).
@@ -47,8 +47,8 @@ didn't get very far, as I later had other things in mind. I created a disk image
 Ext filesystem entries in the root inode. But that's about it.
 
 As I am currently on the lookout for a new job and would like to get into hardware level programming, I thought it would be a
-good idea add some documentation this sadly orphaned project of mine. I know the code will be hard to read for any outsider, as
-many things made sense in my head but were never documented. I also know that the code is badly-groomed and contains legacy
+good idea to add some documentation on this sadly orphaned project of mine. I know the code will be hard to read for any outsider, as
+many things made sense in my head back then but were never documented. I also know that the code is badly-groomed and contains legacy
 stuff that was later replaced by other functionality and is now probably dead. Maybe at some point in time I will try to again
 make sense of what I did and clean everything up a bit. But don't count on that!
 
@@ -112,8 +112,9 @@ Now do:
 
 #### Clone, compile and run:
 
-> git clone https://github.com/kohaerenzstifter/mycrokernel.git mycrokernel
-> cd mycrokernel/
+> git clone https://github.com/kohaerenzstifter/mycrokernel.git mycrokernel  
+> cd mycrokernel/  
+> make bochs
 
 #### You' first see this screen:
 ![1](https://github.com/kohaerenzstifter/mycrokernel/blob/master/1.png)
@@ -122,18 +123,17 @@ The messages "Relocated myself." and "Successfully loaded GDT!" already come fro
 #### Next thing you'll see is this:
 ![1](https://github.com/kohaerenzstifter/mycrokernel/blob/master/2.png)
 
-These are already messages from the kernel. It's showing information on the memory regions available in the system as obtained from the BIOS. The second part explains how the kernel calculates the space that's available to kernel (everything that's left below 1 MByte after subtracting the sizes of all of the different parts of the loaded image).
-
+These are already messages from the kernel. It's showing information on the memory regions available in the system as obtained from the BIOS. The second part explains how the kernel calculates the space that's available to kernel (everything that's left below 1 MByte after subtracting the sizes of all of the different parts of the loaded image).  
 The third part then documents how three processes were created and set up to run as soon as the scheduler kicks in.
 
 #### Now you'll see this:
 ![1](https://github.com/kohaerenzstifter/mycrokernel/blob/master/3.png)
 
-As mentioned earlier, I later implemented a small dummy hard disk driver process that gets a chance to speak up here. It tells you some of the details of the (virtual) drive it found and spits out the content of the root inode off the Ext filesystem contained therein. Then the "driver" exits, also to show off how a process can gracefully end when it's work has been done.
+As mentioned earlier, I later implemented a small dummy hard disk driver process that gets a chance to speak up here. It tells you some of the details of the (virtual) drive it found and spits out the content of the root inode of the Ext filesystem contained therein. Then the "driver" exits, also to show off how a process can gracefully end when it's work has been done.
 
 #### You're now left with this:
 ![1](https://github.com/kohaerenzstifter/mycrokernel/blob/master/4.png)
 
-This is still basically the same screen, but do try to type in something with your keyboard and hit enter. What you type here is sent to the shell process, which just sleeps around waiting for anything you've got to say. It'll count the number of characters you enter and spit out a short message.
+This is still basically the same screen, but do try to type in something with your keyboard and hit enter. What you type here is sent to the shell process, which just sleeps waiting for anything you've got to say. It'll count the number of characters you enter and spit out a short message.
 
 I'll stop writing for now, I think you got the basic idea. Comments are welcome, of course ...
